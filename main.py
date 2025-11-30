@@ -1331,6 +1331,28 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
         except Exception as db_err:
             logger.warning(f"Failed to save to database: {db_err}")
         
+        # Run live analysis if AI enabled (catalysts, institutional matrix, horizon reports)
+        if not no_ai and model:
+            try:
+                from scripts.live_analysis import LiveAnalyzer
+                analyzer = LiveAnalyzer(config, logger, model)
+                logger.info("[LIVE] Running live analysis suite...")
+                
+                # Generate all live reports
+                reports_generated = analyzer.run_full_analysis(
+                    gold_price=gold_price,
+                    silver_price=data.get('SILVER', {}).get('price', 0),
+                    current_bias=new_bias
+                )
+                
+                for report_name, report_path in reports_generated.items():
+                    logger.info(f"[LIVE] Generated: {report_name} -> {report_path}")
+                    
+            except ImportError as ie:
+                logger.debug(f"Live analysis module not available: {ie}")
+            except Exception as la_err:
+                logger.warning(f"Live analysis failed: {la_err}")
+        
         return True
         
     except Exception as e:
