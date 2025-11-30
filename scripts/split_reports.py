@@ -178,18 +178,12 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
         md.append("AI disabled; provide your own tactical notes or re-run with AI enabled for an automated thesis.\n")
 
     # Create short timeframe charts (1 week) for assets
+    # For weekly charts, we use the full recent data for chart generation (which includes SMAs)
+    # but then just copy the main chart rather than trying to generate a separate short-period chart
     for key, conf in __import__('main').ASSETS.items():
         try:
-            df = q._fetch(conf['p'], conf['b'])
-            if df is None or df.empty:
-                continue
-            # Use last 14 days window for weekly chart context
-            df_week = df.tail(14)
-            q._chart(key + "_WEEK", df_week)
-            src = os.path.join(config.CHARTS_DIR, f"{key}_WEEK.png")
-            if not os.path.exists(src):
-                # fallback to generic
-                src = os.path.join(config.CHARTS_DIR, f"{key}.png")
+            # Use existing chart from QuantEngine (already generated during get_data)
+            src = os.path.join(config.CHARTS_DIR, f"{key}.png")
             dst = os.path.join(charts_dir, f"{key}_week.png")
             if os.path.exists(src):
                 import shutil

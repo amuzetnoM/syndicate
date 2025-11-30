@@ -91,10 +91,76 @@ Quickstart
 
 Output will be under `output/` with charts in `output/charts` and a markdown journal `Journal_YYYY-MM-DD.md`.
 
+---
+
+## Unified CLI — `run.py`
+
+The recommended way to use Gold Standard is through the unified CLI entry point `run.py`. It provides both an **interactive menu** and **command-line flags** for automation.
+
+### Interactive Mode
+
+Simply run without arguments for a menu-driven experience:
+
+```bash
+python run.py
+```
+
+```
+╔═══════════════════════════════════════════════════════════════════════╗
+║   ██████╗  ██████╗ ██╗     ██████╗     ███████╗████████╗██████╗       ║
+║  ██╔════╝ ██╔═══██╗██║     ██╔══██╗    ██╔════╝╚══██╔══╝██╔══██╗      ║
+║  ██║  ███╗██║   ██║██║     ██║  ██║    ███████╗   ██║   ██║  ██║      ║
+║  ██║   ██║██║   ██║██║     ██║  ██║    ╚════██║   ██║   ██║  ██║      ║
+║  ╚██████╔╝╚██████╔╝███████╗██████╔╝    ███████║   ██║   ██████╔╝      ║
+║   ╚═════╝  ╚═════╝ ╚══════╝╚═════╝     ╚══════╝   ╚═╝   ╚═════╝       ║
+║                   Precious Metals Intelligence                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+  [1] Daily Journal        — Full daily analysis with AI-generated thesis
+  [2] Weekly Rundown       — Short-horizon tactical overview for the weekend
+  [3] Monthly Report       — Monthly aggregated performance tables + AI outlook
+  [4] Yearly Report        — Year-over-year analysis + AI forecast
+  [5] All Reports          — Generate everything (daily + weekly + monthly + yearly)
+  [0] Exit
+```
+
+### Command-Line Mode
+
+For scripting, automation, or cron jobs, use the `--mode` flag:
+
+| Command | Description |
+|---|---|
+| `python run.py --mode daily` | Run the full daily journal pipeline |
+| `python run.py --mode weekly` | Generate weekend tactical rundown |
+| `python run.py --mode monthly` | Generate monthly aggregated report |
+| `python run.py --mode yearly` | Generate yearly performance report |
+| `python run.py --mode all` | Generate all reports at once |
+| `python run.py --mode daily --no-ai` | Run daily without AI (no Gemini calls) |
+
+### Quick Examples
+
+```bash
+# Interactive menu
+python run.py
+
+# Weekend rundown without AI
+python run.py --mode weekly --no-ai
+
+# Full daily journal with AI
+python run.py --mode daily
+
+# Generate all reports for archival
+python run.py --mode all
+```
+
+---
+
 Key files:
 | File | Purpose |
 |---|---|
-| `main.py` | Core pipeline and CLI entry point (Cortex, QuantEngine, Strategist) |
+| `run.py` | **Unified CLI** — interactive menu or `--mode` flags for all report types |
+| `main.py` | Core pipeline (Cortex, QuantEngine, Strategist) — invoked by `run.py` for daily |
+| `scripts/split_reports.py` | Weekly/monthly/yearly report generator — invoked by `run.py` |
 | `cortex_memory.template.json` | Safe default memory template for new users |
 | `scripts/init_cortex.py` | Helper to initialize local `cortex_memory.json` from template |
 | `scripts/prevent_secrets.py` | Pre-commit helper that blocks committing `.env` and likely secrets |
