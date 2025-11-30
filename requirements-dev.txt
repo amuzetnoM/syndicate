@@ -1,3 +1,29 @@
-pre-commit>=3.4.0
-detect-secrets>=1.5.0
-pytest-cov>=4.0
+# =============================================================================
+# Gold Standard - Development Dependencies
+# =============================================================================
+# Install: pip install -r requirements-dev.txt
+# Note: Install requirements.txt first for full development setup
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Include Production Dependencies
+# -----------------------------------------------------------------------------
+-r requirements.txt
+
+# -----------------------------------------------------------------------------
+# Code Quality & Security
+# -----------------------------------------------------------------------------
+pre-commit>=3.4.0             # Git hooks for code quality checks
+detect-secrets>=1.5.0         # Prevent secrets from being committed
+
+# -----------------------------------------------------------------------------
+# Testing & Coverage
+# -----------------------------------------------------------------------------
+pytest-cov>=4.0               # Test coverage reporting for pytest
+
+# -----------------------------------------------------------------------------
+# Optional: Linting & Formatting (uncomment as needed)
+# -----------------------------------------------------------------------------
+# ruff>=0.1.0                 # Fast Python linter and formatter
+# mypy>=1.0                   # Static type checking
+# black>=23.0                 # Code formatter

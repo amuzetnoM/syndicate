@@ -1,10 +1,32 @@
-yfinance>=0.2.66
-pandas>=2.0.0
-pandas_ta>=0.4.71b0
-mplfinance>=0.12.10b0
-google-generativeai>=0.8.0
-schedule>=1.2.0
-colorama>=0.4.6
-filelock>=3.0.0
-pytest>=7.0
-python-dotenv>=1.0.0
+# =============================================================================
+# Gold Standard - Production Dependencies
+# =============================================================================
+# Install: pip install -r requirements.txt
+# Update:  pip install --upgrade -r requirements.txt
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Core Data & Analysis
+# -----------------------------------------------------------------------------
+yfinance>=0.2.66              # Yahoo Finance market data API
+pandas>=2.0.0                 # Data manipulation and analysis
+pandas_ta>=0.4.71b0           # Technical analysis indicators (optional on 3.14+)
+mplfinance>=0.12.10b0         # Financial charting library
+
+# -----------------------------------------------------------------------------
+# AI & Machine Learning
+# -----------------------------------------------------------------------------
+google-generativeai>=0.8.0    # Google Gemini AI API client
+
+# -----------------------------------------------------------------------------
+# Utilities & Runtime
+# -----------------------------------------------------------------------------
+schedule>=1.2.0               # Job scheduling for recurring tasks
+colorama>=0.4.6               # Cross-platform colored terminal output
+filelock>=3.0.0               # File-based locking for concurrent access
+python-dotenv>=1.0.0          # Environment variable management from .env files
+
+# -----------------------------------------------------------------------------
+# Testing (included for CI/CD compatibility)
+# -----------------------------------------------------------------------------
+pytest>=7.0                   # Testing framework
