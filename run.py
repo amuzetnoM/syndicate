@@ -32,17 +32,17 @@ BANNER = r"""
               /:/  /         \:\__\      \:\__\        \:\__\        \::/  /       \:\__\        \:\__\        \::/  /   
               \/__/           \/__/       \/__/         \/__/         \/__/         \/__/         \/__/         \/__/    
 
-              PRECIOUS METAL INTELLIGENCE COMPLEX
+                                                  
+                                                  PRECIOUS METALS INTELLIGENCE COMPLEX
 """
 
 MENU = """
 Select a mode:
 
-  [1] Daily Journal        — Full daily analysis with AI-generated thesis
-  [2] Weekly Rundown       — Short-horizon tactical overview for the weekend
-  [3] Monthly Report       — Monthly aggregated performance tables + AI outlook
-  [4] Yearly Report        — Year-over-year analysis + AI forecast
-  [5] All Reports          — Generate everything (daily + weekly + monthly + yearly)
+  [1] Daily Journal   -  Full daily analysis with AI-generated thesis
+  [2] Weekly Rundown  -  Short-horizon tactical overview for the weekend
+  [3] Monthly Report  -  Monthly aggregated performance tables + AI outlook
+  [4] Yearly Report   -  Year-over-year analysis + AI forecast
 
   [0] Exit
 
@@ -56,7 +56,7 @@ def print_banner():
     print(BANNER)
 
 
-def run_daily(no_ai: bool = False, once: bool = True):
+def run_daily(no_ai: bool = False):
     """Run the daily journal via main.py."""
     print("\n>> Running Daily Journal...\n")
     cmd_parts = [sys.executable, "main.py", "--once"]
@@ -92,15 +92,6 @@ def run_yearly(no_ai: bool = False):
     os.system(" ".join(cmd_parts))
 
 
-def run_all(no_ai: bool = False):
-    """Run all reports: daily, weekly, monthly, yearly."""
-    print("\n>> Running All Reports...\n")
-    run_daily(no_ai=no_ai)
-    run_weekly(no_ai=no_ai)
-    run_monthly(no_ai=no_ai)
-    run_yearly(no_ai=no_ai)
-
-
 def interactive_mode(no_ai: bool = False):
     """Interactive menu loop."""
     while True:
@@ -108,8 +99,8 @@ def interactive_mode(no_ai: bool = False):
         print_banner()
         print(MENU)
         if no_ai:
-            print("  [AI Disabled — running in --no-ai mode]\n")
-        choice = input("  Enter choice [0-5]: ").strip()
+            print("  [AI Disabled - running in --no-ai mode]\n")
+        choice = input("  Enter choice [0-4]: ").strip()
 
         if choice == "1":
             run_daily(no_ai=no_ai)
@@ -123,36 +114,32 @@ def interactive_mode(no_ai: bool = False):
         elif choice == "4":
             run_yearly(no_ai=no_ai)
             input("\n  Press Enter to continue...")
-        elif choice == "5":
-            run_all(no_ai=no_ai)
-            input("\n  Press Enter to continue...")
         elif choice == "0":
             print("\n  Goodbye!\n")
             break
         else:
-            print("\n  Invalid choice. Please enter a number between 0 and 5.")
+            print("\n  Invalid choice. Please enter a number between 0 and 4.")
             input("  Press Enter to continue...")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gold Standard CLI — Unified entry point for daily, weekly, monthly, and yearly reports.",
+        description="Gold Standard CLI - Unified entry point for daily, weekly, monthly, and yearly reports.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run.py                     # Interactive menu
-  python run.py --mode daily        # Run daily journal
-  python run.py --mode weekly       # Run weekly rundown
-  python run.py --mode monthly      # Run monthly report
-  python run.py --mode yearly       # Run yearly report
-  python run.py --mode all          # Run all reports
+  python run.py                       # Interactive menu
+  python run.py --mode daily          # Run daily journal
+  python run.py --mode weekly         # Run weekly rundown
+  python run.py --mode monthly        # Run monthly report
+  python run.py --mode yearly         # Run yearly report
   python run.py --mode daily --no-ai  # Run daily without AI
         """
     )
     parser.add_argument(
         '--mode', '-m',
-        choices=['daily', 'weekly', 'monthly', 'yearly', 'all'],
-        help='Run mode: daily, weekly, monthly, yearly, or all. If omitted, interactive menu is shown.'
+        choices=['daily', 'weekly', 'monthly', 'yearly'],
+        help='Run mode: daily, weekly, monthly, or yearly. If omitted, interactive menu is shown.'
     )
     parser.add_argument(
         '--no-ai',
@@ -181,8 +168,6 @@ Examples:
             run_monthly(no_ai=args.no_ai)
         elif args.mode == 'yearly':
             run_yearly(no_ai=args.no_ai)
-        elif args.mode == 'all':
-            run_all(no_ai=args.no_ai)
         return
 
     # Interactive mode

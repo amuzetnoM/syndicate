@@ -501,7 +501,8 @@ class QuantEngine:
                     period=self.config.DATA_PERIOD,
                     interval=self.config.DATA_INTERVAL,
                     progress=False,
-                    multi_level_index=False
+                    multi_level_index=False,
+                    auto_adjust=True
                 )
                 
                 if df.empty:

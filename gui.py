@@ -10,14 +10,16 @@ import threading
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime
 import webbrowser
+import json
 
 # Project root
 PROJECT_ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 REPORTS_DIR = OUTPUT_DIR / "reports"
 CHARTS_DIR = OUTPUT_DIR / "charts"
+MEMORY_FILE = PROJECT_ROOT / "cortex_memory.json"
 
 
 class GoldStandardGUI:
@@ -202,7 +204,6 @@ class GoldStandardGUI:
             ("weekly", "Weekly Rundown", "Short-horizon tactical weekend overview"),
             ("monthly", "Monthly Report", "Monthly performance tables + AI outlook"),
             ("yearly", "Yearly Report", "Year-over-year analysis + AI forecast"),
-            ("all", "All Reports", "Generate everything at once"),
         ]
         
         for mode_id, mode_name, mode_desc in modes:
@@ -299,20 +300,25 @@ class GoldStandardGUI:
         self.notebook = ttk.Notebook(parent, style='Dark.TNotebook')
         self.notebook.pack(fill=tk.BOTH, expand=True)
         
+        # Charts tab (first)
+        charts_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
+        self.notebook.add(charts_frame, text="  Charts  ")
+        self._build_charts_tab(charts_frame)
+        
         # Reports tab
         reports_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
         self.notebook.add(reports_frame, text="  Reports  ")
         self._build_reports_tab(reports_frame)
         
-        # Charts tab
-        charts_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(charts_frame, text="  Charts  ")
-        self._build_charts_tab(charts_frame)
-        
         # Preview tab
         preview_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
         self.notebook.add(preview_frame, text="  Preview  ")
         self._build_preview_tab(preview_frame)
+        
+        # Journal tab (persistent Cortex memory)
+        journal_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
+        self.notebook.add(journal_frame, text="  Journal  ")
+        self._build_journal_tab(journal_frame)
 
     def _build_reports_tab(self, parent):
         """Build the reports list tab."""
@@ -375,6 +381,175 @@ class GoldStandardGUI:
         self.preview_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self.preview_text.insert(tk.END, "Select a report from the Reports tab to preview its contents.")
 
+    def _build_journal_tab(self, parent):
+        """Build the Journal tab with persistent Cortex memory display."""
+        # Header with refresh button
+        header = ttk.Frame(parent, style='Panel.TFrame')
+        header.pack(fill=tk.X, padx=10, pady=(10, 5))
+        
+        ttk.Label(header, text="CORTEX MEMORY", style='Gold.TLabel').pack(side=tk.LEFT)
+        
+        ttk.Button(
+            header,
+            text="Refresh",
+            style='Secondary.TButton',
+            command=self._refresh_journal
+        ).pack(side=tk.RIGHT)
+        
+        # Main journal content area - two panels
+        content = ttk.Frame(parent, style='Panel.TFrame')
+        content.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # Left side: Stats panel (narrower)
+        stats_frame = ttk.Frame(content, style='Light.TFrame', width=250)
+        stats_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        stats_frame.pack_propagate(False)
+        
+        # Stats header
+        ttk.Label(stats_frame, text="Performance Stats", 
+                 font=('Segoe UI', 11, 'bold'),
+                 background=self.colors['bg_light'],
+                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
+        
+        # Stats content
+        self.stats_text = tk.Text(
+            stats_frame,
+            bg=self.colors['bg_light'],
+            fg=self.colors['text'],
+            font=('Consolas', 9),
+            relief=tk.FLAT,
+            padx=10,
+            pady=10,
+            wrap=tk.WORD
+        )
+        self.stats_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Right side: Latest Journal Report
+        journal_frame = ttk.Frame(content, style='Light.TFrame')
+        journal_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Journal header
+        ttk.Label(journal_frame, text="Latest Daily Journal", 
+                 font=('Segoe UI', 11, 'bold'),
+                 background=self.colors['bg_light'],
+                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
+        
+        # Journal content (the actual report)
+        self.journal_text = scrolledtext.ScrolledText(
+            journal_frame,
+            bg=self.colors['bg_light'],
+            fg=self.colors['text'],
+            font=('Consolas', 9),
+            relief=tk.FLAT,
+            padx=10,
+            pady=10,
+            wrap=tk.WORD
+        )
+        self.journal_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Load initial journal data
+        self._refresh_journal()
+
+    def _get_latest_journal_file(self):
+        """Find the most recent Journal markdown file."""
+        journal_files = list(OUTPUT_DIR.glob("Journal_*.md"))
+        if not journal_files:
+            return None
+        # Sort by modification time, most recent first
+        journal_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+        return journal_files[0]
+
+    def _refresh_journal(self):
+        """Refresh the journal tab with current Cortex memory and latest journal."""
+        # Load Cortex memory for stats
+        try:
+            if MEMORY_FILE.exists():
+                with open(MEMORY_FILE, 'r', encoding='utf-8') as f:
+                    memory = json.load(f)
+            else:
+                memory = {}
+        except Exception as e:
+            memory = {'error': str(e)}
+        
+        # Update stats panel
+        self.stats_text.config(state=tk.NORMAL)
+        self.stats_text.delete(1.0, tk.END)
+        
+        stats_lines = []
+        stats_lines.append("CORTEX MEMORY STATS")
+        stats_lines.append("=" * 24)
+        stats_lines.append("")
+        
+        # Current bias
+        last_bias = memory.get('last_bias', 'N/A')
+        stats_lines.append(f"Current Bias: {last_bias}")
+        stats_lines.append("")
+        
+        # Last price
+        last_price = memory.get('last_price', 'N/A')
+        if last_price != 'N/A':
+            stats_lines.append(f"Last Price: ${last_price:.2f}")
+        else:
+            stats_lines.append(f"Last Price: {last_price}")
+        stats_lines.append("")
+        
+        # Win/Loss record
+        wins = memory.get('wins', 0)
+        losses = memory.get('losses', 0)
+        total = wins + losses
+        win_rate = (wins / total * 100) if total > 0 else 0
+        stats_lines.append(f"W/L: {wins}W / {losses}L")
+        stats_lines.append(f"Win Rate: {win_rate:.1f}%")
+        stats_lines.append("")
+        
+        # Streaks
+        current_streak = memory.get('current_streak', 0)
+        streak_type = memory.get('streak_type', 'none')
+        stats_lines.append(f"Streak: {abs(current_streak)} ({streak_type})")
+        stats_lines.append("")
+        
+        # Last updated
+        last_run = memory.get('last_run', 'Never')
+        stats_lines.append(f"Last Run: {last_run}")
+        stats_lines.append("")
+        stats_lines.append("=" * 24)
+        
+        # Add prediction history summary
+        history = memory.get('history', [])
+        if history:
+            stats_lines.append("")
+            stats_lines.append("RECENT PREDICTIONS")
+            stats_lines.append("-" * 24)
+            for entry in reversed(history[-5:]):
+                entry_date = entry.get('date', '?')
+                entry_bias = entry.get('bias', '?')
+                entry_result = entry.get('result', 'pending')
+                result_mark = "[OK]" if entry_result == 'correct' else "[X]" if entry_result == 'incorrect' else "[?]"
+                stats_lines.append(f"{entry_date}: {entry_bias} {result_mark}")
+        
+        self.stats_text.insert(tk.END, "\n".join(stats_lines))
+        self.stats_text.config(state=tk.DISABLED)
+        
+        # Update journal content panel with actual journal file
+        self.journal_text.config(state=tk.NORMAL)
+        self.journal_text.delete(1.0, tk.END)
+        
+        journal_file = self._get_latest_journal_file()
+        if journal_file:
+            try:
+                with open(journal_file, 'r', encoding='utf-8') as f:
+                    journal_content = f.read()
+                self.journal_text.insert(tk.END, f"File: {journal_file.name}\n")
+                self.journal_text.insert(tk.END, "=" * 50 + "\n\n")
+                self.journal_text.insert(tk.END, journal_content)
+            except Exception as e:
+                self.journal_text.insert(tk.END, f"Error reading journal: {e}")
+        else:
+            self.journal_text.insert(tk.END, "No journal files found.\n\n")
+            self.journal_text.insert(tk.END, "Run a 'Daily' analysis to generate your first journal report.")
+        
+        self.journal_text.config(state=tk.DISABLED)
+
     def _log(self, message: str):
         """Add a message to the log panel."""
         self.log_text.config(state=tk.NORMAL)
@@ -424,13 +599,20 @@ class GoldStandardGUI:
             if no_ai:
                 cmd.append("--no-ai")
             
+            # Use UTF-8 encoding and handle errors gracefully
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = 'utf-8'
+            
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                cwd=str(PROJECT_ROOT)
+                cwd=str(PROJECT_ROOT),
+                env=env,
+                encoding='utf-8',
+                errors='replace'
             )
             
             # Read output line by line
@@ -469,6 +651,7 @@ class GoldStandardGUI:
         """Refresh the results dashboard."""
         self._refresh_reports()
         self._refresh_charts()
+        self._refresh_journal()
 
     def _refresh_reports(self):
         """Refresh the reports list."""

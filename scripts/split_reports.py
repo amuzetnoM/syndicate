@@ -60,12 +60,12 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
             df = df.sort_index()
             df.index = pd.to_datetime(df.index)
 
-            # Monthly aggregation
-            monthly = df.resample('M').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
+            # Monthly aggregation (ME = Month End)
+            monthly = df.resample('ME').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
             monthly['Return'] = monthly['Close'].pct_change() * 100
 
-            # Yearly aggregation
-            yearly = df.resample('Y').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
+            # Yearly aggregation (YE = Year End)
+            yearly = df.resample('YE').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
             yearly['Return'] = yearly['Close'].pct_change() * 100
 
             asset_monthly[key] = monthly
@@ -92,12 +92,12 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
     path = os.path.join(reports_dir, filename)
 
     md = []
-    md.append(f"# Monthly & Yearly Report — {now}\n")
+    md.append(f"# Monthly & Yearly Report - {now}\n")
     md.append("## Summary\n")
     # Aggregated summary: latest snapshot from QuantEngine.get_data
     snapshot = q.get_data()
     if snapshot is None:
-        md.append("Data fetch failed — no snapshot available.\n")
+        md.append("Data fetch failed - no snapshot available.\n")
     else:
         for k, v in snapshot.items():
             if not isinstance(v, dict):
@@ -156,7 +156,7 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
     filename = f"weekly_rundown_{now}.md"
     report_path = os.path.join(reports_dir, filename)
 
-    md.append(f"# Weekly Rundown — {now}\n")
+    md.append(f"# Weekly Rundown - {now}\n")
     md.append("## Overview\n")
     for k, v in snapshot.items():
         if not isinstance(v, dict):
