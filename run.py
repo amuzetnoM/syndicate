@@ -58,7 +58,7 @@ def print_banner():
 
 def run_daily(no_ai: bool = False, once: bool = True):
     """Run the daily journal via main.py."""
-    print("\n▶ Running Daily Journal...\n")
+    print("\n>> Running Daily Journal...\n")
     cmd_parts = [sys.executable, "main.py", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
@@ -67,7 +67,7 @@ def run_daily(no_ai: bool = False, once: bool = True):
 
 def run_weekly(no_ai: bool = False):
     """Run the weekly rundown via split_reports.py."""
-    print("\n▶ Running Weekly Rundown...\n")
+    print("\n>> Running Weekly Rundown...\n")
     cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "weekly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
@@ -76,7 +76,7 @@ def run_weekly(no_ai: bool = False):
 
 def run_monthly(no_ai: bool = False):
     """Run the monthly report via split_reports.py."""
-    print("\n▶ Running Monthly Report...\n")
+    print("\n>> Running Monthly Report...\n")
     cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "monthly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
@@ -85,7 +85,7 @@ def run_monthly(no_ai: bool = False):
 
 def run_yearly(no_ai: bool = False):
     """Run the yearly report via split_reports.py."""
-    print("\n▶ Running Yearly Report...\n")
+    print("\n>> Running Yearly Report...\n")
     cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "yearly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
@@ -94,7 +94,7 @@ def run_yearly(no_ai: bool = False):
 
 def run_all(no_ai: bool = False):
     """Run all reports: daily, weekly, monthly, yearly."""
-    print("\n▶ Running All Reports...\n")
+    print("\n>> Running All Reports...\n")
     run_daily(no_ai=no_ai)
     run_weekly(no_ai=no_ai)
     run_monthly(no_ai=no_ai)

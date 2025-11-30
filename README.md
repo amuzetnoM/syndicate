@@ -155,10 +155,30 @@ python run.py --mode all
 
 ---
 
+## GUI Dashboard — `gui.py`
+
+For a visual experience, launch the GUI dashboard:
+
+```bash
+python gui.py
+```
+
+The GUI provides:
+- **Mode Selection Wizard** — Radio buttons to choose Daily, Weekly, Monthly, Yearly, or All
+- **No AI Toggle** — Checkbox to skip Gemini API calls
+- **Live Console Output** — Real-time progress as reports are generated
+- **Results Dashboard** with three tabs:
+  - **Reports** — List of all generated markdown reports with double-click to preview
+  - **Charts** — Gallery of generated chart images with quick-open buttons
+  - **Preview** — Full markdown preview of selected reports
+
+---
+
 Key files:
 | File | Purpose |
 |---|---|
 | `run.py` | **Unified CLI** — interactive menu or `--mode` flags for all report types |
+| `gui.py` | **GUI Dashboard** — visual wizard with mode selection and results viewer |
 | `main.py` | Core pipeline (Cortex, QuantEngine, Strategist) — invoked by `run.py` for daily |
 | `scripts/split_reports.py` | Weekly/monthly/yearly report generator — invoked by `run.py` |
 | `cortex_memory.template.json` | Safe default memory template for new users |
