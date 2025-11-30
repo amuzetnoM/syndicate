@@ -1305,6 +1305,32 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
         
         logger.info(f"Report generated: {report_path}")
         logger.info(f"[SUCCESS] Quant Report Generated: {report_path}")
+        
+        # Save to database for organized storage
+        try:
+            from db_manager import get_db, JournalEntry
+            db = get_db()
+            
+            # Get silver price and GSR for database
+            silver_price = data.get('SILVER', {}).get('price', 0)
+            gsr = gold_price / silver_price if silver_price > 0 else 0
+            
+            entry = JournalEntry(
+                date=str(datetime.date.today()),
+                content=safe_report,
+                bias=new_bias,
+                gold_price=gold_price,
+                silver_price=silver_price,
+                gsr=gsr,
+                ai_enabled=not no_ai
+            )
+            db.save_journal(entry, overwrite=True)
+            logger.info(f"[DATABASE] Journal saved for {datetime.date.today()}")
+        except ImportError:
+            logger.debug("Database module not available, skipping DB save")
+        except Exception as db_err:
+            logger.warning(f"Failed to save to database: {db_err}")
+        
         return True
         
     except Exception as e:

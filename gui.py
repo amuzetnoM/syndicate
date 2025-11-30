@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Gold Standard GUI
-Dashboard and wizard for running reports and viewing results.
+Gold Standard GUI v2
+Modern dashboard with database integration and date-wise journal browsing.
 """
 import os
 import sys
@@ -10,9 +10,10 @@ import threading
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import webbrowser
 import json
+import calendar
 
 # Project root
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -20,864 +21,964 @@ OUTPUT_DIR = PROJECT_ROOT / "output"
 REPORTS_DIR = OUTPUT_DIR / "reports"
 CHARTS_DIR = OUTPUT_DIR / "charts"
 MEMORY_FILE = PROJECT_ROOT / "cortex_memory.json"
+DATA_DIR = PROJECT_ROOT / "data"
+
+# Add to path for imports
+sys.path.insert(0, str(PROJECT_ROOT))
+
+try:
+    from db_manager import get_db, JournalEntry
+except ImportError:
+    get_db = None
+
+
+class ModernTheme:
+    """Modern dark theme with gold accents."""
+    
+    # Color palette
+    BG_DARK = "#0D1117"       # Main background
+    BG_PANEL = "#161B22"      # Panel background
+    BG_CARD = "#21262D"       # Card/elevated background
+    BG_HOVER = "#30363D"      # Hover state
+    
+    GOLD = "#F0B90B"          # Primary accent (gold)
+    GOLD_DIM = "#B8860B"      # Dimmed gold
+    GREEN = "#3FB950"         # Success/bullish
+    RED = "#F85149"           # Error/bearish
+    BLUE = "#58A6FF"          # Info/links
+    
+    TEXT = "#E6EDF3"          # Primary text
+    TEXT_DIM = "#8B949E"      # Secondary text
+    TEXT_MUTED = "#484F58"    # Muted text
+    
+    BORDER = "#30363D"        # Border color
 
 
 class GoldStandardGUI:
-    """Main GUI application for Gold Standard."""
+    """Main GUI application for Gold Standard v2."""
 
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Gold Standard — Precious Metals Intelligence")
-        self.root.geometry("1200x800")
-        self.root.minsize(900, 600)
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 700)
         
-        # Configure dark theme colors
-        self.colors = {
-            'bg': '#1a1a2e',
-            'bg_light': '#16213e',
-            'accent': '#e94560',
-            'gold': '#ffd700',
-            'text': '#eaeaea',
-            'text_dim': '#a0a0a0',
-            'success': '#4ecca3',
-            'warning': '#ff9f1c',
-            'panel': '#0f3460'
-        }
-        
-        self.root.configure(bg=self.colors['bg'])
+        # Theme
+        self.theme = ModernTheme
+        self.root.configure(bg=self.theme.BG_DARK)
         
         # State
-        self.selected_mode = tk.StringVar(value="daily")
-        self.no_ai = tk.BooleanVar(value=False)
         self.is_running = False
         self.process = None
+        self.no_ai = tk.BooleanVar(value=False)
+        self.selected_date = tk.StringVar(value=date.today().isoformat())
         
-        # Configure styles
-        self._configure_styles()
+        # Database
+        self.db = get_db() if get_db else None
         
-        # Build UI
+        # Setup
+        self._setup_styles()
         self._build_ui()
-        
-        # Refresh results on start
-        self._refresh_results()
+        self._refresh_all()
 
-    def _configure_styles(self):
-        """Configure ttk styles for dark theme."""
+    def _setup_styles(self):
+        """Configure ttk styles for modern look."""
         style = ttk.Style()
         style.theme_use('clam')
         
-        # Frame styles
-        style.configure('Dark.TFrame', background=self.colors['bg'])
-        style.configure('Panel.TFrame', background=self.colors['panel'])
-        style.configure('Light.TFrame', background=self.colors['bg_light'])
+        t = self.theme
         
-        # Label styles
-        style.configure('Title.TLabel', 
-                       background=self.colors['bg'],
-                       foreground=self.colors['gold'],
-                       font=('Consolas', 24, 'bold'))
+        # Frames
+        style.configure('Dark.TFrame', background=t.BG_DARK)
+        style.configure('Panel.TFrame', background=t.BG_PANEL)
+        style.configure('Card.TFrame', background=t.BG_CARD)
+        
+        # Labels
+        style.configure('Title.TLabel',
+                       background=t.BG_DARK,
+                       foreground=t.GOLD,
+                       font=('Segoe UI', 24, 'bold'))
+        
         style.configure('Subtitle.TLabel',
-                       background=self.colors['bg'],
-                       foreground=self.colors['text_dim'],
-                       font=('Segoe UI', 10))
-        style.configure('Dark.TLabel',
-                       background=self.colors['bg'],
-                       foreground=self.colors['text'],
-                       font=('Segoe UI', 10))
-        style.configure('Panel.TLabel',
-                       background=self.colors['panel'],
-                       foreground=self.colors['text'],
-                       font=('Segoe UI', 10))
-        style.configure('Gold.TLabel',
-                       background=self.colors['bg'],
-                       foreground=self.colors['gold'],
-                       font=('Segoe UI', 11, 'bold'))
+                       background=t.BG_DARK,
+                       foreground=t.TEXT_DIM,
+                       font=('Segoe UI', 11))
         
-        # Button styles
+        style.configure('Header.TLabel',
+                       background=t.BG_PANEL,
+                       foreground=t.GOLD,
+                       font=('Segoe UI', 13, 'bold'))
+        
+        style.configure('Text.TLabel',
+                       background=t.BG_PANEL,
+                       foreground=t.TEXT,
+                       font=('Segoe UI', 10))
+        
+        style.configure('Muted.TLabel',
+                       background=t.BG_PANEL,
+                       foreground=t.TEXT_DIM,
+                       font=('Segoe UI', 9))
+        
+        style.configure('Status.TLabel',
+                       background=t.BG_DARK,
+                       foreground=t.GREEN,
+                       font=('Consolas', 10))
+        
+        # Buttons
         style.configure('Action.TButton',
-                       background=self.colors['accent'],
-                       foreground='white',
-                       font=('Segoe UI', 11, 'bold'),
-                       padding=(20, 10))
+                       background=t.GOLD,
+                       foreground=t.BG_DARK,
+                       font=('Segoe UI', 12, 'bold'),
+                       padding=(20, 12))
         style.map('Action.TButton',
-                 background=[('active', '#ff6b6b'), ('disabled', '#555')])
+                 background=[('active', t.GOLD_DIM), ('pressed', t.GOLD_DIM)])
         
         style.configure('Secondary.TButton',
-                       background=self.colors['bg_light'],
-                       foreground=self.colors['text'],
+                       background=t.BG_CARD,
+                       foreground=t.TEXT,
+                       font=('Segoe UI', 10),
+                       padding=(12, 8))
+        style.map('Secondary.TButton',
+                 background=[('active', t.BG_HOVER)])
+        
+        style.configure('Small.TButton',
+                       background=t.BG_CARD,
+                       foreground=t.TEXT_DIM,
                        font=('Segoe UI', 9),
-                       padding=(10, 5))
+                       padding=(8, 4))
         
-        # Radiobutton styles
-        style.configure('Mode.TRadiobutton',
-                       background=self.colors['bg'],
-                       foreground=self.colors['text'],
-                       font=('Segoe UI', 11),
-                       padding=10)
-        style.map('Mode.TRadiobutton',
-                 background=[('selected', self.colors['bg_light'])])
-        
-        # Checkbutton styles
+        # Checkbutton
         style.configure('Dark.TCheckbutton',
-                       background=self.colors['bg'],
-                       foreground=self.colors['text'],
+                       background=t.BG_DARK,
+                       foreground=t.TEXT,
                        font=('Segoe UI', 10))
         
-        # Notebook styles
-        style.configure('Dark.TNotebook',
-                       background=self.colors['bg'],
-                       borderwidth=0)
+        # Notebook
+        style.configure('Dark.TNotebook', background=t.BG_DARK, borderwidth=0)
         style.configure('Dark.TNotebook.Tab',
-                       background=self.colors['bg_light'],
-                       foreground=self.colors['text'],
-                       padding=(15, 8),
+                       background=t.BG_PANEL,
+                       foreground=t.TEXT_DIM,
+                       padding=(16, 8),
                        font=('Segoe UI', 10))
         style.map('Dark.TNotebook.Tab',
-                 background=[('selected', self.colors['panel'])],
-                 foreground=[('selected', self.colors['gold'])])
+                 background=[('selected', t.BG_CARD)],
+                 foreground=[('selected', t.GOLD)])
+        
+        # Treeview
+        style.configure('Dark.Treeview',
+                       background=t.BG_CARD,
+                       foreground=t.TEXT,
+                       fieldbackground=t.BG_CARD,
+                       font=('Segoe UI', 10),
+                       rowheight=28)
+        style.configure('Dark.Treeview.Heading',
+                       background=t.BG_PANEL,
+                       foreground=t.GOLD,
+                       font=('Segoe UI', 10, 'bold'))
+        style.map('Dark.Treeview',
+                 background=[('selected', t.BG_HOVER)])
+        
+        # Scrollbar
+        style.configure('Dark.Vertical.TScrollbar',
+                       background=t.BG_PANEL,
+                       troughcolor=t.BG_DARK,
+                       bordercolor=t.BG_DARK,
+                       arrowcolor=t.TEXT_DIM)
 
     def _build_ui(self):
         """Build the main UI layout."""
+        t = self.theme
+        
         # Main container
         main = ttk.Frame(self.root, style='Dark.TFrame')
-        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main.pack(fill=tk.BOTH, expand=True)
         
-        # Header
+        # Header bar
         self._build_header(main)
         
-        # Content area with two columns
+        # Content area (sidebar + main content)
         content = ttk.Frame(main, style='Dark.TFrame')
-        content.pack(fill=tk.BOTH, expand=True, pady=(20, 0))
+        content.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
         
-        # Left panel - Mode selection and controls
-        left_panel = ttk.Frame(content, style='Dark.TFrame', width=350)
-        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
-        left_panel.pack_propagate(False)
+        # Left sidebar (controls + status)
+        sidebar = ttk.Frame(content, style='Dark.TFrame', width=320)
+        sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
+        sidebar.pack_propagate(False)
         
-        self._build_mode_selector(left_panel)
-        self._build_controls(left_panel)
-        self._build_progress_panel(left_panel)
+        self._build_sidebar(sidebar)
         
-        # Right panel - Results dashboard
-        right_panel = ttk.Frame(content, style='Dark.TFrame')
-        right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Right main content
+        main_content = ttk.Frame(content, style='Dark.TFrame')
+        main_content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self._build_results_dashboard(right_panel)
+        self._build_main_content(main_content)
 
     def _build_header(self, parent):
-        """Build the header section."""
-        header = ttk.Frame(parent, style='Dark.TFrame')
-        header.pack(fill=tk.X)
+        """Build the header bar."""
+        t = self.theme
         
-        # ASCII art title (simplified for GUI)
-        title_frame = ttk.Frame(header, style='Dark.TFrame')
+        header = tk.Frame(parent, bg=t.BG_DARK, height=80)
+        header.pack(fill=tk.X, padx=20, pady=(20, 10))
+        header.pack_propagate(False)
+        
+        # Logo/Title
+        title_frame = tk.Frame(header, bg=t.BG_DARK)
         title_frame.pack(side=tk.LEFT)
         
-        title = ttk.Label(title_frame, text="[ GOLD STANDARD ]", style='Title.TLabel')
-        title.pack(anchor=tk.W)
+        tk.Label(title_frame,
+                text="GOLD STANDARD",
+                bg=t.BG_DARK,
+                fg=t.GOLD,
+                font=('Segoe UI', 28, 'bold')).pack(anchor=tk.W)
         
-        subtitle = ttk.Label(title_frame, 
-                            text="Precious Metals Intelligence Dashboard",
-                            style='Subtitle.TLabel')
-        subtitle.pack(anchor=tk.W)
+        tk.Label(title_frame,
+                text="Precious Metals Intelligence Complex",
+                bg=t.BG_DARK,
+                fg=t.TEXT_DIM,
+                font=('Segoe UI', 12)).pack(anchor=tk.W)
         
-        # Status indicator
-        self.status_frame = ttk.Frame(header, style='Dark.TFrame')
-        self.status_frame.pack(side=tk.RIGHT)
+        # Status area (right)
+        status_frame = tk.Frame(header, bg=t.BG_DARK)
+        status_frame.pack(side=tk.RIGHT)
         
-        self.status_label = ttk.Label(self.status_frame, 
-                                      text="[*] Ready",
-                                      style='Dark.TLabel')
-        self.status_label.pack()
+        # Date/time
+        self.time_label = tk.Label(status_frame,
+                                   text=datetime.now().strftime("%B %d, %Y"),
+                                   bg=t.BG_DARK,
+                                   fg=t.TEXT,
+                                   font=('Segoe UI', 12))
+        self.time_label.pack(anchor=tk.E)
+        
+        self.status_label = tk.Label(status_frame,
+                                     text="● Ready",
+                                     bg=t.BG_DARK,
+                                     fg=t.GREEN,
+                                     font=('Segoe UI', 11))
+        self.status_label.pack(anchor=tk.E)
 
-    def _build_mode_selector(self, parent):
-        """Build the mode selection panel."""
-        # Section title
-        section = ttk.Frame(parent, style='Dark.TFrame')
-        section.pack(fill=tk.X, pady=(0, 10))
+    def _build_sidebar(self, parent):
+        """Build the left sidebar with controls."""
+        t = self.theme
         
-        ttk.Label(section, text="SELECT MODE", style='Gold.TLabel').pack(anchor=tk.W)
+        # === RUN SECTION ===
+        run_panel = tk.Frame(parent, bg=t.BG_PANEL, padx=15, pady=15)
+        run_panel.pack(fill=tk.X, pady=(0, 15))
         
-        # Mode options
-        modes = [
-            ("daily", "Daily Journal", "Full daily analysis with AI-generated thesis"),
-            ("weekly", "Weekly Rundown", "Short-horizon tactical weekend overview"),
-            ("monthly", "Monthly Report", "Monthly performance tables + AI outlook"),
-            ("yearly", "Yearly Report", "Year-over-year analysis + AI forecast"),
-            ("premarket", "Pre-Market Plan", "Daily pre-market blueprint with catalysts"),
-        ]
+        tk.Label(run_panel,
+                text="RUN ANALYSIS",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 12, 'bold')).pack(anchor=tk.W, pady=(0, 10))
         
-        for mode_id, mode_name, mode_desc in modes:
-            frame = ttk.Frame(parent, style='Dark.TFrame')
-            frame.pack(fill=tk.X, pady=2)
-            
-            rb = ttk.Radiobutton(
-                frame,
-                text=mode_name,
-                value=mode_id,
-                variable=self.selected_mode,
-                style='Mode.TRadiobutton'
-            )
-            rb.pack(anchor=tk.W)
-            
-            desc = ttk.Label(frame, text=f"  {mode_desc}", style='Subtitle.TLabel')
-            desc.pack(anchor=tk.W, padx=(25, 0))
-
-    def _build_controls(self, parent):
-        """Build the control buttons panel."""
-        controls = ttk.Frame(parent, style='Dark.TFrame')
-        controls.pack(fill=tk.X, pady=20)
+        # Main run button
+        self.run_btn = tk.Button(run_panel,
+                                text="▶  RUN ALL",
+                                bg=t.GOLD,
+                                fg=t.BG_DARK,
+                                font=('Segoe UI', 14, 'bold'),
+                                activebackground=t.GOLD_DIM,
+                                activeforeground=t.BG_DARK,
+                                bd=0,
+                                padx=20,
+                                pady=12,
+                                cursor='hand2',
+                                command=self._run_analysis)
+        self.run_btn.pack(fill=tk.X, pady=(0, 10))
         
-        # Options
-        options_frame = ttk.Frame(controls, style='Dark.TFrame')
-        options_frame.pack(fill=tk.X, pady=(0, 15))
+        # AI toggle
+        ai_frame = tk.Frame(run_panel, bg=t.BG_PANEL)
+        ai_frame.pack(fill=tk.X)
         
-        ttk.Checkbutton(
-            options_frame,
-            text="No AI Mode (skip Gemini)",
-            variable=self.no_ai,
-            style='Dark.TCheckbutton'
-        ).pack(anchor=tk.W)
-        
-        # Run button
-        self.run_btn = ttk.Button(
-            controls,
-            text=">>  RUN ANALYSIS",
-            style='Action.TButton',
-            command=self._run_analysis
-        )
-        self.run_btn.pack(fill=tk.X)
+        ttk.Checkbutton(ai_frame,
+                       text="Disable AI (No Gemini)",
+                       variable=self.no_ai,
+                       style='Dark.TCheckbutton').pack(anchor=tk.W)
         
         # Secondary buttons
-        btn_frame = ttk.Frame(controls, style='Dark.TFrame')
+        btn_frame = tk.Frame(run_panel, bg=t.BG_PANEL)
         btn_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(
-            btn_frame,
-            text="Open Output Folder",
-            style='Secondary.TButton',
-            command=self._open_output_folder
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        tk.Button(btn_frame,
+                 text="Quick Daily",
+                 bg=t.BG_CARD,
+                 fg=t.TEXT,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=6,
+                 cursor='hand2',
+                 command=self._run_daily).pack(side=tk.LEFT, padx=(0, 5))
         
-        ttk.Button(
-            btn_frame,
-            text="Refresh Results",
-            style='Secondary.TButton',
-            command=self._refresh_results
-        ).pack(side=tk.LEFT)
-
-    def _build_progress_panel(self, parent):
-        """Build the progress/log panel."""
-        progress_frame = ttk.Frame(parent, style='Dark.TFrame')
-        progress_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        tk.Button(btn_frame,
+                 text="Pre-Market",
+                 bg=t.BG_CARD,
+                 fg=t.TEXT,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=6,
+                 cursor='hand2',
+                 command=self._run_premarket).pack(side=tk.LEFT)
         
-        ttk.Label(progress_frame, text="CONSOLE OUTPUT", style='Gold.TLabel').pack(anchor=tk.W)
+        # === STATUS SECTION ===
+        status_panel = tk.Frame(parent, bg=t.BG_PANEL, padx=15, pady=15)
+        status_panel.pack(fill=tk.X, pady=(0, 15))
         
-        # Scrolled text for logs
-        self.log_text = scrolledtext.ScrolledText(
-            progress_frame,
-            height=12,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 9),
-            insertbackground=self.colors['text'],
-            relief=tk.FLAT,
-            padx=10,
-            pady=10
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
-        self.log_text.insert(tk.END, "Ready to run analysis...\n")
+        tk.Label(status_panel,
+                text="SYSTEM STATUS",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 12, 'bold')).pack(anchor=tk.W, pady=(0, 10))
+        
+        self.status_text = tk.Text(status_panel,
+                                   bg=t.BG_CARD,
+                                   fg=t.TEXT,
+                                   font=('Consolas', 9),
+                                   height=8,
+                                   relief=tk.FLAT,
+                                   padx=10,
+                                   pady=10)
+        self.status_text.pack(fill=tk.X)
+        
+        # === CONSOLE ===
+        console_panel = tk.Frame(parent, bg=t.BG_PANEL, padx=15, pady=15)
+        console_panel.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(console_panel,
+                text="CONSOLE",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 12, 'bold')).pack(anchor=tk.W, pady=(0, 10))
+        
+        self.log_text = scrolledtext.ScrolledText(console_panel,
+                                                  bg=t.BG_CARD,
+                                                  fg=t.TEXT_DIM,
+                                                  font=('Consolas', 9),
+                                                  relief=tk.FLAT,
+                                                  padx=10,
+                                                  pady=10)
+        self.log_text.pack(fill=tk.BOTH, expand=True)
         self.log_text.config(state=tk.DISABLED)
 
-    def _build_results_dashboard(self, parent):
-        """Build the results dashboard with tabs grouped by function."""
-        # Section title
-        header = ttk.Frame(parent, style='Dark.TFrame')
-        header.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(header, text="RESULTS DASHBOARD", style='Gold.TLabel').pack(side=tk.LEFT)
+    def _build_main_content(self, parent):
+        """Build the main content area with tabs."""
+        t = self.theme
         
         # Notebook for tabs
         self.notebook = ttk.Notebook(parent, style='Dark.TNotebook')
         self.notebook.pack(fill=tk.BOTH, expand=True)
         
-        # === GROUP 1: ANALYSIS ===
-        # Charts tab
-        charts_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(charts_frame, text="  Charts  ")
+        # Tab 1: Journals (with date selector)
+        journals_frame = tk.Frame(self.notebook, bg=t.BG_PANEL)
+        self.notebook.add(journals_frame, text="  📅 Journals  ")
+        self._build_journals_tab(journals_frame)
+        
+        # Tab 2: Charts
+        charts_frame = tk.Frame(self.notebook, bg=t.BG_PANEL)
+        self.notebook.add(charts_frame, text="  📊 Charts  ")
         self._build_charts_tab(charts_frame)
         
-        # Reports tab
-        reports_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(reports_frame, text="  Reports  ")
+        # Tab 3: Reports
+        reports_frame = tk.Frame(self.notebook, bg=t.BG_PANEL)
+        self.notebook.add(reports_frame, text="  📑 Reports  ")
         self._build_reports_tab(reports_frame)
         
-        # === GROUP 2: TRADING ===
-        # Journal tab
-        journal_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(journal_frame, text="  Journal  ")
-        self._build_journal_tab(journal_frame)
-        
-        # Pre-Market tab (NEW)
-        premarket_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(premarket_frame, text="  Pre-Market  ")
-        self._build_premarket_tab(premarket_frame)
-        
-        # Trades tab (NEW - Trade Simulation)
-        trades_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(trades_frame, text="  Trades  ")
+        # Tab 4: Trades
+        trades_frame = tk.Frame(self.notebook, bg=t.BG_PANEL)
+        self.notebook.add(trades_frame, text="  💹 Trades  ")
         self._build_trades_tab(trades_frame)
-        
-        # Preview tab (moved to end)
-        preview_frame = ttk.Frame(self.notebook, style='Panel.TFrame')
-        self.notebook.add(preview_frame, text="  Preview  ")
-        self._build_preview_tab(preview_frame)
 
-    def _build_reports_tab(self, parent):
-        """Build the reports list tab."""
-        # Treeview for reports
-        columns = ('name', 'date', 'size', 'path')
-        self.reports_tree = ttk.Treeview(parent, columns=columns, show='headings', height=15)
+    def _build_journals_tab(self, parent):
+        """Build the journals tab with date-wise browsing."""
+        t = self.theme
         
-        self.reports_tree.heading('name', text='Report Name')
-        self.reports_tree.heading('date', text='Generated')
-        self.reports_tree.heading('size', text='Size')
-        self.reports_tree.heading('path', text='Path')
+        # Split: left calendar/list, right content
+        left = tk.Frame(parent, bg=t.BG_CARD, width=280)
+        left.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+        left.pack_propagate(False)
         
-        self.reports_tree.column('name', width=250)
-        self.reports_tree.column('date', width=150)
-        self.reports_tree.column('size', width=80)
-        self.reports_tree.column('path', width=300)
+        right = tk.Frame(parent, bg=t.BG_CARD)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10), pady=10)
         
-        self.reports_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Left side: Date list
+        tk.Label(left,
+                text="JOURNAL DATES",
+                bg=t.BG_CARD,
+                fg=t.GOLD,
+                font=('Segoe UI', 11, 'bold')).pack(anchor=tk.W, padx=10, pady=(10, 5))
         
-        # Double-click to open
-        self.reports_tree.bind('<Double-1>', self._open_selected_report)
+        tk.Label(left,
+                text="Starting December 1, 2025",
+                bg=t.BG_CARD,
+                fg=t.TEXT_DIM,
+                font=('Segoe UI', 9)).pack(anchor=tk.W, padx=10, pady=(0, 10))
         
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=self.reports_tree.yview)
-        self.reports_tree.configure(yscrollcommand=scrollbar.set)
+        # Date list
+        list_frame = tk.Frame(left, bg=t.BG_CARD)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        scrollbar = ttk.Scrollbar(list_frame, style='Dark.Vertical.TScrollbar')
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.date_listbox = tk.Listbox(list_frame,
+                                       bg=t.BG_PANEL,
+                                       fg=t.TEXT,
+                                       font=('Consolas', 10),
+                                       selectbackground=t.GOLD,
+                                       selectforeground=t.BG_DARK,
+                                       activestyle='none',
+                                       relief=tk.FLAT,
+                                       highlightthickness=0,
+                                       yscrollcommand=scrollbar.set)
+        self.date_listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.date_listbox.yview)
+        
+        self.date_listbox.bind('<<ListboxSelect>>', self._on_date_select)
+        
+        # Refresh button
+        tk.Button(left,
+                 text="↻ Refresh Dates",
+                 bg=t.BG_PANEL,
+                 fg=t.TEXT_DIM,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=6,
+                 cursor='hand2',
+                 command=self._refresh_date_list).pack(fill=tk.X, padx=10, pady=10)
+        
+        # Right side: Journal content
+        header = tk.Frame(right, bg=t.BG_CARD)
+        header.pack(fill=tk.X, padx=15, pady=(15, 10))
+        
+        self.journal_date_label = tk.Label(header,
+                                           text="Select a date",
+                                           bg=t.BG_CARD,
+                                           fg=t.GOLD,
+                                           font=('Segoe UI', 14, 'bold'))
+        self.journal_date_label.pack(side=tk.LEFT)
+        
+        self.journal_bias_label = tk.Label(header,
+                                           text="",
+                                           bg=t.BG_CARD,
+                                           fg=t.TEXT_DIM,
+                                           font=('Segoe UI', 11))
+        self.journal_bias_label.pack(side=tk.RIGHT)
+        
+        # Journal content
+        self.journal_text = scrolledtext.ScrolledText(right,
+                                                      bg=t.BG_PANEL,
+                                                      fg=t.TEXT,
+                                                      font=('Consolas', 10),
+                                                      relief=tk.FLAT,
+                                                      padx=15,
+                                                      pady=15,
+                                                      wrap=tk.WORD)
+        self.journal_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        self.journal_text.config(state=tk.DISABLED)
 
     def _build_charts_tab(self, parent):
         """Build the charts gallery tab."""
-        # Canvas with scrollbar for chart thumbnails
-        canvas_frame = ttk.Frame(parent, style='Panel.TFrame')
-        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        t = self.theme
         
-        self.charts_canvas = tk.Canvas(canvas_frame, bg=self.colors['panel'], highlightthickness=0)
-        scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.charts_canvas.yview)
+        # Header
+        header = tk.Frame(parent, bg=t.BG_PANEL)
+        header.pack(fill=tk.X, padx=15, pady=15)
         
-        self.charts_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        tk.Label(header,
+                text="CHART GALLERY",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 13, 'bold')).pack(side=tk.LEFT)
+        
+        tk.Button(header,
+                 text="↻ Refresh",
+                 bg=t.BG_CARD,
+                 fg=t.TEXT_DIM,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=4,
+                 cursor='hand2',
+                 command=self._refresh_charts).pack(side=tk.RIGHT)
+        
+        tk.Button(header,
+                 text="Open Folder",
+                 bg=t.BG_CARD,
+                 fg=t.TEXT_DIM,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=4,
+                 cursor='hand2',
+                 command=lambda: self._open_folder(CHARTS_DIR)).pack(side=tk.RIGHT, padx=(0, 5))
+        
+        # Charts grid
+        self.charts_frame = tk.Frame(parent, bg=t.BG_PANEL)
+        self.charts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+    def _build_reports_tab(self, parent):
+        """Build the reports list tab."""
+        t = self.theme
+        
+        # Header
+        header = tk.Frame(parent, bg=t.BG_PANEL)
+        header.pack(fill=tk.X, padx=15, pady=15)
+        
+        tk.Label(header,
+                text="REPORTS & ANALYSIS",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 13, 'bold')).pack(side=tk.LEFT)
+        
+        tk.Button(header,
+                 text="↻ Refresh",
+                 bg=t.BG_CARD,
+                 fg=t.TEXT_DIM,
+                 font=('Segoe UI', 9),
+                 bd=0,
+                 padx=10,
+                 pady=4,
+                 cursor='hand2',
+                 command=self._refresh_reports).pack(side=tk.RIGHT)
+        
+        # Reports treeview
+        tree_frame = tk.Frame(parent, bg=t.BG_CARD)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        
+        columns = ('name', 'type', 'date', 'size')
+        self.reports_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', 
+                                         style='Dark.Treeview', height=15)
+        
+        self.reports_tree.heading('name', text='Report Name')
+        self.reports_tree.heading('type', text='Type')
+        self.reports_tree.heading('date', text='Date')
+        self.reports_tree.heading('size', text='Size')
+        
+        self.reports_tree.column('name', width=350)
+        self.reports_tree.column('type', width=100)
+        self.reports_tree.column('date', width=150)
+        self.reports_tree.column('size', width=80)
+        
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, 
+                                  command=self.reports_tree.yview,
+                                  style='Dark.Vertical.TScrollbar')
+        self.reports_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.reports_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.charts_canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Inner frame for charts
-        self.charts_inner = ttk.Frame(self.charts_canvas, style='Panel.TFrame')
-        self.charts_canvas.create_window((0, 0), window=self.charts_inner, anchor=tk.NW)
-        
-        self.charts_inner.bind('<Configure>', 
-                               lambda e: self.charts_canvas.configure(scrollregion=self.charts_canvas.bbox("all")))
+        self.reports_tree.bind('<Double-1>', self._open_selected_report)
 
-    def _build_preview_tab(self, parent):
-        """Build the report preview tab."""
-        # Report content viewer
-        self.preview_text = scrolledtext.ScrolledText(
-            parent,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 10),
-            relief=tk.FLAT,
-            padx=15,
-            pady=15
-        )
-        self.preview_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.preview_text.insert(tk.END, "Select a report from the Reports tab to preview its contents.")
+    def _build_trades_tab(self, parent):
+        """Build the trades/simulation tab."""
+        t = self.theme
+        
+        # Header
+        header = tk.Frame(parent, bg=t.BG_PANEL)
+        header.pack(fill=tk.X, padx=15, pady=15)
+        
+        tk.Label(header,
+                text="TRADE SIMULATION",
+                bg=t.BG_PANEL,
+                fg=t.GOLD,
+                font=('Segoe UI', 13, 'bold')).pack(side=tk.LEFT)
+        
+        # Stats row
+        stats_frame = tk.Frame(parent, bg=t.BG_CARD)
+        stats_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        
+        self.trade_stats = {}
+        for stat in ['Total', 'Wins', 'Losses', 'Win Rate', 'PnL']:
+            frame = tk.Frame(stats_frame, bg=t.BG_CARD)
+            frame.pack(side=tk.LEFT, padx=20, pady=15)
+            
+            self.trade_stats[stat] = tk.Label(frame,
+                                              text="0",
+                                              bg=t.BG_CARD,
+                                              fg=t.GOLD,
+                                              font=('Segoe UI', 18, 'bold'))
+            self.trade_stats[stat].pack()
+            
+            tk.Label(frame,
+                    text=stat,
+                    bg=t.BG_CARD,
+                    fg=t.TEXT_DIM,
+                    font=('Segoe UI', 9)).pack()
+        
+        # Trade history
+        history_frame = tk.Frame(parent, bg=t.BG_CARD)
+        history_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        
+        tk.Label(history_frame,
+                text="Trade History",
+                bg=t.BG_CARD,
+                fg=t.TEXT,
+                font=('Segoe UI', 11, 'bold')).pack(anchor=tk.W, padx=15, pady=(15, 10))
+        
+        self.trades_text = scrolledtext.ScrolledText(history_frame,
+                                                     bg=t.BG_PANEL,
+                                                     fg=t.TEXT,
+                                                     font=('Consolas', 9),
+                                                     relief=tk.FLAT,
+                                                     padx=15,
+                                                     pady=10)
+        self.trades_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        self.trades_text.config(state=tk.DISABLED)
 
-    def _build_journal_tab(self, parent):
-        """Build the Journal tab with persistent Cortex memory display."""
-        # Header with refresh button
-        header = ttk.Frame(parent, style='Panel.TFrame')
-        header.pack(fill=tk.X, padx=10, pady=(10, 5))
-        
-        ttk.Label(header, text="CORTEX MEMORY", style='Gold.TLabel').pack(side=tk.LEFT)
-        
-        ttk.Button(
-            header,
-            text="Refresh",
-            style='Secondary.TButton',
-            command=self._refresh_journal
-        ).pack(side=tk.RIGHT)
-        
-        # Main journal content area - two panels
-        content = ttk.Frame(parent, style='Panel.TFrame')
-        content.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        # Left side: Stats panel (narrower)
-        stats_frame = ttk.Frame(content, style='Light.TFrame', width=250)
-        stats_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        stats_frame.pack_propagate(False)
-        
-        # Stats header
-        ttk.Label(stats_frame, text="Performance Stats", 
-                 font=('Segoe UI', 11, 'bold'),
-                 background=self.colors['bg_light'],
-                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
-        
-        # Stats content
-        self.stats_text = tk.Text(
-            stats_frame,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 9),
-            relief=tk.FLAT,
-            padx=10,
-            pady=10,
-            wrap=tk.WORD
-        )
-        self.stats_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # Right side: Latest Journal Report
-        journal_frame = ttk.Frame(content, style='Light.TFrame')
-        journal_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Journal header
-        ttk.Label(journal_frame, text="Latest Daily Journal", 
-                 font=('Segoe UI', 11, 'bold'),
-                 background=self.colors['bg_light'],
-                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
-        
-        # Journal content (the actual report)
-        self.journal_text = scrolledtext.ScrolledText(
-            journal_frame,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 9),
-            relief=tk.FLAT,
-            padx=10,
-            pady=10,
-            wrap=tk.WORD
-        )
-        self.journal_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # Load initial journal data
-        self._refresh_journal()
+    # ==========================================
+    # REFRESH METHODS
+    # ==========================================
+    
+    def _refresh_all(self):
+        """Refresh all panels."""
+        self._refresh_status()
+        self._refresh_date_list()
+        self._refresh_charts()
+        self._refresh_reports()
+        self._refresh_trades()
 
-    def _get_latest_journal_file(self):
-        """Find the most recent Journal markdown file."""
-        journal_files = list(OUTPUT_DIR.glob("Journal_*.md"))
-        if not journal_files:
-            return None
-        # Sort by modification time, most recent first
-        journal_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-        return journal_files[0]
-
-    def _refresh_journal(self):
-        """Refresh the journal tab with current Cortex memory and latest journal."""
-        # Load Cortex memory for stats
-        try:
-            if MEMORY_FILE.exists():
-                with open(MEMORY_FILE, 'r', encoding='utf-8') as f:
-                    memory = json.load(f)
-            else:
-                memory = {}
-        except Exception as e:
-            memory = {'error': str(e)}
+    def _refresh_status(self):
+        """Refresh the status panel."""
+        self.status_text.config(state=tk.NORMAL)
+        self.status_text.delete(1.0, tk.END)
         
-        # Update stats panel
-        self.stats_text.config(state=tk.NORMAL)
-        self.stats_text.delete(1.0, tk.END)
-        
-        stats_lines = []
-        stats_lines.append("CORTEX MEMORY STATS")
-        stats_lines.append("=" * 24)
-        stats_lines.append("")
-        
-        # Current bias
-        last_bias = memory.get('last_bias', 'N/A')
-        stats_lines.append(f"Current Bias: {last_bias}")
-        stats_lines.append("")
-        
-        # Last price
-        last_price = memory.get('last_price', 'N/A')
-        if last_price != 'N/A':
-            stats_lines.append(f"Last Price: ${last_price:.2f}")
+        if self.db:
+            try:
+                info = self.db.get_current_period_info()
+                missing = self.db.get_missing_reports()
+                stats = self.db.get_statistics()
+                
+                lines = [
+                    f"Date: {info['today']}",
+                    f"Week: {info['week']} | Month: {info['month_period']}",
+                    "",
+                    f"Journals: {stats['total_journals']}",
+                    f"Reports: {stats['weekly_reports']}W / {stats['monthly_reports']}M / {stats['yearly_reports']}Y",
+                    "",
+                    "Today:",
+                    f"  Journal: {'✓' if not missing['daily_journal'] else '○'}",
+                    f"  Monthly: {'✓' if not missing['monthly_report'] else '○'}",
+                    f"  Yearly:  {'✓' if not missing['yearly_report'] else '○'}",
+                ]
+                self.status_text.insert(tk.END, "\n".join(lines))
+            except Exception as e:
+                self.status_text.insert(tk.END, f"Error: {e}")
         else:
-            stats_lines.append(f"Last Price: {last_price}")
-        stats_lines.append("")
+            self.status_text.insert(tk.END, "Database not available")
         
-        # Win/Loss record
-        wins = memory.get('wins', 0)
-        losses = memory.get('losses', 0)
-        total = wins + losses
-        win_rate = (wins / total * 100) if total > 0 else 0
-        stats_lines.append(f"W/L: {wins}W / {losses}L")
-        stats_lines.append(f"Win Rate: {win_rate:.1f}%")
-        stats_lines.append("")
+        self.status_text.config(state=tk.DISABLED)
+
+    def _refresh_date_list(self):
+        """Refresh the journal date list."""
+        self.date_listbox.delete(0, tk.END)
         
-        # Streaks
-        current_streak = memory.get('current_streak', 0)
-        streak_type = memory.get('streak_type', 'none')
-        stats_lines.append(f"Streak: {abs(current_streak)} ({streak_type})")
-        stats_lines.append("")
+        # Get dates from database or file system
+        dates = []
         
-        # Last updated
-        last_run = memory.get('last_run', 'Never')
-        stats_lines.append(f"Last Run: {last_run}")
-        stats_lines.append("")
-        stats_lines.append("=" * 24)
+        if self.db:
+            dates = self.db.get_journal_dates("2025-12-01")
         
-        # Add prediction history summary
-        history = memory.get('history', [])
-        if history:
-            stats_lines.append("")
-            stats_lines.append("RECENT PREDICTIONS")
-            stats_lines.append("-" * 24)
-            for entry in reversed(history[-5:]):
-                entry_date = entry.get('date', '?')
-                entry_bias = entry.get('bias', '?')
-                entry_result = entry.get('result', 'pending')
-                result_mark = "[OK]" if entry_result == 'correct' else "[X]" if entry_result == 'incorrect' else "[?]"
-                stats_lines.append(f"{entry_date}: {entry_bias} {result_mark}")
+        # Also scan output directory for journal files
+        if OUTPUT_DIR.exists():
+            for f in OUTPUT_DIR.glob("Journal_*.md"):
+                try:
+                    date_str = f.stem.replace("Journal_", "")
+                    if date_str not in dates:
+                        dates.append(date_str)
+                except:
+                    pass
         
-        self.stats_text.insert(tk.END, "\n".join(stats_lines))
-        self.stats_text.config(state=tk.DISABLED)
+        # Sort descending
+        dates = sorted(set(dates), reverse=True)
         
-        # Update journal content panel with actual journal file
+        if not dates:
+            # Show placeholder dates from Dec 1
+            today = date.today()
+            start = date(2025, 12, 1)
+            delta = (today - start).days + 1
+            dates = [(start + timedelta(days=i)).isoformat() for i in range(delta)]
+            dates.reverse()
+        
+        for d in dates:
+            # Check if journal exists
+            has_journal = False
+            if self.db and self.db.has_journal_for_date(d):
+                has_journal = True
+            elif (OUTPUT_DIR / f"Journal_{d}.md").exists():
+                has_journal = True
+            
+            marker = "●" if has_journal else "○"
+            self.date_listbox.insert(tk.END, f" {marker}  {d}")
+
+    def _on_date_select(self, event):
+        """Handle date selection."""
+        selection = self.date_listbox.curselection()
+        if not selection:
+            return
+        
+        item = self.date_listbox.get(selection[0])
+        date_str = item.split()[-1]  # Get the date part
+        self._load_journal(date_str)
+
+    def _load_journal(self, date_str: str):
+        """Load journal for selected date."""
+        t = self.theme
+        self.journal_date_label.config(text=date_str)
+        
         self.journal_text.config(state=tk.NORMAL)
         self.journal_text.delete(1.0, tk.END)
         
-        journal_file = self._get_latest_journal_file()
-        if journal_file:
-            try:
-                with open(journal_file, 'r', encoding='utf-8') as f:
-                    journal_content = f.read()
-                self.journal_text.insert(tk.END, f"File: {journal_file.name}\n")
-                self.journal_text.insert(tk.END, "=" * 50 + "\n\n")
-                self.journal_text.insert(tk.END, journal_content)
-            except Exception as e:
-                self.journal_text.insert(tk.END, f"Error reading journal: {e}")
+        content = None
+        bias = None
+        
+        # Try database first
+        if self.db:
+            entry = self.db.get_journal(date_str)
+            if entry:
+                content = entry.content
+                bias = entry.bias
+        
+        # Fall back to file
+        if not content:
+            file_path = OUTPUT_DIR / f"Journal_{date_str}.md"
+            if file_path.exists():
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except:
+                    pass
+        
+        if content:
+            self.journal_text.insert(tk.END, content)
+            if bias:
+                self.journal_bias_label.config(text=f"Bias: {bias}")
+            else:
+                self.journal_bias_label.config(text="")
         else:
-            self.journal_text.insert(tk.END, "No journal files found.\n\n")
-            self.journal_text.insert(tk.END, "Run a 'Daily' analysis to generate your first journal report.")
+            self.journal_text.insert(tk.END, f"No journal entry for {date_str}\n\n")
+            self.journal_text.insert(tk.END, "Run analysis to generate this journal.")
+            self.journal_bias_label.config(text="")
         
         self.journal_text.config(state=tk.DISABLED)
 
-    def _build_premarket_tab(self, parent):
-        """Build the Pre-Market tab for daily trading plans."""
-        # Header with generate and refresh buttons
-        header = ttk.Frame(parent, style='Panel.TFrame')
-        header.pack(fill=tk.X, padx=10, pady=(10, 5))
+    def _refresh_charts(self):
+        """Refresh the charts gallery."""
+        t = self.theme
         
-        ttk.Label(header, text="PRE-MARKET PLAN", style='Gold.TLabel').pack(side=tk.LEFT)
+        # Clear existing
+        for widget in self.charts_frame.winfo_children():
+            widget.destroy()
         
-        btn_frame = ttk.Frame(header, style='Panel.TFrame')
-        btn_frame.pack(side=tk.RIGHT)
+        if not CHARTS_DIR.exists():
+            tk.Label(self.charts_frame,
+                    text="No charts found. Run analysis to generate.",
+                    bg=t.BG_PANEL,
+                    fg=t.TEXT_DIM,
+                    font=('Segoe UI', 11)).pack(pady=50)
+            return
         
-        ttk.Button(
-            btn_frame,
-            text="Generate New",
-            style='Secondary.TButton',
-            command=self._generate_premarket
-        ).pack(side=tk.LEFT, padx=(0, 5))
+        charts = list(CHARTS_DIR.glob("*.png"))
+        if not charts:
+            tk.Label(self.charts_frame,
+                    text="No charts found. Run analysis to generate.",
+                    bg=t.BG_PANEL,
+                    fg=t.TEXT_DIM,
+                    font=('Segoe UI', 11)).pack(pady=50)
+            return
         
-        ttk.Button(
-            btn_frame,
-            text="Refresh",
-            style='Secondary.TButton',
-            command=self._refresh_premarket
-        ).pack(side=tk.LEFT)
-        
-        # Pre-market content
-        self.premarket_text = scrolledtext.ScrolledText(
-            parent,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 9),
-            relief=tk.FLAT,
-            padx=15,
-            pady=15,
-            wrap=tk.WORD
-        )
-        self.premarket_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
-        
-        # Load initial premarket
-        self._refresh_premarket()
-
-    def _get_latest_premarket_file(self):
-        """Find the most recent premarket markdown file."""
-        premarket_files = list(REPORTS_DIR.glob("premarket_*.md"))
-        if not premarket_files:
-            return None
-        premarket_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-        return premarket_files[0]
-
-    def _refresh_premarket(self):
-        """Refresh the premarket tab with latest premarket plan."""
-        self.premarket_text.config(state=tk.NORMAL)
-        self.premarket_text.delete(1.0, tk.END)
-        
-        premarket_file = self._get_latest_premarket_file()
-        if premarket_file:
+        # Create grid
+        row_frame = None
+        for i, chart in enumerate(sorted(charts)):
+            if i % 3 == 0:
+                row_frame = tk.Frame(self.charts_frame, bg=t.BG_PANEL)
+                row_frame.pack(fill=tk.X, pady=5)
+            
+            card = tk.Frame(row_frame, bg=t.BG_CARD, padx=15, pady=15)
+            card.pack(side=tk.LEFT, padx=5)
+            
+            tk.Label(card,
+                    text=chart.stem,
+                    bg=t.BG_CARD,
+                    fg=t.GOLD,
+                    font=('Segoe UI', 11, 'bold')).pack()
+            
             try:
-                with open(premarket_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                self.premarket_text.insert(tk.END, f"File: {premarket_file.name}\n")
-                self.premarket_text.insert(tk.END, "=" * 50 + "\n\n")
-                self.premarket_text.insert(tk.END, content)
-            except Exception as e:
-                self.premarket_text.insert(tk.END, f"Error reading premarket plan: {e}")
-        else:
-            self.premarket_text.insert(tk.END, "No pre-market plans found.\n\n")
-            self.premarket_text.insert(tk.END, "Click 'Generate New' to create today's pre-market plan.\n")
-            self.premarket_text.insert(tk.END, "Or use: python run.py --mode premarket")
-        
-        self.premarket_text.config(state=tk.DISABLED)
+                size_kb = chart.stat().st_size / 1024
+                tk.Label(card,
+                        text=f"{size_kb:.1f} KB",
+                        bg=t.BG_CARD,
+                        fg=t.TEXT_DIM,
+                        font=('Segoe UI', 9)).pack()
+            except:
+                pass
+            
+            tk.Button(card,
+                     text="Open",
+                     bg=t.BG_PANEL,
+                     fg=t.TEXT,
+                     font=('Segoe UI', 9),
+                     bd=0,
+                     padx=15,
+                     pady=4,
+                     cursor='hand2',
+                     command=lambda p=chart: self._open_file(p)).pack(pady=(10, 0))
 
-    def _generate_premarket(self):
-        """Generate a new premarket plan."""
-        self._log("[*] Generating Pre-Market Plan...")
-        self.run_btn.config(state=tk.DISABLED)
+    def _refresh_reports(self):
+        """Refresh the reports list."""
+        for item in self.reports_tree.get_children():
+            self.reports_tree.delete(item)
         
-        def run():
-            import subprocess
-            cmd = [sys.executable, "scripts/pre_market.py"]
-            if self.no_ai.get():
-                cmd.append("--no-ai")
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(PROJECT_ROOT))
-                self.root.after(0, lambda: self._log(result.stdout if result.stdout else "Completed"))
-                if result.stderr:
-                    self.root.after(0, lambda: self._log(f"[STDERR] {result.stderr}"))
-            except Exception as e:
-                self.root.after(0, lambda: self._log(f"[ERROR] {e}"))
-            finally:
-                self.root.after(0, lambda: self.run_btn.config(state=tk.NORMAL))
-                self.root.after(0, self._refresh_premarket)
+        # Gather all reports
+        reports = []
         
-        threading.Thread(target=run, daemon=True).start()
-
-    def _build_trades_tab(self, parent):
-        """Build the Trades tab for trade simulation and tracking."""
-        # Header
-        header = ttk.Frame(parent, style='Panel.TFrame')
-        header.pack(fill=tk.X, padx=10, pady=(10, 5))
+        for report_dir in [OUTPUT_DIR, REPORTS_DIR]:
+            if not report_dir.exists():
+                continue
+            
+            for f in report_dir.glob("*.md"):
+                try:
+                    stat = f.stat()
+                    size_kb = stat.st_size / 1024
+                    mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+                    
+                    # Determine type
+                    name = f.stem
+                    if 'Journal' in name:
+                        rtype = 'Daily'
+                    elif 'Weekly' in name or 'weekly' in name:
+                        rtype = 'Weekly'
+                    elif 'Monthly' in name or 'monthly' in name:
+                        rtype = 'Monthly'
+                    elif 'Yearly' in name or 'yearly' in name:
+                        rtype = 'Yearly'
+                    elif 'premarket' in name.lower():
+                        rtype = 'Pre-Market'
+                    else:
+                        rtype = 'Other'
+                    
+                    reports.append({
+                        'name': f.name,
+                        'type': rtype,
+                        'date': mtime,
+                        'size': f"{size_kb:.1f} KB",
+                        'path': str(f)
+                    })
+                except:
+                    pass
         
-        ttk.Label(header, text="TRADE SIMULATION", style='Gold.TLabel').pack(side=tk.LEFT)
+        # Sort by date descending
+        reports.sort(key=lambda x: x['date'], reverse=True)
         
-        ttk.Button(
-            header,
-            text="Refresh",
-            style='Secondary.TButton',
-            command=self._refresh_trades
-        ).pack(side=tk.RIGHT)
-        
-        # Main content - split into active trades and closed trades
-        content = ttk.Frame(parent, style='Panel.TFrame')
-        content.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        # Left side: Trade summary and active trades
-        left_frame = ttk.Frame(content, style='Light.TFrame')
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        
-        # Summary stats at top
-        summary_frame = ttk.Frame(left_frame, style='Light.TFrame')
-        summary_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(summary_frame, text="Performance Summary", 
-                 font=('Segoe UI', 11, 'bold'),
-                 background=self.colors['bg_light'],
-                 foreground=self.colors['gold']).pack(anchor=tk.W)
-        
-        self.trade_summary_text = tk.Text(
-            summary_frame,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 10),
-            height=6,
-            relief=tk.FLAT,
-            padx=10,
-            pady=5
-        )
-        self.trade_summary_text.pack(fill=tk.X, pady=(5, 0))
-        
-        # Active trades section
-        ttk.Label(left_frame, text="Active Positions", 
-                 font=('Segoe UI', 11, 'bold'),
-                 background=self.colors['bg_light'],
-                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
-        
-        # Active trades treeview
-        columns = ('id', 'direction', 'entry', 'current', 'sl', 'pnl', 'pnl_pct')
-        self.active_trades_tree = ttk.Treeview(left_frame, columns=columns, show='headings', height=6)
-        
-        self.active_trades_tree.heading('id', text='#')
-        self.active_trades_tree.heading('direction', text='Dir')
-        self.active_trades_tree.heading('entry', text='Entry')
-        self.active_trades_tree.heading('current', text='Current')
-        self.active_trades_tree.heading('sl', text='SL')
-        self.active_trades_tree.heading('pnl', text='PnL ($)')
-        self.active_trades_tree.heading('pnl_pct', text='PnL (%)')
-        
-        self.active_trades_tree.column('id', width=30)
-        self.active_trades_tree.column('direction', width=50)
-        self.active_trades_tree.column('entry', width=80)
-        self.active_trades_tree.column('current', width=80)
-        self.active_trades_tree.column('sl', width=80)
-        self.active_trades_tree.column('pnl', width=80)
-        self.active_trades_tree.column('pnl_pct', width=70)
-        
-        self.active_trades_tree.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
-        # Right side: Closed trades history
-        right_frame = ttk.Frame(content, style='Light.TFrame')
-        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
-        
-        ttk.Label(right_frame, text="Trade History", 
-                 font=('Segoe UI', 11, 'bold'),
-                 background=self.colors['bg_light'],
-                 foreground=self.colors['gold']).pack(anchor=tk.W, padx=10, pady=(10, 5))
-        
-        self.closed_trades_text = scrolledtext.ScrolledText(
-            right_frame,
-            bg=self.colors['bg_light'],
-            fg=self.colors['text'],
-            font=('Consolas', 9),
-            relief=tk.FLAT,
-            padx=10,
-            pady=10
-        )
-        self.closed_trades_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
-        # Load initial trades data
-        self._refresh_trades()
+        for r in reports:
+            self.reports_tree.insert('', tk.END, values=(
+                r['name'], r['type'], r['date'], r['size']
+            ), tags=(r['path'],))
 
     def _refresh_trades(self):
-        """Refresh the trades tab with current trade data from Cortex memory."""
+        """Refresh the trades tab."""
+        t = self.theme
+        
+        # Load from cortex memory
         try:
             if MEMORY_FILE.exists():
                 with open(MEMORY_FILE, 'r', encoding='utf-8') as f:
                     memory = json.load(f)
             else:
                 memory = {}
-        except Exception as e:
-            memory = {'error': str(e)}
+        except:
+            memory = {}
         
-        # Update summary
-        self.trade_summary_text.config(state=tk.NORMAL)
-        self.trade_summary_text.delete(1.0, tk.END)
-        
+        # Update stats
         total_wins = memory.get('total_wins', 0)
         total_losses = memory.get('total_losses', 0)
-        total_trades = total_wins + total_losses
-        win_rate = (total_wins / total_trades * 100) if total_trades > 0 else 0
+        total = total_wins + total_losses
+        win_rate = (total_wins / total * 100) if total > 0 else 0
         total_pnl = memory.get('total_pnl', 0)
-        win_streak = memory.get('win_streak', 0)
-        loss_streak = memory.get('loss_streak', 0)
-        active_count = len(memory.get('active_trades', []))
         
-        summary = f"""Total Trades: {total_trades}  |  Active: {active_count}
-Win/Loss: {total_wins}W / {total_losses}L  |  Win Rate: {win_rate:.1f}%
-Total PnL: ${total_pnl:.2f}
-Current Streak: {win_streak}W / {loss_streak}L"""
+        self.trade_stats['Total'].config(text=str(total))
+        self.trade_stats['Wins'].config(text=str(total_wins), fg=t.GREEN)
+        self.trade_stats['Losses'].config(text=str(total_losses), fg=t.RED)
+        self.trade_stats['Win Rate'].config(text=f"{win_rate:.0f}%")
+        self.trade_stats['PnL'].config(
+            text=f"${total_pnl:+.2f}",
+            fg=t.GREEN if total_pnl >= 0 else t.RED
+        )
         
-        self.trade_summary_text.insert(tk.END, summary)
-        self.trade_summary_text.config(state=tk.DISABLED)
+        # Update history
+        self.trades_text.config(state=tk.NORMAL)
+        self.trades_text.delete(1.0, tk.END)
         
-        # Update active trades tree
-        for item in self.active_trades_tree.get_children():
-            self.active_trades_tree.delete(item)
-        
-        active_trades = memory.get('active_trades', [])
-        for trade in active_trades:
-            pnl = trade.get('unrealized_pnl', 0)
-            pnl_pct = trade.get('unrealized_pnl_pct', 0)
-            pnl_color = 'green' if pnl >= 0 else 'red'
-            
-            self.active_trades_tree.insert('', tk.END, values=(
-                trade.get('id', '?'),
-                trade.get('direction', '?'),
-                f"${trade.get('entry_price', 0):.2f}",
-                f"${trade.get('current_price', 0):.2f}",
-                f"${trade.get('stop_loss', 0):.2f}",
-                f"${pnl:.2f}",
-                f"{pnl_pct:+.2f}%"
-            ))
-        
-        # Update closed trades
-        self.closed_trades_text.config(state=tk.NORMAL)
-        self.closed_trades_text.delete(1.0, tk.END)
-        
-        closed_trades = memory.get('closed_trades', [])
-        if not closed_trades:
-            self.closed_trades_text.insert(tk.END, "No closed trades yet.\n\n")
-            self.closed_trades_text.insert(tk.END, "Trade history will appear here as trades are closed.")
+        closed = memory.get('closed_trades', [])
+        if not closed:
+            self.trades_text.insert(tk.END, "No trade history yet.\n\n")
+            self.trades_text.insert(tk.END, "Trades will appear here as they are simulated.")
         else:
-            for trade in reversed(closed_trades[-20:]):  # Last 20 trades
-                result = trade.get('result', 'UNKNOWN')
-                result_marker = "[WIN]" if result == 'WIN' else "[LOSS]" if result == 'LOSS' else "[BE]"
+            for trade in reversed(closed[-20:]):
+                result = trade.get('result', '?')
+                marker = "[WIN]" if result == 'WIN' else "[LOSS]" if result == 'LOSS' else "[BE]"
                 pnl = trade.get('realized_pnl', 0)
-                pnl_pct = trade.get('realized_pnl_pct', 0)
                 
-                self.closed_trades_text.insert(tk.END, f"{result_marker} Trade #{trade.get('id', '?')}\n")
-                self.closed_trades_text.insert(tk.END, f"  {trade.get('direction', '?')} @ ${trade.get('entry_price', 0):.2f}")
-                self.closed_trades_text.insert(tk.END, f" -> ${trade.get('exit_price', 0):.2f}\n")
-                self.closed_trades_text.insert(tk.END, f"  PnL: ${pnl:.2f} ({pnl_pct:+.2f}%)\n")
-                self.closed_trades_text.insert(tk.END, f"  Reason: {trade.get('exit_reason', 'N/A')}\n")
-                self.closed_trades_text.insert(tk.END, "-" * 40 + "\n")
+                self.trades_text.insert(tk.END, f"{marker} Trade #{trade.get('id', '?')}\n")
+                self.trades_text.insert(tk.END, f"  {trade.get('direction', '?')} @ ${trade.get('entry_price', 0):.2f}")
+                self.trades_text.insert(tk.END, f" → ${trade.get('exit_price', 0):.2f}\n")
+                self.trades_text.insert(tk.END, f"  PnL: ${pnl:+.2f}\n")
+                self.trades_text.insert(tk.END, "-" * 40 + "\n")
         
-        self.closed_trades_text.config(state=tk.DISABLED)
+        self.trades_text.config(state=tk.DISABLED)
 
-    def _log(self, message: str):
-        """Add a message to the log panel."""
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        self.log_text.config(state=tk.DISABLED)
-
-    def _set_status(self, text: str, color: str = None):
-        """Update the status indicator."""
-        self.status_label.config(text=text)
-        if color:
-            # Update style dynamically
-            pass
-
+    # ==========================================
+    # ACTION METHODS
+    # ==========================================
+    
     def _run_analysis(self):
-        """Run the selected analysis mode."""
+        """Run full analysis."""
         if self.is_running:
-            messagebox.showwarning("Already Running", "An analysis is already in progress.")
+            messagebox.showwarning("Running", "Analysis is already in progress.")
             return
         
-        mode = self.selected_mode.get()
-        no_ai = self.no_ai.get()
-        
-        # Clear log
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.delete(1.0, tk.END)
-        self.log_text.config(state=tk.DISABLED)
-        
-        self._log(f"Starting {mode.upper()} analysis...")
-        if no_ai:
-            self._log("(No AI mode - Gemini will be skipped)")
-        self._log("-" * 40)
-        
-        self._set_status("[~] Running...", self.colors['warning'])
-        self.run_btn.config(state=tk.DISABLED)
+        self._log("Starting full analysis...")
+        self._set_status("Running...", self.theme.GOLD)
+        self.run_btn.config(state=tk.DISABLED, bg=self.theme.GOLD_DIM)
         self.is_running = True
         
-        # Run in background thread
-        thread = threading.Thread(target=self._run_subprocess, args=(mode, no_ai))
+        thread = threading.Thread(target=self._run_subprocess, args=("--run",))
         thread.daemon = True
         thread.start()
 
-    def _run_subprocess(self, mode: str, no_ai: bool):
+    def _run_daily(self):
+        """Quick daily run."""
+        if self.is_running:
+            return
+        
+        self._log("Running quick daily...")
+        self._set_status("Running...", self.theme.GOLD)
+        self.is_running = True
+        
+        thread = threading.Thread(target=self._run_subprocess, args=("--daily",))
+        thread.daemon = True
+        thread.start()
+
+    def _run_premarket(self):
+        """Run pre-market plan."""
+        if self.is_running:
+            return
+        
+        self._log("Generating pre-market plan...")
+        self._set_status("Running...", self.theme.GOLD)
+        self.is_running = True
+        
+        thread = threading.Thread(target=self._run_subprocess, args=("--premarket",))
+        thread.daemon = True
+        thread.start()
+
+    def _run_subprocess(self, mode: str):
         """Run the analysis subprocess."""
         try:
-            cmd = [sys.executable, str(PROJECT_ROOT / "run.py"), "--mode", mode]
-            if no_ai:
+            cmd = [sys.executable, str(PROJECT_ROOT / "run.py"), mode]
+            if self.no_ai.get():
                 cmd.append("--no-ai")
             
-            # Use UTF-8 encoding and handle errors gracefully
             env = os.environ.copy()
             env['PYTHONIOENCODING'] = 'utf-8'
             
@@ -893,15 +994,11 @@ Current Streak: {win_streak}W / {loss_streak}L"""
                 errors='replace'
             )
             
-            # Read output line by line
             for line in iter(self.process.stdout.readline, ''):
                 if line:
-                    # Schedule UI update on main thread
                     self.root.after(0, self._log, line.rstrip())
             
             self.process.wait()
-            
-            # Done
             self.root.after(0, self._analysis_complete, self.process.returncode)
             
         except Exception as e:
@@ -911,130 +1008,30 @@ Current Streak: {win_streak}W / {loss_streak}L"""
     def _analysis_complete(self, return_code: int):
         """Handle analysis completion."""
         self.is_running = False
-        self.run_btn.config(state=tk.NORMAL)
+        self.run_btn.config(state=tk.NORMAL, bg=self.theme.GOLD)
         
         if return_code == 0:
-            self._log("-" * 40)
-            self._log("[OK] Analysis completed successfully!")
-            self._set_status("[+] Complete", self.colors['success'])
+            self._log("✓ Analysis completed successfully")
+            self._set_status("● Complete", self.theme.GREEN)
         else:
-            self._log("-" * 40)
-            self._log(f"[X] Analysis finished with code {return_code}")
-            self._set_status("[!] Error", self.colors['accent'])
+            self._log(f"✗ Analysis finished with code {return_code}")
+            self._set_status("● Error", self.theme.RED)
         
-        # Refresh results
-        self._refresh_results()
+        self._refresh_all()
 
-    def _refresh_results(self):
-        """Refresh the results dashboard."""
-        self._refresh_reports()
-        self._refresh_charts()
-        self._refresh_journal()
-        self._refresh_premarket()
-        self._refresh_trades()
+    def _log(self, message: str):
+        """Add message to console."""
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.see(tk.END)
+        self.log_text.config(state=tk.DISABLED)
 
-    def _refresh_reports(self):
-        """Refresh the reports list."""
-        # Clear existing
-        for item in self.reports_tree.get_children():
-            self.reports_tree.delete(item)
-        
-        # Find all reports
-        report_dirs = [OUTPUT_DIR, REPORTS_DIR]
-        
-        for report_dir in report_dirs:
-            if not report_dir.exists():
-                continue
-            
-            for file in report_dir.glob("*.md"):
-                try:
-                    stat = file.stat()
-                    size_kb = stat.st_size / 1024
-                    mtime = date.fromtimestamp(stat.st_mtime).isoformat()
-                    
-                    self.reports_tree.insert('', tk.END, values=(
-                        file.name,
-                        mtime,
-                        f"{size_kb:.1f} KB",
-                        str(file)
-                    ))
-                except Exception:
-                    pass
-
-    def _refresh_charts(self):
-        """Refresh the charts gallery."""
-        # Clear existing
-        for widget in self.charts_inner.winfo_children():
-            widget.destroy()
-        
-        if not CHARTS_DIR.exists():
-            ttk.Label(self.charts_inner, text="No charts found", style='Panel.TLabel').pack(pady=20)
-            return
-        
-        # Find chart files
-        chart_files = list(CHARTS_DIR.glob("*.png"))
-        
-        if not chart_files:
-            ttk.Label(self.charts_inner, text="No charts found", style='Panel.TLabel').pack(pady=20)
-            return
-        
-        # Create grid of chart cards
-        row_frame = None
-        for i, chart_file in enumerate(chart_files):
-            if i % 3 == 0:
-                row_frame = ttk.Frame(self.charts_inner, style='Panel.TFrame')
-                row_frame.pack(fill=tk.X, pady=5)
-            
-            card = ttk.Frame(row_frame, style='Light.TFrame')
-            card.pack(side=tk.LEFT, padx=5, pady=5)
-            
-            # Chart name
-            name_label = ttk.Label(card, text=chart_file.stem, style='Dark.TLabel')
-            name_label.pack(pady=(5, 2))
-            
-            # Size info
-            try:
-                size_kb = chart_file.stat().st_size / 1024
-                size_label = ttk.Label(card, text=f"{size_kb:.1f} KB", style='Subtitle.TLabel')
-                size_label.pack()
-            except:
-                pass
-            
-            # Open button
-            btn = ttk.Button(
-                card,
-                text="View",
-                style='Secondary.TButton',
-                command=lambda f=chart_file: self._open_file(f)
-            )
-            btn.pack(pady=5)
-
-    def _open_selected_report(self, event):
-        """Open the selected report from treeview."""
-        selection = self.reports_tree.selection()
-        if not selection:
-            return
-        
-        item = self.reports_tree.item(selection[0])
-        path = item['values'][3]
-        
-        # Show preview
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            self.preview_text.config(state=tk.NORMAL)
-            self.preview_text.delete(1.0, tk.END)
-            self.preview_text.insert(tk.END, content)
-            self.preview_text.config(state=tk.DISABLED)
-            
-            # Switch to preview tab
-            self.notebook.select(2)
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not read file: {e}")
+    def _set_status(self, text: str, color: str):
+        """Update status label."""
+        self.status_label.config(text=text, fg=color)
 
     def _open_file(self, path: Path):
-        """Open a file with the default application."""
+        """Open file with default app."""
         try:
             if sys.platform == 'win32':
                 os.startfile(str(path))
@@ -1045,30 +1042,27 @@ Current Streak: {win_streak}W / {loss_streak}L"""
         except Exception as e:
             messagebox.showerror("Error", f"Could not open file: {e}")
 
-    def _open_output_folder(self):
-        """Open the output folder in file explorer."""
-        try:
-            if sys.platform == 'win32':
-                os.startfile(str(OUTPUT_DIR))
-            elif sys.platform == 'darwin':
-                subprocess.run(['open', str(OUTPUT_DIR)])
-            else:
-                subprocess.run(['xdg-open', str(OUTPUT_DIR)])
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not open folder: {e}")
+    def _open_folder(self, path: Path):
+        """Open folder in explorer."""
+        path.mkdir(parents=True, exist_ok=True)
+        self._open_file(path)
+
+    def _open_selected_report(self, event):
+        """Open selected report from treeview."""
+        selection = self.reports_tree.selection()
+        if not selection:
+            return
+        
+        item = self.reports_tree.item(selection[0])
+        tags = item.get('tags', [])
+        if tags:
+            path = Path(tags[0])
+            self._open_file(path)
 
 
 def main():
-    """Main entry point for GUI."""
+    """Main entry point."""
     root = tk.Tk()
-    
-    # Set icon if available
-    try:
-        # Could add an icon file later
-        pass
-    except:
-        pass
-    
     app = GoldStandardGUI(root)
     root.mainloop()
 
