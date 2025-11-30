@@ -1,5 +1,9 @@
 import logging
 import sys
+from pathlib import Path
+
+# Ensure project root is importable (so tests can import main directly)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import types
 
 # Monkeypatch pandas_ta to avoid numba dependency in tests

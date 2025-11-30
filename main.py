@@ -246,12 +246,22 @@ class Cortex:
         }
         
         try:
+            # Attempt to create a memory file from the shipped template if it doesn't exist
+            template_path = os.path.join(self.config.BASE_DIR, 'cortex_memory.template.json')
             with self.lock:
-                if os.path.exists(self.config.MEMORY_FILE):
-                    with open(self.config.MEMORY_FILE, 'r', encoding='utf-8') as f:
-                        loaded = json.load(f)
-                        # Merge with defaults to handle missing keys
-                        return {**default_memory, **loaded}
+                    if not os.path.exists(self.config.MEMORY_FILE) and os.path.exists(template_path):
+                        # Copy template to actual memory file without clobbering an existing file
+                        with open(template_path, 'r', encoding='utf-8') as t:
+                            template_content = t.read()
+                        with open(self.config.MEMORY_FILE, 'w', encoding='utf-8') as f:
+                            f.write(template_content)
+                        self.logger.debug(f"Initialized memory file from template: {self.config.MEMORY_FILE}")
+
+                    if os.path.exists(self.config.MEMORY_FILE):
+                        with open(self.config.MEMORY_FILE, 'r', encoding='utf-8') as f:
+                            loaded = json.load(f)
+                            # Merge with defaults to handle missing keys
+                            return {**default_memory, **loaded}
         except filelock.Timeout:
             self.logger.error("Could not acquire memory file lock (timeout)")
         except json.JSONDecodeError as e:

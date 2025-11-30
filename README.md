@@ -1,12 +1,31 @@
-# Gold Standard Quant Analysis (Detailed Technical Overview)
+# Gold Standard Quant Analysis — Technical Overview
 
-Welcome to Gold Standard — an end-to-end quantitative analysis pipeline focusing on gold (and its intermarket relationships) with AI-enhanced reporting.
+![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![CI](https://github.com/amuzetnoM/gold_standard/actions/workflows/python-ci.yml/badge.svg)
+![Codecov](https://img.shields.io/codecov/c/gh/amuzetnoM/gold_standard)
+![Pre-commit](https://results.pre-commit.ci/badge/github/amuzetnoM/gold_standard/main.svg)
+
+Badges (what they mean):
+- CI: GitHub Actions test and lint status for the default branch.
+- Codecov: Test coverage aggregated for the repository (requires Codecov setup to show data).
+- Pre-commit: Status of `pre-commit.ci` and hooks for the repository (optional, requires configuration).
+
+Welcome to Gold Standard — an end-to-end quantitative analysis pipeline focused on gold and its intermarket relationships, producing structured AI-enhanced market reports.
 
 This README provides an exhaustive technical overview of the repository and how each module operates. A separate companion `BOOKLET.md` provides a conceptual primer and tutorial for newcomers wanting to understand the math, architecture, and operational best practices.
 
 Table of contents
-- Quickstart
-- Architecture & Module Deep Dive
+* Quickstart
+* Architecture & Module Deep Dive
+* Modules at a glance
+* Data Pipeline Details
+* Technical Indicators & Fallbacks
+* Secrets Management & Pre-commit Hooks
+* Development, Tests, and CI Recommendations
+* Troubleshooting & Operational Notes
+* Contributing & Future Work
+* Appendices
   - Cortex (Memory & Reflection)
   - QuantEngine (Market Data, Indicators & Charts)
   - Strategist (AI Analysis & Bias Extraction)
@@ -22,7 +41,7 @@ Table of contents
 
 ---
 
-Quickstart ✅
+Quickstart
 
 1) Create local virtual environment and install dependencies:
 
@@ -43,8 +62,13 @@ Quickstart ✅
    ```
 
 2) Prepare environment variables:
-   - Provide `GEMINI_API_KEY` in a local `.env` file (not committed) or export in your session.
-   - `python-dotenv` will automatically load `.env` when running `python main.py`.
+  - Copy the included `.env.template` to `.env`, then fill in your credentials. Do NOT commit your `.env` file to source control.
+  ```powershell
+  cp .env.template .env
+  # Edit .env and set GEMINI_API_KEY
+  ```
+  - Alternatively, export key(s) in your session if not using a `.env` file.
+  - `python-dotenv` will automatically load `.env` when running `python main.py`.
 
 3) Local test run (no AI; quick):
    ```bash
@@ -56,13 +80,43 @@ Quickstart ✅
    python main.py --once
    ```
 
-Output will be under `output/` with charts `output/charts` and a markdown journal `Journal_YYYY-MM-DD.md`.
+Output will be under `output/` with charts in `output/charts` and a markdown journal `Journal_YYYY-MM-DD.md`.
+
+Key files:
+| File | Purpose |
+|---|---|
+| `main.py` | Core pipeline and CLI entry point (Cortex, QuantEngine, Strategist) |
+| `cortex_memory.template.json` | Safe default memory template for new users |
+| `scripts/init_cortex.py` | Helper to initialize local `cortex_memory.json` from template |
+| `scripts/prevent_secrets.py` | Pre-commit helper that blocks committing `.env` and likely secrets |
+| `output/charts` | Default destination for generated charts |
+| `output/Journal_YYYY-MM-DD.md` | Generated report file for each run |
+
+Why this project:
+- Provides an automated, reproducible approach for intermarket analysis focused on precious metals and related assets.
+- Combines well-known technical indicators with AI-generated natural language analysis to speed up research and journaling.
+
+How to extend:
+1. Add a new asset in `ASSETS` in `main.py`.
+2. Extend `QuantEngine._fetch` to compute additional indicators.
+3. Add plotting in `QuantEngine._chart` and validate output.
+4. Add unit tests under `tests/` and fixtures under `tests/data/`.
+
 
 ---
 
-Architecture & Module Deep Dive 🔍
+Architecture & Module Deep Dive
 
-This project is organized as a single-file application for convenience (`main.py`) but internally follows clear module responsibilities. Below are the major components and their responsibilities.
+This project is organized as a single-file application for convenience (`main.py`) but internally follows clear module responsibilities. For an at-a-glance summary, see the table below.
+
+Modules at a glance
+| Module | Purpose | Key methods |
+|---|---|---|
+| `Cortex` | Persistent memory of past predictions and grading performance | `_load_memory`, `update_memory`, `grade_performance`, `get_formatted_history` |
+| `QuantEngine` | Fetch market data, compute indicators and generate charts | `get_data`, `_fetch`, `_chart`, `_cleanup_old_charts` |
+| `Strategist` | Build prompts, call AI, and parse bias | `_build_prompt`, `think`, `_extract_bias` |
+| `main()` & executors | Orchestrate runs, scheduling, and write reports | `execute`, scheduling loop and CLI handlers |
+
 
 1) Cortex (Memory & Reflection)
    - Purpose: Persistent memory for the system. Records and persists the last bias, last price, history of the last N predictions, win/loss counters and streaks.
@@ -110,7 +164,7 @@ This system attempts to avoid data issues by applying the following measures:
 
 If you intend to run this on a VPS or in Docker, ensure a single instance is scheduled or use an external scheduler and a single memory store (e.g., S3) to avoid conflicts.
 
-Technical Indicators & Fallbacks 🛠️
+Technical Indicators & Fallbacks
 - This project uses `pandas_ta` for convenience, but to support running on newer Python releases or in environments where `numba` isn't available, fallback implementations are provided. These fallbacks:
   - Compute SMA via rolling mean
   - Compute RSI via the gains/losses averaging method
@@ -118,13 +172,13 @@ Technical Indicators & Fallbacks 🛠️
   - Provide a basic ADX implementation with DMI components
 - Caveat: Fallback ADX is functional but may differ from `pandas_ta` / numba-based computations. For production-grade reliability, run this under Python 3.11 with `pandas_ta` and `numba` installed.
 
-Logging, File Locking & Concurrency 🚦
+Logging, File Locking & Concurrency
 - Logging is done via a root logger `GoldStandard` with:
   - A console handler (INFO) for real-time observability
   - A rotating file handler (5 MB max) writing to `output/gold_standard.log` for long-term diagnostics
 - `filelock.FileLock` is used to protect `cortex_memory.json` (via `Cortex.lock`). This prevents concurrent main process runs from corrupting memory.
 
-Secrets Management & Pre-commit Hooks 🛡️
+Secrets Management & Pre-commit Hooks
 - Secrets should NEVER be committed to source control. The project contains a `.gitignore` entry for `.env` and `cortex_memory.json`.
 - `pre-commit` is configured in `.pre-commit-config.yaml` and includes:
   - `black` formatting
@@ -132,15 +186,39 @@ Secrets Management & Pre-commit Hooks 🛡️
   - A local `prevent_secrets.py` script that blocks committing `.env` or other likely secret patterns
 - If you accidentally commit a secret, rotate it immediately and remove it from your repo history (e.g., using `git filter-repo`).
 
-Development, Tests, and CI Recommendations 🧪
+Development, Tests, and CI Recommendations
 - Use Python 3.11 for best compatibility with `pandas_ta` and `numba`.
 - The repository includes `tests/test_core.py` (unit tests for bias parsing and fewer core functions). Run them with `pytest`.
-- Add a GitHub Actions workflow that:
+ - Add a GitHub Actions workflow that:
   1. Uses the `python` virtual environment with 3.11.
   2. Installs dependencies from `requirements-dev.txt` and runs `pre-commit` and `pytest`.
   3. Checks linting and formatting rules with `black` and `flake8` if desired.
 
-Troubleshooting & Operational Notes ⚠️
+Sample GitHub Actions workflow (quick-start):
+```yaml
+name: Python CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+      - name: Run tests
+        run: pytest -q --disable-warnings --maxfail=1
+```
+
+Troubleshooting & Operational Notes
 - If `numba` fails to install on Python versions > 3.11, fallback logic will still run — but check numerical parity if you rely on ADX values.
 - If Gemini fails with `model not found`, use `scripts/list_gemini_models.py` with your credentials to locate an accessible model.
 - If chart generation fails or chart files are tiny, it likely indicates that the OHLC dataset is too small after NaN removal or the plotting backend failed; check `gold_standard.log` for the mpf errors.
@@ -460,6 +538,21 @@ The application is implemented in three primary modules inside main.py:
 - Charts and logs are written to the `output/` directory, created automatically.
 - The scheduler uses `schedule.every(RUN_INTERVAL_HOURS).hours.do(execute, ...)`.
 - File locking with `filelock.FileLock` prevents concurrent memory corruption.
+
+## Sample Memory Template & Initialization
+The repository contains a safe-to-commit sample template `cortex_memory.template.json` which stores an empty/default memory schema that doesn't include PII, API keys, or other secrets. This template is meant to make the repository runnable for new contributors while keeping real memory (which contains run-specific values) outside version control.
+
+To initialize a real `cortex_memory.json` from the template you can either run the helper script or let `main.py` auto-populate the memory file on first run.
+
+Manual helper (explicit copy):
+```bash
+python scripts/init_cortex.py
+# or to overwrite if needed
+python scripts/init_cortex.py --force
+```
+
+Auto-initialization: when `main.py` starts, the `Cortex` class checks for `cortex_memory.json`, and if it is missing, copies `cortex_memory.template.json` to `cortex_memory.json` so long as a template is present. This behavior ensures a consistent, safe starting memory for new users.
+
 
 ## License
 
