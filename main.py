@@ -3,17 +3,79 @@ import os
 import sys
 import re
 import json
+from dotenv import load_dotenv
 import time
 import signal
 import logging
+from logging.handlers import RotatingFileHandler
 import datetime
 import filelock
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 
 import schedule
+import argparse
 import pandas as pd
-import pandas_ta as ta
+try:
+    import pandas_ta as ta
+except Exception:
+    # Fallback implementations for environments where pandas_ta or its optional
+    # dependencies (like numba) are unavailable (e.g., Python 3.14).
+    import pandas as _pd
+
+    class _FallbackTA:
+        @staticmethod
+        def sma(series, length=50):
+            return series.rolling(window=length).mean()
+
+        @staticmethod
+        def rsi(series, length=14):
+            delta = series.diff()
+            up = delta.clip(lower=0)
+            down = -delta.clip(upper=0)
+            ma_up = up.rolling(window=length, min_periods=length).mean()
+            ma_down = down.rolling(window=length, min_periods=length).mean()
+            rs = ma_up / ma_down
+            return 100 - (100 / (1 + rs))
+
+        @staticmethod
+        def atr(high, low, close, length=14):
+            prev_close = close.shift(1)
+            tr1 = high - low
+            tr2 = (high - prev_close).abs()
+            tr3 = (low - prev_close).abs()
+            tr = _pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+            return tr.rolling(window=length, min_periods=length).mean()
+
+        @staticmethod
+        def adx(high, low, close, length=14):
+                # Basic ADX implementation compatible with pandas Series input (fallback).
+                try:
+                    prev_close = close.shift(1)
+                    tr1 = high - low
+                    tr2 = (high - prev_close).abs()
+                    tr3 = (low - prev_close).abs()
+                    tr = _pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+                    atr = tr.rolling(window=length, min_periods=length).mean()
+
+                    up_move = high.diff()
+                    down_move = -low.diff()
+                    # Use where to avoid setting dtype incompatible warnings
+                    plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0.0)
+                    minus_dm = (-down_move).where((down_move > up_move) & (down_move > 0), 0.0)
+
+                    plus_di = (plus_dm.rolling(window=length, min_periods=length).sum() / atr) * 100
+                    minus_di = (minus_dm.rolling(window=length, min_periods=length).sum() / atr) * 100
+
+                    dx = (plus_di - minus_di).abs() / (plus_di + minus_di) * 100
+                    adx = dx.rolling(window=length, min_periods=length).mean()
+
+                    df = _pd.concat([adx.rename(f'ADX_{length}'), plus_di.rename(f'DMP_{length}'), minus_di.rename(f'DMN_{length}')], axis=1)
+                    return df
+                except Exception:
+                    return None
+
+    ta = _FallbackTA()
 import yfinance as yf
 import mplfinance as mpf
 import google.generativeai as genai
@@ -26,8 +88,11 @@ from colorama import Fore, Back, Style, init
 class Config:
     """Central configuration with sensible defaults."""
     # API Configuration
-    GEMINI_API_KEY: str = field(default_factory=lambda: os.environ.get("GEMINI_API_KEY", "AIzaSyB_AcEs6f3qxHZRnN_5OjaGHIpdy4t0_78"))
-    GEMINI_MODEL: str = "gemini-1.5-pro-latest"
+    # Read API key from environment; do not hardcode secrets
+    GEMINI_API_KEY: str = field(default_factory=lambda: os.environ.get("GEMINI_API_KEY", ""))
+    # Use an available model name from Google GenAI model list.
+    # Default will work for the current API: 'models/gemini-pro-latest'
+    GEMINI_MODEL: str = "models/gemini-pro-latest"
     
     # Filesystem paths
     BASE_DIR: str = field(default_factory=lambda: os.path.dirname(os.path.abspath(__file__)))
@@ -64,7 +129,8 @@ class Config:
     MAX_CHART_AGE_DAYS: int = 7
     
     # Scheduling
-    RUN_INTERVAL_HOURS: int = 4
+    # Default to hourly runs for more frequent analysis
+    RUN_INTERVAL_HOURS: int = 1
 
 
 # Asset Universe Configuration
@@ -79,7 +145,6 @@ ASSETS: Dict[str, Dict[str, str]] = {
 
 # Global state for graceful shutdown
 shutdown_requested = False
-model = None  # Will be initialized in main()
 
 # ==========================================
 # LOGGING SETUP
@@ -103,10 +168,10 @@ def setup_logging(config: Config) -> logging.Logger:
     console_handler.setFormatter(console_format)
     logger.addHandler(console_handler)
     
-    # File handler for detailed logs
+    # File handler for detailed logs (rotating)
     log_file = os.path.join(config.OUTPUT_DIR, "gold_standard.log")
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding='utf-8')
     file_handler.setLevel(logging.DEBUG)
     file_format = logging.Formatter(
         '%(asctime)s | %(levelname)-8s | %(name)s | %(funcName)s:%(lineno)d | %(message)s'
@@ -115,6 +180,30 @@ def setup_logging(config: Config) -> logging.Logger:
     logger.addHandler(file_handler)
     
     return logger
+
+
+def strip_emojis(text: str) -> str:
+    """Remove common emoji characters from a text string.
+    This uses Unicode ranges for emoji and other symbols and removes them.
+    """
+    try:
+        import re
+        emoji_pattern = re.compile(
+            "[\U0001F600-\U0001F64F"  # emoticons
+            "\U0001F300-\U0001F5FF"  # symbols & pictographs
+            "\U0001F680-\U0001F6FF"  # transport & map symbols
+            "\U0001F700-\U0001F77F"  # alchemical symbols
+            "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+            "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+            "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+            "\U0001FA00-\U0001FA6F"  # Chess Symbols etc
+            "\U00002600-\U000026FF"  # Misc symbols
+            "\U00002700-\U000027BF"  # Dingbats
+            "]+", flags=re.UNICODE)
+        return emoji_pattern.sub(r'', text)
+    except Exception:
+        # Fallback: naive filter keeping ascii and basic punctuation
+        return ''.join(ch for ch in text if ord(ch) < 10000)
 
 
 # ==========================================
@@ -291,11 +380,12 @@ class QuantEngine:
         self.config = config
         self.logger = logger
         self.news: List[str] = []
+        # Production mode: using ASSETS defined in the source configuration
 
     def get_data(self) -> Optional[Dict[str, Any]]:
         """Fetch and process data for all tracked assets."""
         self.logger.info("Engaging Quant Engine - fetching market data...")
-        print(f"{Fore.CYAN}[SYSTEM] Engaging Quant Engine...")
+        self.logger.info(f"[SYSTEM] Engaging Quant Engine...")
         
         snapshot: Dict[str, Any] = {}
         self.news = []
@@ -308,6 +398,7 @@ class QuantEngine:
         
         # Fetch data for each asset
         for key, conf in ASSETS.items():
+            conf = ASSETS[key]
             try:
                 df = self._fetch(conf['p'], conf['b'])
                 if df is None or df.empty:
@@ -390,6 +481,8 @@ class QuantEngine:
 
     def _fetch(self, primary: str, backup: str) -> Optional[pd.DataFrame]:
         """Fetch market data with fallback to backup ticker."""
+        # Production path: fetch from yfinance only
+
         for ticker in [primary, backup]:
             try:
                 self.logger.debug(f"Fetching data for {ticker}")
@@ -470,7 +563,18 @@ class QuantEngine:
                 plot_kwargs['addplot'] = apds
             
             mpf.plot(df.tail(self.config.CHART_CANDLE_COUNT), **plot_kwargs)
-            self.logger.debug(f"Chart generated: {chart_path}")
+            # ensure chart was actually written
+            ok = False
+            try:
+                if os.path.exists(chart_path) and os.path.getsize(chart_path) > 2048:
+                    ok = True
+            except Exception:
+                ok = False
+
+            if not ok:
+                self.logger.warning(f"Chart generated but verification failed (size too small or missing): {chart_path}")
+            else:
+                self.logger.info(f"Chart generated and verified: {chart_path}")
             
         except Exception as e:
             self.logger.error(f"Error generating chart for {name}: {e}")
@@ -513,18 +617,20 @@ class Strategist:
         logger: logging.Logger,
         data: Dict[str, Any],
         news: List[str],
-        memory_log: str
+        memory_log: str,
+        model: Optional[Any] = None,
     ):
         self.config = config
         self.logger = logger
         self.data = data
         self.news = news
         self.memory = memory_log
+        self.model = model
 
     def think(self) -> Tuple[str, str]:
         """Generate AI analysis and extract trading bias."""
         self.logger.info("AI Strategist analyzing correlations & volatility...")
-        print(f"{Fore.YELLOW}[AI] Analyzing Correlations & Volatility...")
+        self.logger.info(f"[AI] Analyzing Correlations & Volatility...")
         
         # Validate required data
         if 'GOLD' not in self.data:
@@ -543,7 +649,9 @@ class Strategist:
         prompt = self._build_prompt(gsr, vix_price, data_dump)
         
         try:
-            response = model.generate_content(prompt)
+            if not self.model:
+                raise RuntimeError("AI model not available")
+            response = self.model.generate_content(prompt)
             response_text = response.text
             
             # Extract bias using more robust parsing
@@ -586,18 +694,18 @@ class Strategist:
         Identity: Advanced Quant Algo "Gold Standard".
         Context: You are analyzing markets for a Hedge Fund.
         
-        ### 🧠 SYSTEM MEMORY (Self-Reflection):
+        SYSTEM MEMORY (Self-Reflection):
         {self.memory}
         (If you LOST last time, be more cautious. If you WON, maintain logic).
 
-        ### 📊 QUANT METRICS:
+        ### QUANT METRICS:
         Gold/Silver Ratio: {gsr} (High > {self.config.GSR_HIGH_THRESHOLD} = Silver Cheap, Low < {self.config.GSR_LOW_THRESHOLD} = Gold Cheap)
         VIX (Fear): {vix_price} (High > {self.config.VIX_HIGH_THRESHOLD} = High Volatility Risk)
         
-        ### 📉 ASSET TELEMETRY:
+        ### ASSET TELEMETRY:
         {data_dump}
         
-        ### 📰 NEWS CONTEXT:
+        ### NEWS CONTEXT:
         {chr(10).join(self.news[:4]) if self.news else "No recent news available."}
 
         ### INSTRUCTIONS:
@@ -607,28 +715,28 @@ class Strategist:
         4. **Bias:** Must be BULLISH, BEARISH, or NEUTRAL.
 
         ### OUTPUT FORMAT (MARKDOWN):
-        # 🪙 Gold Standard Quant Report
+        # Gold Standard Quant Report
         
-        ## 1. 🧠 Algo Self-Correction
+        ## 1. Algo Self-Correction
         *   **Previous Call:** (Reflect on the memory provided)
         *   **Current Stance:** (Adjusted based on recent performance)
 
-        ## 2. 🌍 Macro & Intermarket
+        ## 2. Macro & Intermarket
         *   **Regime:** (Trending or Ranging based on ADX?)
         *   **Gold/Silver Ratio:** (Analysis of {gsr})
         *   **VIX/Risk:** (Impact of VIX {vix_price})
 
-        ## 3. 🎯 Strategic Thesis
+        ## 3. Strategic Thesis
         *   **Bias:** **[BULLISH/BEARISH/NEUTRAL]** (Choose exactly one and put it in bold)
         *   **Logic:** ...
 
-        ## 4. 📐 Precision Execution (ATR Based)
+        ## 4. Precision Execution (ATR Based)
         *   **Entry Zone:** Current Price +/- volatility
         *   **Volatility Stop (2x ATR):** ${atr_stop:.2f} width
         *   **Stop Loss Level:** $...
         *   **Take Profit:** $...
 
-        ## 5. 🔮 Scenario Probability
+        ## 5. Scenario Probability
         (Create a Markdown Matrix Table)
         """
 
@@ -668,12 +776,12 @@ class Strategist:
 # ==========================================
 # EXECUTION LOOP
 # ==========================================
-def execute(config: Config, logger: logging.Logger) -> bool:
+def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None, dry_run: bool = False, no_ai: bool = False) -> bool:
     """
     Execute one analysis cycle.
     Returns True on success, False on failure.
     """
-    print(f"\n{Back.BLUE}{Fore.WHITE} --- QUANT CYCLE INITIATED --- {Style.RESET_ALL}")
+    logger.info("--- QUANT CYCLE INITIATED ---")
     logger.info("=" * 50)
     logger.info("QUANT CYCLE INITIATED")
     logger.info("=" * 50)
@@ -689,95 +797,150 @@ def execute(config: Config, logger: logging.Logger) -> bool:
     data = quant.get_data()
     if not data:
         logger.error("Data fetch failed - aborting cycle")
-        print(f"{Fore.RED}[ERROR] Data fetch failed.")
+        logger.error("Data fetch failed.")
         return False
     
     # Validate gold data exists
     if 'GOLD' not in data:
         logger.error("Gold data missing - aborting cycle")
-        print(f"{Fore.RED}[ERROR] Gold data unavailable.")
+        logger.error("Gold data unavailable.")
         return False
     
     gold_price = data['GOLD']['price']
     
     # 2. Grade Past Performance
     last_result = cortex.grade_performance(gold_price)
-    print(f"{Fore.MAGENTA}[MEMORY] Last Run Result: {last_result}")
+    logger.info(f"[MEMORY] Last Run Result: {last_result}")
     
     # 3. AI Analysis
     memory_context = cortex.get_formatted_history()
-    strat = Strategist(config, logger, data, quant.news, memory_context)
-    report, new_bias = strat.think()
+    report = ""
+    new_bias = "NEUTRAL"
+
+    if no_ai:
+        logger.info("No-AI mode enabled; skipping AI analysis")
+        report = "# Gold Standard Quant Report\n\n[NO AI MODE] - AI analysis skipped by CLI option."
+        new_bias = "NEUTRAL"
+    else:
+        strat = Strategist(config, logger, data, quant.news, memory_context, model=model)
+        report, new_bias = strat.think()
     
-    # 4. Save Bias to Memory
-    cortex.update_memory(new_bias, gold_price)
+    # 4. Save Bias to Memory (unless dry-run)
+    if not dry_run:
+        cortex.update_memory(new_bias, gold_price)
+    else:
+        logger.info("Dry-run mode: memory not updated")
     
+    # Remove any existing today's journal so a fresh one can be created
+    try:
+        fname = os.path.join(config.OUTPUT_DIR, f"Journal_{datetime.date.today()}.md")
+        if os.path.exists(fname):
+            os.remove(fname)
+            logger.info(f"Deleted previous journal: {fname}")
+    except Exception as e:
+        logger.warning(f"Failed deleting previous journal: {e}")
+
     # 5. Write Report
     report_filename = f"Journal_{datetime.date.today()}.md"
     report_path = os.path.join(config.OUTPUT_DIR, report_filename)
     
+    if dry_run:
+        logger.info("Dry-run mode: skipping writing report")
+        logger.info(f"[DRY-RUN] Skipped saving report: {report_path}")
+        return True
+
     try:
+        # Clean non-ASCII / emoji characters from report before saving
+        safe_report = strip_emojis(report)
         with open(report_path, 'w', encoding='utf-8') as f:
-            f.write(report)
-            f.write("\n\n---\n\n## 📈 Charts\n\n")
+            f.write(safe_report)
+            f.write("\n\n---\n\n## Charts\n\n")
             f.write("![Gold](charts/GOLD.png)\n\n")
             f.write("![Silver](charts/SILVER.png)\n\n")
             f.write("![VIX](charts/VIX.png)\n")
         
         logger.info(f"Report generated: {report_path}")
-        print(f"{Fore.GREEN}[SUCCESS] Quant Report Generated: {report_path}")
+        logger.info(f"[SUCCESS] Quant Report Generated: {report_path}")
         return True
         
     except Exception as e:
-        logger.error(f"Error writing report: {e}")
-        print(f"{Fore.RED}[ERROR] Failed to write report: {e}")
+        logger.error(f"Error writing report: {e}", exc_info=True)
+        logger.error(f"[ERROR] Failed to write report: {e}")
         return False
 
 
 def main() -> None:
     """Main entry point with graceful shutdown handling."""
-    global shutdown_requested, model
+    global shutdown_requested
+
+    # Load environment from .env (optional)
+    load_dotenv()
     
+    # Parse CLI arguments
+    parser = argparse.ArgumentParser(description="Gold Standard Quant Analysis")
+    parser.add_argument('--once', action='store_true', help='Run one cycle and exit')
+    parser.add_argument('--dry-run', action='store_true', help='Run without writing memory/report')
+    parser.add_argument('--no-ai', action='store_true', help='Do not call AI, produce a skeleton report')
+    parser.add_argument('--interval', type=int, default=None, help='Override run interval hours')
+    parser.add_argument('--log-level', default='INFO', help='Logging level (DEBUG, INFO, WARNING, ERROR)')
+    parser.add_argument('--gemini-key', default=None, help='Override GEMINI API key via CLI (not recommended)')
+    # Production mode: the tool uses the configured ASSETS in the source code
+    args = parser.parse_args()
+
     # Initialize colorama
     init(autoreset=True)
     
     # Load configuration
     config = Config()
+    if args.interval:
+        config.RUN_INTERVAL_HOURS = args.interval
     
     # Setup logging
     logger = setup_logging(config)
+    # Adjust log level from CLI
+    logger.setLevel(getattr(logging, args.log_level.upper(), logging.INFO))
     
-    # Validate API key
-    if not config.GEMINI_API_KEY:
-        logger.error("GEMINI_API_KEY environment variable not set!")
-        print(f"{Fore.RED}[ERROR] Please set GEMINI_API_KEY environment variable.")
-        print(f"{Fore.YELLOW}Example: $env:GEMINI_API_KEY = 'your-api-key-here'")
-        sys.exit(1)
+    # Validate API key unless --no-ai is set
+    if not args.no_ai:
+        if args.gemini_key:
+            config.GEMINI_API_KEY = args.gemini_key
+        if not config.GEMINI_API_KEY:
+            logger.error("GEMINI_API_KEY environment variable not set and no CLI key provided!")
+            logger.error("Please set GEMINI_API_KEY environment variable or provide --gemini-key.")
+            logger.warning("Example: $env:GEMINI_API_KEY = 'your-api-key-here' or use --gemini-key option")
+            sys.exit(1)
     
-    # Configure Gemini
-    try:
-        genai.configure(api_key=config.GEMINI_API_KEY)
-        model = genai.GenerativeModel(config.GEMINI_MODEL)
-        logger.info(f"Gemini AI configured with model: {config.GEMINI_MODEL}")
-    except Exception as e:
-        logger.error(f"Failed to configure Gemini AI: {e}")
-        sys.exit(1)
+    # Configure Gemini (unless --no-ai)
+    model_obj = None
+    if not args.no_ai:
+        try:
+            genai.configure(api_key=config.GEMINI_API_KEY)
+            model_obj = genai.GenerativeModel(config.GEMINI_MODEL)
+            logger.info(f"Gemini AI configured with model: {config.GEMINI_MODEL}")
+        except Exception as e:
+            logger.error(f"Failed to configure Gemini AI: {e}")
+            sys.exit(1)
     
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    print(f"{Fore.GREEN}GOLD STANDARD SYSTEM ONLINE")
-    print(f"{Fore.CYAN}Interval: {config.RUN_INTERVAL_HOURS} hours")
-    print(f"{Fore.YELLOW}Press Ctrl+C to shutdown gracefully\n")
+    logger.info("GOLD STANDARD SYSTEM ONLINE")
+    logger.info(f"Interval: {config.RUN_INTERVAL_HOURS} hours")
+    logger.info("Press Ctrl+C to shutdown gracefully")
     
     logger.info(f"System started. Run interval: {config.RUN_INTERVAL_HOURS} hours")
     
     # Execute immediately
-    execute(config, logger)
-    
+    execute(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai)
+
+    # If --once, we exit now
+    if args.once:
+        logger.info("Run-once mode specified -- exiting")
+        return
+
     # Schedule recurring execution
-    schedule.every(config.RUN_INTERVAL_HOURS).hours.do(execute, config, logger)
+    schedule.every(config.RUN_INTERVAL_HOURS).hours.do(execute, config, logger, model_obj, args.dry_run, args.no_ai)
     
     # Main loop with graceful shutdown
     while not shutdown_requested:
@@ -789,9 +952,8 @@ def main() -> None:
             time.sleep(5)
     
     logger.info("Graceful shutdown complete")
-    print(f"\n{Fore.GREEN}[SHUTDOWN] Gold Standard system stopped gracefully.")
+    logger.info("\n[SHUTDOWN] Gold Standard system stopped gracefully.")
 
 
 if __name__ == "__main__":
     main()
-        time.sleep(60)

@@ -12,7 +12,7 @@ A quantitative analysis system that combines financial market data, technical in
 - AI-Powered Insights: Uses Google Gemini (configured via google-generativeai) for natural-language analysis
 - Self-Reflection Memory: Persists past predictions and grades performance (win/loss/streaks)
 - Automated Charts: Generates candlestick charts with SMA overlays (mplfinance)
-- Scheduled Execution: Default run every 4 hours (configurable via Config)
+- Scheduled Execution: Default run every hour (configurable via Config)
 - Markdown Reports: Outputs a dated markdown journal per run
 - Graceful Shutdown: Ctrl+C (SIGINT) and SIGTERM handled for clean termination
 - Structured Logging: Console and file logging (output/gold_standard.log)
@@ -73,7 +73,7 @@ The `Config` dataclass in main.py exposes these defaults:
 - VIX_HIGH_THRESHOLD: 20.0
 - RSI_OVERBOUGHT: 70.0
 - RSI_OVERSOLD: 30.0
-- RUN_INTERVAL_HOURS: 4
+- RUN_INTERVAL_HOURS: 1
 
 Adjust these values directly in main.py or extend the Config class as needed.
 
@@ -83,6 +83,20 @@ Run the main program:
 
 ```bash
 python main.py
+```
+
+CLI options:
+- `--once`: run one cycle and exit
+- `--dry-run`: run without updating memory or writing report
+- `--no-ai`: skip AI analysis and produce a simple report
+- `--interval <hours>`: override the run interval in hours
+- `--log-level <level>`: set log level (DEBUG, INFO, WARNING, ERROR)
+- `--gemini-key <key>`: provide Gemini API key via CLI (not recommended; prefer env var)
+
+Example - run once without AI (useful for testing data pipeline):
+
+```bash
+python main.py --once --no-ai
 ```
 
 High-level flow per cycle:
@@ -134,6 +148,17 @@ Key packages used (listed in requirements.txt):
 - schedule — periodic execution
 - colorama — terminal coloring
 - filelock — thread-safe file locking
+Note: The project includes optional dependencies that may require older Python versions (e.g., pandas_ta uses numba). Use Python 3.11 for best compatibility.
+
+Note: Journal output is sanitized to remove emoji characters to maintain plain-text reports.
+## Running tests
+
+Install dev/test dependencies then run pytest:
+
+```bash
+pip install -r requirements.txt
+pytest
+```
 - (standard library logging, json, datetime, signal, etc.)
 
 ## Architecture
