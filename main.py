@@ -1218,7 +1218,6 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
     Execute one analysis cycle.
     Returns True on success, False on failure.
     """
-    logger.info("--- QUANT CYCLE INITIATED ---")
     logger.info("=" * 50)
     logger.info("QUANT CYCLE INITIATED")
     logger.info("=" * 50)
@@ -1234,13 +1233,11 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
     data = quant.get_data()
     if not data:
         logger.error("Data fetch failed - aborting cycle")
-        logger.error("Data fetch failed.")
         return False
     
     # Validate gold data exists
     if 'GOLD' not in data:
         logger.error("Gold data missing - aborting cycle")
-        logger.error("Gold data unavailable.")
         return False
     
     gold_price = data['GOLD']['price']
@@ -1268,7 +1265,7 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
         strat = Strategist(config, logger, data, quant.news, memory_context, model=model, cortex=cortex)
         report, new_bias = strat.think()
     
-    # 4. Save Bias to Memory (unless dry-run)
+    # 5. Save Bias to Memory (unless dry-run)
     if not dry_run:
         cortex.update_memory(new_bias, gold_price)
     else:
@@ -1283,13 +1280,12 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
     except Exception as e:
         logger.warning(f"Failed deleting previous journal: {e}")
 
-    # 5. Write Report
+    # 6. Write Report
     report_filename = f"Journal_{datetime.date.today()}.md"
     report_path = os.path.join(config.OUTPUT_DIR, report_filename)
     
     if dry_run:
-        logger.info("Dry-run mode: skipping writing report")
-        logger.info(f"[DRY-RUN] Skipped saving report: {report_path}")
+        logger.info(f"Dry-run mode: skipping report write to {report_path}")
         return True
 
     try:
@@ -1303,7 +1299,6 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
             f.write("![VIX](charts/VIX.png)\n")
         
         logger.info(f"Report generated: {report_path}")
-        logger.info(f"[SUCCESS] Quant Report Generated: {report_path}")
         
         # Save to database for organized storage
         try:
@@ -1356,7 +1351,6 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
         
     except Exception as e:
         logger.error(f"Error writing report: {e}", exc_info=True)
-        logger.error(f"[ERROR] Failed to write report: {e}")
         return False
 
 
@@ -1417,10 +1411,8 @@ def main() -> None:
     signal.signal(signal.SIGTERM, signal_handler)
     
     logger.info("GOLD STANDARD SYSTEM ONLINE")
-    logger.info(f"Interval: {config.RUN_INTERVAL_HOURS} hours")
+    logger.info(f"Run interval: {config.RUN_INTERVAL_HOURS} hours")
     logger.info("Press Ctrl+C to shutdown gracefully")
-    
-    logger.info(f"System started. Run interval: {config.RUN_INTERVAL_HOURS} hours")
     
     # Execute immediately
     execute(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai)
@@ -1443,7 +1435,6 @@ def main() -> None:
             time.sleep(5)
     
     logger.info("Graceful shutdown complete")
-    logger.info("\n[SHUTDOWN] Gold Standard system stopped gracefully.")
 
 
 if __name__ == "__main__":
