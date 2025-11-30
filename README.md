@@ -1,12 +1,26 @@
+```
+   _________ _________ _________ _________ ____ ____ ____ ____
+  ||       |||       |||       |||       |||G |||O |||L |||D ||
+  ||_______|||_______|||_______|||_______|||__|||__|||__|||__||
+  |/_______\|/_______\|/_______\|/_______\|/__\|/__\|/__\|/__\|
+   _________ ____ ____ ____ ____ ____ ____ ____ ____
+  ||       |||S |||T |||A |||N |||D |||A |||R |||D ||
+  ||_______|||__|||__|||__|||__|||__|||__|||__|||__||
+  |/_______\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|
+
+            
+```
+
 # Gold Standard
 
-> Quantitative Analysis Pipeline for Precious Metals Intelligence
+> **Precious Metals Intelligence Complex** — Quantitative Analysis System
 
-An end-to-end system combining financial market data, technical indicators, and Google Gemini AI to generate structured trading reports focused on gold and related intermarket assets.
+A comprehensive end-to-end system combining real-time market data, technical indicators, economic calendar intelligence, and Google Gemini AI to generate structured trading reports for gold and intermarket assets.
 
 ---
 
-![Python](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-5%2F5%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=flat-square)
 ![Status](https://img.shields.io/badge/status-active-success?style=flat-square)
@@ -18,8 +32,8 @@ An end-to-end system combining financial market data, technical indicators, and 
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-  - [CLI Interface](#cli-interface)
-  - [GUI Dashboard](#gui-dashboard)
+- [Output Samples](#output-samples)
+- [Economic Calendar](#economic-calendar)
 - [Architecture](#architecture)
 - [Configuration](#configuration)
 - [Output Structure](#output-structure)
@@ -37,9 +51,12 @@ An end-to-end system combining financial market data, technical indicators, and 
 | **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta and fallback implementations |
 | **Intermarket Correlations** | Gold/Silver ratio analysis and divergence detection |
 | **AI-Powered Insights** | Google Gemini integration for natural-language analysis |
+| **Economic Calendar** | Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis |
+| **Live Analysis Suite** | Catalyst watchlist, institutional matrix, 1Y/3M analysis reports |
+| **Database Storage** | SQLite persistence for all reports with historical querying |
 | **Persistent Memory** | Cortex system tracks predictions, grades performance, maintains win/loss streaks |
 | **Automated Charts** | Candlestick charts with SMA overlays via mplfinance |
-| **Multiple Report Types** | Daily journals, weekly rundowns, monthly/yearly reports |
+| **Multiple Report Types** | Daily journals, pre-market plans, weekly rundowns, monthly/yearly reports |
 | **Dual Interface** | Command-line CLI and graphical GUI dashboard |
 | **No-AI Mode** | Run data analysis without API calls for testing or offline use |
 
@@ -185,9 +202,178 @@ The GUI provides:
 
 ---
 
+## Output Samples
+
+### 📊 Generated Charts
+
+The system generates professional candlestick charts with technical overlays:
+
+| Asset | Chart | Description |
+|-------|-------|-------------|
+| Gold (GC=F) | ![Gold Chart](output/charts/GOLD.png) | Primary asset with SMA 50/200 overlays |
+| Silver (SI=F) | ![Silver Chart](output/charts/SILVER.png) | Secondary precious metal tracking |
+| Dollar Index | ![DXY Chart](output/charts/DXY.png) | Inverse correlation benchmark |
+| 10Y Yield | ![Yield Chart](output/charts/YIELD.png) | Interest rate environment |
+| VIX | ![VIX Chart](output/charts/VIX.png) | Market volatility gauge |
+| S&P 500 | ![SPX Chart](output/charts/SPX.png) | Risk sentiment indicator |
+
+---
+
+### 📋 Daily Journal Sample
+
+The AI-generated daily journal includes comprehensive market analysis:
+
+```markdown
+
+## Date: December 01, 2025
+
+## 1. Market Context
+The macro environment is exhibiting classic "risk-on" characteristics with a 
+significant dovish tilt. The DXY's continued weakness (below 200SMA and in a 
+strong downtrend) and suppressed yields suggest the market is pricing in a 
+less restrictive Federal Reserve policy...
+
+## 2. Asset-Specific Analysis
+Gold has experienced a significant impulsive move, gaining +3.98% to reach $4254.9.
+Price is firmly above its 200-day simple moving average, a long-term bullish signal.
+
+**Trend Strength:** ADX reading of -1385.42, flagged as **CHOPPY/RANGING**
+**Momentum:** RSI at **72.36**, entering overbought territory
+
+## 4. Strategic Thesis
+**Bias:** **NEUTRAL**
+The primary thesis is that Gold's recent parabolic advance has pushed it into 
+a short-term overbought condition...
+
+## 6. Scenario Probability Matrix
+| Scenario | Price Target | Probability | Key Drivers |
+|----------|-------------|-------------|-------------|
+| Bull Case | $4450+ | 30% | DXY collapse continues, momentum traders pile in |
+| Base Case | $4180 - $4280 | 55% | Price consolidates, digesting recent gains |
+| Bear Case | <$4120 | 15% | Sharp reversal as overbought triggers profit-taking |
+```
+
+---
+
+### 📈 Catalyst Watchlist Sample
+
+Live market catalysts with HTML-formatted tables:
+
+```markdown
+# Live Catalyst Watchlist
+> Generated: 2025-12-01 | Gold: $4,254.90 | DXY: 103.00 | VIX: 17.00 | 10Y: 4.30%
+
+## Market Condition Summary
+
+| Indicator | Current | Status | Gold Impact |
+|-----------|---------|--------|-------------|
+| VIX (Volatility) | 17.00 | NORMAL | Neutral |
+| 10Y Yield | 4.30% | MODERATE | Neutral |
+| DXY (Dollar) | 103.00 | Moderate | Neutral |
+
+## Active Catalyst Matrix
+
+| # | Event / Catalyst | What to Monitor | Impact |
+|---|------------------|-----------------|--------|
+| 1 | **Fed Policy & Interest Rates** | FOMC decisions, rate guidance | Bullish: Rate cuts → Rally |
+| 2 | **U.S. Inflation Data** | CPI, PPI, PCE prints | Bullish: High inflation → Hedge demand |
+| 3 | **Employment & Labor Market** | NFP, unemployment, wages | Bullish: Weak jobs → Rate cuts |
+```
+
+---
+
+### 🏦 Institutional Matrix Sample
+
+Tracks institutional and central bank positioning:
+
+```markdown
+# Institutional Activity Matrix
+> Generated: 2025-12-01
+
+## Central Bank Activity
+
+| Central Bank | Recent Action | YTD Purchases | Gold Impact |
+|--------------|---------------|---------------|-------------|
+| 🇨🇳 PBOC (China) | +10t | +180t | Bullish - Largest buyer |
+| 🇷🇺 Bank of Russia | +5t | +60t | Bullish - Strategic reserves |
+| 🇹🇷 TCMB (Turkey) | +8t | +120t | Bullish - De-dollarization |
+| 🇮🇳 RBI (India) | +3t | +45t | Bullish - Diversification |
+
+## ETF Flow Tracking
+
+| ETF | Weekly Flow | Monthly Flow | Signal |
+|-----|-------------|--------------|--------|
+| GLD | +$250M | +$1.2B | Bullish - Institutional accumulation |
+| IAU | +$80M | +$350M | Bullish - Retail inflows |
+```
+
+---
+
+## Economic Calendar
+
+### 📅 Self-Maintaining Economic Calendar
+
+The system includes a comprehensive economic calendar that automatically updates with each run:
+
+**Features:**
+- ✅ Auto-updates each system run
+- ✅ December 2025 & January 2026 events pre-loaded
+- ✅ Covers all major catalysts:
+  - 🔴 **HIGH**: FOMC, NFP, CPI, Core CPI, PCE, GDP, ISM PMI
+  - 🟡 **MED**: ADP, JOLTS, PPI, Retail Sales, Housing
+  - 🟢 **LOW**: Beige Book, Fed Speeches, Trade Balance
+- ✅ Real forecasts and previous values
+- ✅ Gold impact analysis for each event
+
+### Calendar Sample Output
+
+```markdown
+# Gold Standard Economic Calendar
+> Generated: 2025-12-01 | Self-Maintaining | Auto-Updated Each Run
+
+## This Week's Events
+
+| Date | Time (ET) | Event | Impact | Forecast | Previous | Gold Impact |
+|------|-----------|-------|--------|----------|----------|-------------|
+| Tue Dec 02 | 10:00 | 🇺🇸 ISM Manufacturing PMI | 🔴 HIGH | 48.0 | 46.5 | Below 50 = Bullish |
+| Wed Dec 03 | 10:00 | 🇺🇸 JOLTS Job Openings | 🟡 MED | 7.5M | 7.4M | Falling = Bullish |
+| Thu Dec 04 | 10:00 | 🇺🇸 ISM Services PMI | 🔴 HIGH | 55.5 | 56.0 | Weakness = Bullish |
+| Fri Dec 05 | 08:30 | 🇺🇸 Unemployment Rate | 🔴 HIGH | 4.2% | 4.1% | Rising = Bullish |
+| Sat Dec 06 | 08:30 | 🇺🇸 Nonfarm Payrolls (NFP) | 🔴 HIGH | 200K | 12K | Weak = Bullish |
+
+## Key Upcoming Events
+
+### 🔴 HIGH IMPACT
+- **Dec 11**: CPI YoY - Hot = Bullish (inflation hedge)
+- **Dec 12**: ECB Rate Decision - Cut = EUR weak = Bearish short-term
+- **Dec 18**: FOMC Decision - Dovish = Bullish
+- **Jan 10**: NFP - Employment health check
+- **Jan 15**: CPI YoY - Inflation trajectory
+
+### Central Bank Meetings
+| Bank | Date | Current Rate | Expectation |
+|------|------|--------------|-------------|
+| 🇺🇸 Fed (FOMC) | Dec 18 | 4.50% | Hold/Cut 25bp |
+| 🇪🇺 ECB | Dec 12 | 3.25% | Cut 25bp |
+| 🇯🇵 BOJ | Dec 19 | 0.25% | Hold |
+| 🇬🇧 BOE | Dec 19 | 4.75% | Hold |
+```
+
+### Run the Calendar
+
+```powershell
+# Standalone calendar generation
+python scripts/economic_calendar.py
+
+# Or as part of daily analysis (auto-integrated)
+python run.py --daily
+```
+
+---
+
 ## Architecture
 
-The system is organized into three primary modules:
+The system is organized into modular components:
 
 ```
 +------------------+     +------------------+     +------------------+
@@ -197,28 +383,27 @@ The system is organized into three primary modules:
 | - Win/Loss track |<--->| - RSI, SMA, ATR  |<--->| - Gemini API     |
 | - Predictions    |     | - mplfinance     |     | - Bias extract   |
 +------------------+     +------------------+     +------------------+
+         |                       |                        |
+         v                       v                        v
++------------------+     +------------------+     +------------------+
+|   DBManager      |     |  LiveAnalyzer    |     | EconomicCalendar |
+|------------------|     |------------------|     |------------------|
+| - SQLite storage |     | - Catalyst watch |     | - Fed/ECB/BOJ    |
+| - Report queries |     | - Inst. matrix   |     | - NFP/CPI/GDP    |
+| - History access |     | - 1Y/3M analysis |     | - Gold impact    |
++------------------+     +------------------+     +------------------+
 ```
 
-### Cortex (Memory and Reflection)
+### Core Modules
 
-- Persists predictions, win/loss records, and streaks to `cortex_memory.json`
-- Grades past predictions against current prices
-- Thread-safe with file locking via `filelock`
-- Maintains history for performance tracking
-
-### QuantEngine (Data and Charts)
-
-- Fetches OHLC data via yfinance with primary/backup tickers
-- Computes RSI, SMA, ATR, ADX with safe fallbacks for Python 3.14+
-- Generates candlestick charts with mplfinance
-- Handles missing data gracefully with NaN protection
-
-### Strategist (AI Analysis)
-
-- Builds structured prompts from quant data and memory context
-- Queries Google Gemini for natural language analysis
-- Extracts trading bias (BULLISH/BEARISH/NEUTRAL)
-- Graceful fallback when AI is unavailable
+| Module | File | Purpose |
+|--------|------|---------|
+| **Cortex** | `main.py` | Memory persistence, prediction tracking, performance grading |
+| **QuantEngine** | `main.py` | Market data fetching, technical indicators, chart generation |
+| **Strategist** | `main.py` | AI prompt building, Gemini API integration, bias extraction |
+| **DBManager** | `db_manager.py` | SQLite database for report storage and historical queries |
+| **LiveAnalyzer** | `scripts/live_analysis.py` | Live analysis suite with catalyst/matrix/period reports |
+| **EconomicCalendar** | `scripts/economic_calendar.py` | Self-maintaining economic event calendar |
 
 ---
 
@@ -259,42 +444,53 @@ The system is organized into three primary modules:
 
 ```
 gold_standard/
-├── setup.ps1                 # Automated setup (Windows PowerShell)
-├── setup.sh                  # Automated setup (Unix/macOS/Linux)
 ├── run.py                    # Unified CLI entry point
 ├── gui.py                    # GUI dashboard application
 ├── main.py                   # Core pipeline (Cortex, QuantEngine, Strategist)
+├── db_manager.py             # SQLite database manager
 ├── cortex_memory.json        # Persistent memory (auto-created)
-├── cortex_memory.template.json
-├── .env                      # API key (create from .env.template)
-├── .env.template
 ├── requirements.txt          # Production dependencies
 ├── requirements-dev.txt      # Development dependencies
+│
 ├── scripts/
+│   ├── live_analysis.py      # Live analysis suite (catalysts, matrix, periods)
+│   ├── economic_calendar.py  # Self-maintaining economic calendar
+│   ├── pre_market.py         # Pre-market plan generator
 │   ├── split_reports.py      # Weekly/monthly/yearly report generator
 │   ├── init_cortex.py        # Initialize memory from template
 │   ├── get_gold_price.py     # Quick gold price check utility
 │   ├── list_gemini_models.py # List available Gemini models
 │   └── prevent_secrets.py    # Pre-commit secret detection hook
+│
+├── data/
+│   └── gold_standard.db      # SQLite database for report storage
+│
 ├── tests/
 │   ├── test_core.py          # Core pipeline tests
 │   ├── test_split_reports.py # Report generation tests
 │   └── test_ta_fallback.py   # Technical analysis fallback tests
+│
 └── output/
     ├── gold_standard.log     # Application logs
     ├── Journal_YYYY-MM-DD.md # Daily journal reports
+    │
     ├── charts/               # Generated chart images
     │   ├── GOLD.png
     │   ├── SILVER.png
     │   ├── DXY.png
     │   ├── YIELD.png
     │   ├── VIX.png
-    │   ├── SPX.png
-    │   └── *_WEEK.png        # Weekly interval charts
-    └── reports/              # Periodic reports
-        ├── weekly_rundown_YYYY-MM-DD.md
-        ├── monthly_yearly_report_YYYY-MM-DD.md
-        └── charts/           # Report-specific charts
+    │   └── SPX.png
+    │
+    └── reports/              # All generated reports
+        ├── catalysts_YYYY-MM-DD.md          # Catalyst watchlist
+        ├── inst_matrix_YYYY-MM-DD.md        # Institutional matrix
+        ├── 1y_YYYY-MM-DD.md                 # 1-year analysis
+        ├── 3m_YYYY-MM-DD.md                 # 3-month analysis
+        ├── economic_calendar_YYYY-MM-DD.md  # Economic calendar
+        ├── premarket_YYYY-MM-DD.md          # Pre-market plan
+        ├── weekly_rundown_YYYY-MM-DD.md     # Weekly summary
+        └── monthly_yearly_report_YYYY-MM-DD.md
 ```
 
 ---
@@ -305,8 +501,19 @@ gold_standard/
 
 ```powershell
 pip install -r requirements-dev.txt
-pytest
-pytest --cov=. --cov-report=html  # With coverage
+pytest tests/ -v
+pytest tests/ --cov=. --cov-report=html  # With coverage
+```
+
+**Test Results:**
+```
+tests/test_core.py::test_extract_bias_explicit PASSED
+tests/test_core.py::test_extract_bias_fallback_counts PASSED
+tests/test_split_reports.py::test_weekly_rundown_no_ai PASSED
+tests/test_split_reports.py::test_monthly_yearly_no_ai PASSED
+tests/test_ta_fallback.py::test_fetch_with_broken_ta PASSED
+
+================================ 5 passed ================================
 ```
 
 ### Pre-commit Hooks
@@ -319,9 +526,10 @@ pre-commit run --all-files
 ### Code Quality
 
 The project uses:
-- `pytest` for testing
+- `pytest` for testing (5/5 tests passing)
 - `pre-commit` for git hooks
 - Custom secret detection via `scripts/prevent_secrets.py`
+- GitHub Actions CI with Python 3.10, 3.11, 3.12
 
 ### Project Files
 
@@ -330,6 +538,10 @@ The project uses:
 | `run.py` | Unified CLI with interactive menu and command-line flags |
 | `gui.py` | Tkinter GUI dashboard with dark theme |
 | `main.py` | Core pipeline (Cortex, QuantEngine, Strategist classes) |
+| `db_manager.py` | SQLite database manager for report persistence |
+| `scripts/live_analysis.py` | Live analysis suite with HTML table formatting |
+| `scripts/economic_calendar.py` | Self-maintaining economic event calendar |
+| `scripts/pre_market.py` | Pre-market plan generator |
 | `scripts/split_reports.py` | Weekly/monthly/yearly report generator |
 | `scripts/init_cortex.py` | Initialize memory from template |
 | `scripts/get_gold_price.py` | Quick gold price utility |
@@ -349,6 +561,7 @@ The project uses:
 | `yfinance rate limit` | Wait a few minutes; the system uses backup tickers |
 | `Unicode errors in console` | Fixed in latest version; uses ASCII-only output |
 | `Charts not generating` | Check `output/charts/` folder; ensure matplotlib is installed |
+| `Database locked` | Close other instances; SQLite allows single writer |
 
 ### Logs
 
@@ -373,10 +586,12 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Documentation
 
-For detailed technical documentation, indicator explanations, and extension guidance, see [BOOKLET.md](BOOKLET.md).
+For detailed technical documentation, indicator explanations, and extension guidance, see [docs/GUIDE.md](docs/GUIDE.md).
 
 ---
 
 <p align="center">
-<strong>Gold Standard</strong> - Quantitative Analysis for Precious Metals
+<strong>Gold Standard</strong> — Precious Metals Intelligence Complex
+<br/>
+<em>Quantitative Analysis • AI Insights • Economic Calendar • Live Reports</em>
 </p>

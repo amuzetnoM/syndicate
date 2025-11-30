@@ -14,9 +14,12 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 4. [AI Prompt Engineering](#ai-prompt-engineering)
 5. [Data Pipeline and Safety](#data-pipeline-and-safety)
 6. [Report Types](#report-types)
-7. [Testing Guidelines](#testing-guidelines)
-8. [Deployment Notes](#deployment-notes)
-9. [Extension Patterns](#extension-patterns)
+7. [Live Analysis Suite](#live-analysis-suite)
+8. [Economic Calendar Module](#economic-calendar-module)
+9. [Database Manager](#database-manager)
+10. [Testing Guidelines](#testing-guidelines)
+11. [Deployment Notes](#deployment-notes)
+12. [Extension Patterns](#extension-patterns)
 
 ---
 
@@ -308,6 +311,147 @@ Same as monthly but with yearly aggregation focus.
 
 ---
 
+## Live Analysis Suite
+
+The `scripts/live_analysis.py` module provides real-time analysis reports with HTML-formatted tables.
+
+### LiveAnalyzer Class
+
+```python
+from scripts.live_analysis import LiveAnalyzer
+
+analyzer = LiveAnalyzer()
+results = analyzer.run_full_analysis()
+```
+
+### Report Types
+
+| Report | Method | Description |
+|--------|--------|-------------|
+| Catalyst Watchlist | `generate_catalyst_watchlist()` | Active market catalysts with gold impact |
+| Institutional Matrix | `generate_institutional_matrix()` | Central bank activity, ETF flows |
+| 1Y Analysis | `generate_1y_analysis()` | One-year trend and pattern analysis |
+| 3M Analysis | `generate_3m_analysis()` | Three-month tactical view |
+
+### HTML Table Format
+
+All tables use consistent HTML formatting:
+
+```html
+<table>
+<thead>
+<tr>
+<th>Column 1</th>
+<th>Column 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Value 1</td>
+<td>Value 2</td>
+</tr>
+</tbody>
+</table>
+```
+
+---
+
+## Economic Calendar Module
+
+The `scripts/economic_calendar.py` module provides a self-maintaining economic calendar system.
+
+### Key Classes
+
+```python
+from enum import Enum
+
+class EventImpact(Enum):
+    HIGH = "HIGH"   # 🔴 FOMC, NFP, CPI, GDP
+    MED = "MED"     # 🟡 ADP, JOLTS, PPI
+    LOW = "LOW"     # 🟢 Beige Book, Fed Speeches
+```
+
+### EconomicCalendar Class
+
+```python
+from scripts.economic_calendar import EconomicCalendar
+
+calendar = EconomicCalendar()
+report = calendar.generate_full_calendar_report()
+```
+
+### Event Structure
+
+Each event includes:
+
+| Field | Description |
+|-------|-------------|
+| `date` | Event datetime |
+| `name` | Event name (e.g., "Nonfarm Payrolls") |
+| `impact` | EventImpact enum (HIGH/MED/LOW) |
+| `forecast` | Expected value |
+| `previous` | Prior reading |
+| `gold_impact` | Directional gold analysis |
+| `country` | Country flag emoji |
+
+### Pre-loaded Events
+
+The calendar comes with December 2025 and January 2026 events pre-loaded:
+
+**HIGH Impact Events:**
+- FOMC Rate Decision (Dec 18, Jan 29)
+- Nonfarm Payrolls (Dec 6, Jan 10)
+- CPI YoY/Core CPI (Dec 11, Jan 15)
+- GDP (Dec 19, Jan 30)
+- ISM Manufacturing/Services PMI
+
+**Central Bank Meetings:**
+- Fed (FOMC): Dec 18, Jan 29
+- ECB: Dec 12, Jan 30
+- BOJ: Dec 19, Jan 24
+- BOE: Dec 19, Feb 6
+
+---
+
+## Database Manager
+
+The `db_manager.py` module provides SQLite persistence for all reports.
+
+### DBManager Class
+
+```python
+from db_manager import DBManager
+
+db = DBManager()
+
+# Save a report
+db.save_journal(date="2025-12-01", content="...", bias="BULLISH")
+
+# Query historical reports
+reports = db.get_journals(limit=30)
+```
+
+### Schema
+
+```sql
+CREATE TABLE journals (
+    id INTEGER PRIMARY KEY,
+    date TEXT UNIQUE,
+    content TEXT,
+    bias TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Benefits
+
+- Persistent storage across runs
+- Historical analysis queries
+- Performance tracking over time
+- Data export capabilities
+
+---
+
 ## Testing Guidelines
 
 ### Unit Tests
@@ -355,7 +499,7 @@ Keep fixtures in `tests/data/`:
 
 ### Environment
 
-- Python 3.11 recommended for pandas_ta/numba compatibility
+- Python 3.10+ recommended
 - Python 3.14 supported with fallback indicators
 
 ### Container Deployment
@@ -413,9 +557,30 @@ df['MACD'] = ta.macd(df['Close'])['MACD_12_26_9']
 
 ### Custom Report Types
 
-1. Create new function in `split_reports.py`
-2. Add CLI mode option
+1. Create new function in `split_reports.py` or `live_analysis.py`
+2. Add CLI mode option in `run.py`
 3. Add to GUI mode selector
+
+### Extending Economic Calendar
+
+Add new events in `economic_calendar.py`:
+
+```python
+def get_february_2026_events(self) -> List[EconomicEvent]:
+    events = [
+        EconomicEvent(
+            datetime(2026, 2, 4, 8, 30),
+            "Nonfarm Payrolls (NFP)",
+            EventImpact.HIGH,
+            "220K",
+            "180K",
+            "Weak = Bullish | Strong = Bearish",
+            "🇺🇸"
+        ),
+        # ... more events
+    ]
+    return events
+```
 
 ---
 
@@ -426,6 +591,10 @@ df['MACD'] = ta.macd(df['Close'])['MACD_12_26_9']
 | `run.py` | Unified CLI entry point |
 | `gui.py` | GUI dashboard application |
 | `main.py` | Core pipeline and modules |
+| `db_manager.py` | SQLite database manager |
+| `scripts/live_analysis.py` | Live analysis suite |
+| `scripts/economic_calendar.py` | Economic calendar system |
+| `scripts/pre_market.py` | Pre-market plan generator |
 | `scripts/split_reports.py` | Specialized report generator |
 | `scripts/init_cortex.py` | Memory initialization |
 | `scripts/prevent_secrets.py` | Pre-commit secret detection |

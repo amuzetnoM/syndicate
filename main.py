@@ -1107,7 +1107,6 @@ Current Regime Detection: {regime} (ADX: {gold_adx})
 
 Generate a comprehensive trading journal following this EXACT structure:
 
-# Gold Standard Quant Report
 ## Date: {datetime.date.today().strftime('%B %d, %Y')}
 
 ---
@@ -1263,7 +1262,7 @@ def execute(config: Config, logger: logging.Logger, model: Optional[Any] = None,
 
     if no_ai:
         logger.info("No-AI mode enabled; skipping AI analysis")
-        report = "# Gold Standard Quant Report\n\n[NO AI MODE] - AI analysis skipped by CLI option."
+        report = "[NO AI MODE] - AI analysis skipped by CLI option."
         new_bias = "NEUTRAL"
     else:
         strat = Strategist(config, logger, data, quant.news, memory_context, model=model, cortex=cortex)
