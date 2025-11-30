@@ -275,21 +275,21 @@ fun GoldChart(
                 // X Axis
                 xAxis.apply {
                     position = XAxis.XAxisPosition.BOTTOM
-                    textColor = this@apply.textColor
+                    this.textColor = textColor
                     setDrawGridLines(false)
                     granularity = 1f
                 }
                 
                 // Y Axis (Left)
                 axisLeft.apply {
-                    textColor = this@apply.textColor
+                    this.textColor = textColor
                     setDrawGridLines(true)
                     gridColor = AndroidColor.GRAY
                 }
                 
                 // Y Axis (Right) - for RSI
                 axisRight.apply {
-                    textColor = this@apply.textColor
+                    this.textColor = textColor
                     setDrawGridLines(false)
                     axisMinimum = 0f
                     axisMaximum = 100f
