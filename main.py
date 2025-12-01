@@ -761,12 +761,29 @@ class QuantEngine:
 
                 try:
                     sma200 = safe_indicator_series('SMA_200', ta.sma, df['Close'], length=200)
-                except Exception:
-                    sma200 = None
+                    if sma200 is None:
+                        # fallback SMA using pandas rolling mean
+                        sma200 = df['Close'].rolling(window=200, min_periods=1).mean()
+                except Exception as e:
+                    self.logger.warning(f"SMA_200 computation failed for {ticker}: {e}")
+                    # fallback SMA using pandas rolling mean
+                    try:
+                        sma200 = df['Close'].rolling(window=200, min_periods=1).mean()
+                    except Exception:
+                        sma200 = None
+
                 try:
                     sma50 = safe_indicator_series('SMA_50', ta.sma, df['Close'], length=50)
-                except Exception:
-                    sma50 = None
+                    if sma50 is None:
+                        # fallback SMA using pandas rolling mean
+                        sma50 = df['Close'].rolling(window=50, min_periods=1).mean()
+                except Exception as e:
+                    self.logger.warning(f"SMA_50 computation failed for {ticker}: {e}")
+                    # fallback SMA using pandas rolling mean
+                    try:
+                        sma50 = df['Close'].rolling(window=50, min_periods=1).mean()
+                    except Exception:
+                        sma50 = None
 
                 try:
                     atr_series = safe_indicator_series('ATR', ta.atr, df['High'], df['Low'], df['Close'], length=14)

@@ -15,8 +15,9 @@ def test_fetch_with_working_ta():
     """Test that _fetch works correctly with the real pandas_ta library.
     
     This test verifies that when pandas_ta is available and functioning,
-    the indicators (RSI, SMA, ATR, ADX) are computed correctly without
-    falling back to the simplified implementations.
+    all core indicators (RSI, SMA, ATR, ADX) are computed correctly.
+    The implementation has fallbacks for each indicator, so they should
+    always be present regardless of pandas_ta availability.
     """
     cfg = Config()
     logger = setup_logging(cfg)
@@ -33,29 +34,40 @@ def test_fetch_with_working_ta():
     assert 'High' in df.columns
     assert 'Low' in df.columns
     
-    # Verify TA indicators were computed
-    # RSI should be present
+    # Verify ALL TA indicators are computed (with fallbacks, they should always be present)
+    
+    # RSI should always be present (only needs 14 periods)
     rsi_cols = [c for c in df.columns if 'RSI' in str(c).upper()]
-    assert len(rsi_cols) > 0, "RSI indicator should be computed"
+    assert len(rsi_cols) > 0, f"RSI indicator should be computed, got columns: {list(df.columns)}"
     
-    # SMA should be present (we compute SMA_20 and SMA_50)
-    sma_cols = [c for c in df.columns if 'SMA' in str(c).upper()]
-    assert len(sma_cols) >= 2, "SMA indicators should be computed"
+    # SMA_50 and SMA_200 should be present (with fallback to pandas rolling)
+    assert 'SMA_50' in df.columns, f"SMA_50 should be computed, got columns: {list(df.columns)}"
+    assert 'SMA_200' in df.columns, f"SMA_200 should be computed, got columns: {list(df.columns)}"
     
-    # ATR should be present
+    # ATR should always be present (only needs 14 periods)
     atr_cols = [c for c in df.columns if 'ATR' in str(c).upper()]
-    assert len(atr_cols) > 0, "ATR indicator should be computed"
+    assert len(atr_cols) > 0, f"ATR indicator should be computed, got columns: {list(df.columns)}"
     
-    # ADX should be present
+    # ADX should be present (ADX_14 from the code)
     adx_cols = [c for c in df.columns if 'ADX' in str(c).upper()]
-    assert len(adx_cols) > 0, "ADX indicator should be computed"
+    assert len(adx_cols) > 0, f"ADX indicator should be computed, got columns: {list(df.columns)}"
     
-    # Verify indicators have reasonable values (not all NaN)
-    for col_list, name in [(rsi_cols, 'RSI'), (sma_cols, 'SMA'), 
-                            (atr_cols, 'ATR'), (adx_cols, 'ADX')]:
-        col = col_list[0]
-        non_null = df[col].dropna()
-        assert len(non_null) > 0, f"{name} should have non-null values"
+    # Verify all indicators have reasonable values (not all NaN)
+    for col, name in [('RSI', 'RSI'), ('SMA_50', 'SMA_50'), ('SMA_200', 'SMA_200'), 
+                      ('ATR', 'ATR'), ('ADX_14', 'ADX')]:
+        if col in df.columns:
+            non_null = df[col].dropna()
+            assert len(non_null) > 0, f"{name} should have non-null values"
+    
+    # Verify SMA values are reasonable (between min and max Close prices)
+    close_min, close_max = df['Close'].min(), df['Close'].max()
+    sma50_values = df['SMA_50'].dropna()
+    sma200_values = df['SMA_200'].dropna()
+    
+    assert sma50_values.min() >= close_min * 0.5, "SMA_50 values should be reasonable"
+    assert sma50_values.max() <= close_max * 1.5, "SMA_50 values should be reasonable"
+    assert sma200_values.min() >= close_min * 0.5, "SMA_200 values should be reasonable"
+    assert sma200_values.max() <= close_max * 1.5, "SMA_200 values should be reasonable"
 
 
 def test_fetch_with_broken_ta(monkeypatch):
