@@ -454,6 +454,54 @@ CREATE TABLE journals (
 
 ## Testing Guidelines
 
+### Test Suite Overview
+
+The project includes **33 tests** across 4 test files:
+
+| File | Tests | Description |
+|------|-------|-------------|
+| `test_core.py` | 2 | Bias extraction logic |
+| `test_gemini.py` | 27 | Gemini AI integration (includes 4 live API tests) |
+| `test_split_reports.py` | 2 | Report generation |
+| `test_ta_fallback.py` | 2 | Technical analysis fallback |
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=. --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_gemini.py -v
+
+# Run live API tests (requires GEMINI_API_KEY in .env)
+pytest tests/test_gemini.py::TestGeminiLiveConnection -v
+```
+
+### Live API Tests
+
+Tests in `TestGeminiLiveConnection` require a valid `GEMINI_API_KEY`:
+
+```python
+class TestGeminiLiveConnection:
+    def test_live_api_configuration(self, api_key):
+        """Test that Gemini API can be configured with real key."""
+        
+    def test_live_model_initialization(self, api_key):
+        """Test that GenerativeModel can be instantiated."""
+        
+    def test_live_simple_generation(self, api_key):
+        """Test a simple content generation to verify API connectivity."""
+        
+    def test_live_strategist_analysis(self, api_key):
+        """Test full Strategist analysis with live API."""
+```
+
+These tests load credentials from `.env` using `python-dotenv`.
+
 ### Unit Tests
 
 Test individual components in isolation:

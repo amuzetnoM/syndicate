@@ -23,7 +23,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 <!-- CI Status -->
 [![CI](https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=CI)](https://github.com/amuzetnoM/gold_standard/actions/workflows/python-ci.yml)
-[![Tests](https://img.shields.io/badge/tests-29%20passing-success?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/amuzetnoM/gold_standard/actions)
+[![Tests](https://img.shields.io/badge/tests-33%20passing-success?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/amuzetnoM/gold_standard/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/amuzetnoM/gold_standard?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/amuzetnoM/gold_standard)
 
 <!-- Tech Stack -->
@@ -61,6 +61,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | Feature | Description |
 |---------|-------------|
 | **Autonomous Daemon** | Runs continuously, executing analysis every 4 hours (configurable) |
+| **Auto Venv Activation** | Scripts automatically detect and activate virtual environment |
 | **Multi-Asset Analysis** | Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, S&P 500 |
 | **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration |
 | **Intermarket Correlations** | Gold/Silver ratio analysis and divergence detection |
