@@ -19,11 +19,24 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 ---
 
-![Python](https://img.shields.io/badge/python-3.10--3.13-blue?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-5%2F5%20passing-brightgreen?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=flat-square)
-![Status](https://img.shields.io/badge/status-active-success?style=flat-square)
+<p align="center">
+
+<!-- CI Status -->
+[![CI](https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=CI)](https://github.com/amuzetnoM/gold_standard/actions/workflows/python-ci.yml)
+[![Tests](https://img.shields.io/badge/tests-29%20passing-success?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/amuzetnoM/gold_standard/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/amuzetnoM/gold_standard?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/amuzetnoM/gold_standard)
+
+<!-- Tech Stack -->
+[![Python](https://img.shields.io/badge/python-3.10--3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Gemini](https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+
+<!-- Meta -->
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
+
+</p>
 
 ---
 
@@ -510,7 +523,8 @@ gold_standard/
 │   └── gold_standard.db      # SQLite database for report storage
 │
 ├── tests/
-│   ├── test_core.py          # Core pipeline tests
+│   ├── test_core.py          # Core pipeline tests (bias extraction)
+│   ├── test_gemini.py        # Gemini AI integration tests
 │   ├── test_split_reports.py # Report generation tests
 │   └── test_ta_fallback.py   # Technical analysis fallback tests
 │
@@ -551,13 +565,12 @@ pytest tests/ --cov=. --cov-report=html  # With coverage
 
 **Test Results:**
 ```
-tests/test_core.py::test_extract_bias_explicit PASSED
-tests/test_core.py::test_extract_bias_fallback_counts PASSED
-tests/test_split_reports.py::test_weekly_rundown_no_ai PASSED
-tests/test_split_reports.py::test_monthly_yearly_no_ai PASSED
-tests/test_ta_fallback.py::test_fetch_with_broken_ta PASSED
+tests/test_core.py (2 tests)                    PASSED
+tests/test_gemini.py (23 tests)                 PASSED
+tests/test_split_reports.py (2 tests)           PASSED
+tests/test_ta_fallback.py (2 tests)             PASSED
 
-================================ 5 passed ================================
+================================ 29 passed ================================
 ```
 
 ### Pre-commit Hooks
@@ -570,10 +583,12 @@ pre-commit run --all-files
 ### Code Quality
 
 The project uses:
-- `pytest` for testing (5/5 tests passing)
-- `pre-commit` for git hooks
-- Custom secret detection via `scripts/prevent_secrets.py`
-- GitHub Actions CI with Python 3.10, 3.11, 3.12
+- **Ruff** - Fast Python linter and formatter
+- **Bandit** - Security vulnerability scanner
+- **pytest** - Testing framework (29 tests passing)
+- **pre-commit** - Git hooks for code quality
+- **detect-secrets** - Prevent secrets from being committed
+- **GitHub Actions CI** - Lint, test, and integration checks
 
 ### Project Files
 
