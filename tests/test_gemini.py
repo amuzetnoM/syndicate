@@ -19,6 +19,10 @@ import pytest
 root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root))
 
+# Load .env file for API keys
+from dotenv import load_dotenv
+load_dotenv(root / ".env")
+
 from main import Config, setup_logging, Strategist
 
 
