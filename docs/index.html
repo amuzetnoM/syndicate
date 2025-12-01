@@ -749,6 +749,7 @@
                 <li><a href="#features">Features</a></li>
                 <li><a href="#quickstart">Quick Start</a></li>
                 <li><a href="#charts">Charts</a></li>
+                <li><a href="#samples">Samples</a></li>
                 <li><a href="#architecture">Architecture</a></li>
                 <li><a href="#docs">Documentation</a></li>
             </ul>
@@ -775,7 +776,7 @@
             </div>
             <div class="badges">
                 <img src="https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=CI" alt="CI Status">
-                <img src="https://img.shields.io/badge/tests-29%20passing-success?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests">
+                <img src="https://img.shields.io/badge/tests-33%20passing-success?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests">
                 <img src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
                 <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
             </div>
@@ -790,7 +791,7 @@
                 <div class="stat-label">Assets Tracked</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">29</div>
+                <div class="stat-value">33</div>
                 <div class="stat-label">Tests Passing</div>
             </div>
             <div class="stat-card">
@@ -852,6 +853,11 @@
                 <div class="feature-icon">📱</div>
                 <h3>Dual Interface</h3>
                 <p>Command-line CLI for power users and graphical GUI dashboard for visual monitoring.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Auto Venv Activation</h3>
+                <p>Scripts automatically detect and activate the virtual environment—just run directly with Python.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔌</div>
@@ -979,6 +985,105 @@ chmod +x scripts/setup.sh && ./scripts/setup.sh
                     <span>Risk Sentiment</span>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Sample Outputs -->
+    <section id="samples">
+        <div class="section-header">
+            <span class="section-label">Sample Outputs</span>
+            <h2 class="section-title">AI-Generated Reports</h2>
+            <p class="section-desc">See what Gold Standard produces—comprehensive market analysis with actionable insights.</p>
+        </div>
+
+        <!-- Daily Journal Sample -->
+        <div class="code-section">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">Daily Journal — December 01, 2025</span>
+            </div>
+            <pre><code><span class="code-comment">## 1. Market Context</span>
+The macro environment is exhibiting classic "risk-on" characteristics with a 
+significant dovish tilt. The DXY's continued weakness (below 200SMA and in a 
+strong downtrend) and suppressed yields suggest the market is pricing in a 
+less restrictive Federal Reserve policy...
+
+<span class="code-comment">## 2. Asset-Specific Analysis</span>
+<span class="code-keyword">Gold</span> has experienced a significant impulsive move, gaining <span class="code-string">+3.98%</span> to reach <span class="code-string">$4254.9</span>.
+Price is firmly above its 200-day simple moving average, a long-term bullish signal.
+
+<span class="code-keyword">Trend Strength:</span> ADX reading of -1385.42, flagged as <span class="code-string">CHOPPY/RANGING</span>
+<span class="code-keyword">Momentum:</span> RSI at <span class="code-string">72.36</span>, entering overbought territory
+
+<span class="code-comment">## 4. Strategic Thesis</span>
+<span class="code-keyword">Bias:</span> <span class="code-string">NEUTRAL</span>
+The primary thesis is that Gold's recent parabolic advance has pushed it into 
+a short-term overbought condition...
+
+<span class="code-comment">## 6. Scenario Probability Matrix</span>
+| Scenario   | Price Target    | Probability | Key Drivers                              |
+|------------|-----------------|-------------|------------------------------------------|
+| Bull Case  | $4450+          | 30%         | DXY collapse continues                   |
+| Base Case  | $4180 - $4280   | 55%         | Price consolidates                       |
+| Bear Case  | &lt;$4120        | 15%         | Sharp reversal, profit-taking            |</code></pre>
+        </div>
+
+        <!-- Catalyst Watchlist Sample -->
+        <div class="code-section" style="margin-top: 2rem;">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">Live Catalyst Watchlist</span>
+            </div>
+            <pre><code><span class="code-comment"># Live Catalyst Watchlist</span>
+<span class="code-keyword">&gt; Generated:</span> 2025-12-01 | <span class="code-string">Gold: $4,254.90</span> | DXY: 103.00 | VIX: 17.00 | 10Y: 4.30%
+
+<span class="code-comment">## Market Condition Summary</span>
+
+| Indicator        | Current | Status   | Gold Impact |
+|------------------|---------|----------|-------------|
+| VIX (Volatility) | 17.00   | NORMAL   | Neutral     |
+| 10Y Yield        | 4.30%   | MODERATE | Neutral     |
+| DXY (Dollar)     | 103.00  | Moderate | Neutral     |
+
+<span class="code-comment">## Active Catalyst Matrix</span>
+
+| # | Event / Catalyst               | What to Monitor            | Impact                          |
+|---|--------------------------------|----------------------------|---------------------------------|
+| 1 | <span class="code-keyword">Fed Policy & Interest Rates</span>   | FOMC decisions, guidance   | <span class="code-string">Bullish: Rate cuts → Rally</span>      |
+| 2 | <span class="code-keyword">U.S. Inflation Data</span>           | CPI, PPI, PCE prints       | <span class="code-string">Bullish: High inflation → Hedge</span> |
+| 3 | <span class="code-keyword">Employment & Labor Market</span>     | NFP, unemployment, wages   | <span class="code-string">Bullish: Weak jobs → Rate cuts</span>  |</code></pre>
+        </div>
+
+        <!-- Institutional Matrix Sample -->
+        <div class="code-section" style="margin-top: 2rem;">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">Institutional Activity Matrix</span>
+            </div>
+            <pre><code><span class="code-comment"># Institutional Activity Matrix</span>
+<span class="code-keyword">&gt; Generated:</span> 2025-12-01
+
+<span class="code-comment">## Central Bank Activity</span>
+
+| Central Bank        | Recent Action | YTD Purchases | Gold Impact                |
+|---------------------|---------------|---------------|----------------------------|
+| 🇨🇳 PBOC (China)     | +10t          | +180t         | <span class="code-string">Bullish - Largest buyer</span>    |
+| 🇷🇺 Bank of Russia   | +5t           | +60t          | <span class="code-string">Bullish - Strategic reserves</span>|
+| 🇹🇷 TCMB (Turkey)    | +8t           | +120t         | <span class="code-string">Bullish - De-dollarization</span> |
+| 🇮🇳 RBI (India)      | +3t           | +45t          | <span class="code-string">Bullish - Diversification</span>  |
+
+<span class="code-comment">## ETF Flow Tracking</span>
+
+| ETF  | Weekly Flow | Monthly Flow | Signal                             |
+|------|-------------|--------------|-------------------------------------|
+| GLD  | +$250M      | +$1.2B       | <span class="code-string">Bullish - Institutional accumulation</span> |
+| IAU  | +$80M       | +$350M       | <span class="code-string">Bullish - Retail inflows</span>            |</code></pre>
         </div>
     </section>
 

@@ -127,12 +127,22 @@ pytest tests/ -k "test_fetch" -v
 
 ### Test Categories
 
-| Test File | Purpose |
-|-----------|---------|
-| `test_core.py` | Core pipeline and bias extraction |
-| `test_gemini.py` | AI integration and API handling |
-| `test_ta_fallback.py` | Technical analysis with fallbacks |
-| `test_split_reports.py` | Report generation |
+The project includes **33 tests** across 4 test files:
+
+| Test File | Tests | Purpose |
+|-----------|-------|---------|
+| `test_core.py` | 2 | Core pipeline and bias extraction |
+| `test_gemini.py` | 27 | AI integration and API handling (includes 4 live API tests) |
+| `test_ta_fallback.py` | 2 | Technical analysis with fallbacks |
+| `test_split_reports.py` | 2 | Report generation |
+
+### Live API Tests
+
+Tests in `TestGeminiLiveConnection` require a valid `GEMINI_API_KEY` in `.env`:
+```bash
+# Run live Gemini tests
+pytest tests/test_gemini.py::TestGeminiLiveConnection -v
+```
 
 ### Writing Tests
 
