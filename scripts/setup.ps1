@@ -1,5 +1,7 @@
 # Gold Standard - Automated Setup Script (Windows PowerShell)
 # Run with: .\setup.ps1
+# Requires: Python 3.10-3.13 (3.14 not supported due to numba)
+# Auto-installs Python 3.12 via winget if needed
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Yellow
@@ -7,43 +9,160 @@ Write-Host "   Gold Standard - Automated Setup" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Yellow
 Write-Host ""
 
-# Check Python installation
-Write-Host "[1/5] Checking Python installation..." -ForegroundColor Cyan
-try {
-    $pythonVersion = python --version 2>&1
-    Write-Host "      Found: $pythonVersion" -ForegroundColor Green
-} catch {
-    Write-Host "      ERROR: Python not found. Please install Python 3.11+ first." -ForegroundColor Red
-    exit 1
+# Function to check if winget is available
+function Test-Winget {
+    try {
+        $null = Get-Command winget -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
 }
 
-# Create virtual environment
-Write-Host "[2/5] Creating virtual environment..." -ForegroundColor Cyan
-if (Test-Path ".venv") {
-    Write-Host "      Virtual environment already exists. Skipping creation." -ForegroundColor Yellow
-} else {
-    python -m venv .venv
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "      Created .venv successfully." -ForegroundColor Green
+# Function to install Python 3.12 via winget
+function Install-Python312 {
+    Write-Host "      Installing Python 3.12 via winget..." -ForegroundColor Cyan
+    try {
+        winget install Python.Python.3.12 --accept-package-agreements --accept-source-agreements
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "      Python 3.12 installed successfully." -ForegroundColor Green
+            Write-Host "      NOTE: You may need to restart your terminal for PATH changes." -ForegroundColor Yellow
+            # Refresh PATH for current session
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            return $true
+        } else {
+            Write-Host "      WARNING: winget install returned non-zero exit code." -ForegroundColor Yellow
+            return $false
+        }
+    } catch {
+        Write-Host "      ERROR: Failed to install Python via winget." -ForegroundColor Red
+        return $false
+    }
+}
+
+# Function to get the best Python command available (prefer 3.12)
+function Get-PythonCommand {
+    # First, try py launcher with 3.12
+    try {
+        $ver = py -3.12 --version 2>&1
+        if ($ver -match "Python 3\.12") {
+            return "py -3.12"
+        }
+    } catch {}
+    
+    # Try py launcher with 3.11
+    try {
+        $ver = py -3.11 --version 2>&1
+        if ($ver -match "Python 3\.11") {
+            return "py -3.11"
+        }
+    } catch {}
+    
+    # Try py launcher with 3.10
+    try {
+        $ver = py -3.10 --version 2>&1
+        if ($ver -match "Python 3\.10") {
+            return "py -3.10"
+        }
+    } catch {}
+    
+    # Try py launcher with 3.13
+    try {
+        $ver = py -3.13 --version 2>&1
+        if ($ver -match "Python 3\.13") {
+            return "py -3.13"
+        }
+    } catch {}
+    
+    # Try default python
+    try {
+        $ver = python --version 2>&1
+        if ($ver -match "Python 3\.1[0-3]") {
+            return "python"
+        }
+    } catch {}
+    
+    return $null
+}
+
+# Check Python installation and version
+Write-Host "[1/6] Checking Python installation..." -ForegroundColor Cyan
+
+$pythonCmd = Get-PythonCommand
+
+if ($null -eq $pythonCmd) {
+    Write-Host "      No compatible Python (3.10-3.13) found." -ForegroundColor Yellow
+    
+    # Try to auto-install Python 3.12
+    if (Test-Winget) {
+        Write-Host "      Attempting automatic installation..." -ForegroundColor Cyan
+        if (Install-Python312) {
+            # Retry finding Python after install
+            Start-Sleep -Seconds 2
+            $pythonCmd = Get-PythonCommand
+            if ($null -eq $pythonCmd) {
+                Write-Host "      Please restart your terminal and run this script again." -ForegroundColor Yellow
+                exit 0
+            }
+        } else {
+            Write-Host "      ERROR: Automatic installation failed." -ForegroundColor Red
+            Write-Host "      Please install Python 3.12 manually:" -ForegroundColor Yellow
+            Write-Host "        winget install Python.Python.3.12" -ForegroundColor Gray
+            Write-Host "        OR download from: https://www.python.org/downloads/" -ForegroundColor Gray
+            exit 1
+        }
     } else {
-        Write-Host "      ERROR: Failed to create virtual environment." -ForegroundColor Red
+        Write-Host "      ERROR: winget not available for automatic install." -ForegroundColor Red
+        Write-Host "      Please install Python 3.12 manually:" -ForegroundColor Yellow
+        Write-Host "        Download from: https://www.python.org/downloads/" -ForegroundColor Gray
+        Write-Host "      After installing, run this script again." -ForegroundColor Yellow
         exit 1
     }
 }
 
+# Display Python version
+$pythonVersion = Invoke-Expression "$pythonCmd --version" 2>&1
+Write-Host "      Using: $pythonVersion ($pythonCmd)" -ForegroundColor Green
+
+# Create virtual environment (prefer venv312 for numba support)
+Write-Host "[2/6] Creating virtual environment..." -ForegroundColor Cyan
+$venvDir = "venv312"
+if (Test-Path $venvDir) {
+    Write-Host "      Virtual environment '$venvDir' already exists. Skipping creation." -ForegroundColor Yellow
+} else {
+    # Also check for legacy .venv
+    if (Test-Path ".venv") {
+        Write-Host "      Found legacy .venv - recommend migrating to venv312 for numba support." -ForegroundColor Yellow
+        $venvDir = ".venv"
+    } else {
+        Invoke-Expression "$pythonCmd -m venv $venvDir"
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "      Created $venvDir successfully." -ForegroundColor Green
+        } else {
+            Write-Host "      ERROR: Failed to create virtual environment." -ForegroundColor Red
+            exit 1
+        }
+    }
+}
+
 # Activate virtual environment
-Write-Host "[3/5] Activating virtual environment..." -ForegroundColor Cyan
+Write-Host "[3/6] Activating virtual environment..." -ForegroundColor Cyan
 try {
-    & .\.venv\Scripts\Activate.ps1
-    Write-Host "      Activated .venv" -ForegroundColor Green
+    & ".\$venvDir\Scripts\Activate.ps1"
+    Write-Host "      Activated $venvDir" -ForegroundColor Green
 } catch {
     Write-Host "      ERROR: Failed to activate virtual environment." -ForegroundColor Red
     Write-Host "      Try running: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Yellow
     exit 1
 }
 
+# Upgrade pip first
+Write-Host "[4/6] Upgrading pip..." -ForegroundColor Cyan
+python -m pip install --upgrade pip --quiet
+Write-Host "      pip upgraded" -ForegroundColor Green
+
 # Install dependencies
-Write-Host "[4/5] Installing production dependencies..." -ForegroundColor Cyan
+Write-Host "[5/6] Installing production dependencies..." -ForegroundColor Cyan
 pip install -r requirements.txt --quiet
 if ($LASTEXITCODE -eq 0) {
     Write-Host "      Installed requirements.txt" -ForegroundColor Green
@@ -52,7 +171,7 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 # Install dev dependencies (optional)
-Write-Host "[5/5] Installing development dependencies..." -ForegroundColor Cyan
+Write-Host "[6/6] Installing development dependencies..." -ForegroundColor Cyan
 if (Test-Path "requirements-dev.txt") {
     pip install -r requirements-dev.txt --quiet
     if ($LASTEXITCODE -eq 0) {
@@ -104,9 +223,9 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Edit .env and add your GEMINI_API_KEY"
 Write-Host "  2. Run: python run.py --mode daily --no-ai  (test without AI)"
-Write-Host "  3. Run: python run.py  (interactive mode)"
+Write-Host "  3. Run: python run.py  (daemon mode, runs every 4 hours)"
 Write-Host "  4. Run: python gui.py  (GUI dashboard)"
 Write-Host ""
-Write-Host "Virtual environment is now active." -ForegroundColor Green
+Write-Host "Virtual environment '$venvDir' is now active." -ForegroundColor Green
 Write-Host "To deactivate later, run: deactivate" -ForegroundColor Gray
 Write-Host ""

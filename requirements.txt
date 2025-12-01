@@ -1,6 +1,7 @@
 # =============================================================================
 # Gold Standard - Production Dependencies
 # =============================================================================
+# Python Version: 3.10 - 3.13 (3.14+ uses fallback TA due to numba incompatibility)
 # Install: pip install -r requirements.txt
 # Update:  pip install --upgrade -r requirements.txt
 # =============================================================================
@@ -10,7 +11,7 @@
 # -----------------------------------------------------------------------------
 yfinance>=0.2.66              # Yahoo Finance market data API
 pandas>=2.0.0                 # Data manipulation and analysis
-pandas_ta>=0.4.71b0           # Technical analysis indicators (optional on 3.14+)
+pandas_ta>=0.4.71b0           # Technical analysis indicators (requires numba)
 mplfinance>=0.12.10b0         # Financial charting library
 
 # -----------------------------------------------------------------------------

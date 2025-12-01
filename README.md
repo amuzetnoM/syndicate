@@ -19,7 +19,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 ---
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
+![Python](https://img.shields.io/badge/python-3.10--3.13-blue?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-5%2F5%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=flat-square)
@@ -47,8 +47,9 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 | Feature | Description |
 |---------|-------------|
+| **Autonomous Daemon** | Runs continuously, executing analysis every 4 hours (configurable) |
 | **Multi-Asset Analysis** | Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, S&P 500 |
-| **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta and fallback implementations |
+| **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration |
 | **Intermarket Correlations** | Gold/Silver ratio analysis and divergence detection |
 | **AI-Powered Insights** | Google Gemini integration for natural-language analysis |
 | **Economic Calendar** | Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis |
@@ -64,10 +65,19 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 ## Quick Start
 
+### Requirements
+
+- **Python 3.10 - 3.13** (Python 3.14+ not supported due to numba dependency)
+- Windows, macOS, or Linux
+- Google Gemini API key (free tier available)
+
 ### Automated Setup (Recommended)
 
 **Windows PowerShell:**
 ```powershell
+# Install Python 3.12 if needed
+winget install Python.Python.3.12
+
 .\setup.ps1
 ```
 
@@ -94,8 +104,8 @@ After setup, edit `.env` and add your `GEMINI_API_KEY`.
 git clone https://github.com/amuzetnoM/gold_standard.git
 cd gold_standard
 
-# Create virtual environment
-python -m venv .venv
+# Create virtual environment (use Python 3.12 for best compatibility)
+py -3.12 -m venv .venv
 
 # Activate (Windows PowerShell)
 .\.venv\Scripts\Activate.ps1
@@ -145,12 +155,40 @@ python gui.py
 
 ### CLI Interface
 
-The unified CLI (`run.py`) provides both interactive and command-line modes.
+The unified CLI (`run.py`) runs as an autonomous daemon by default.
 
-#### Interactive Mode
+#### Autonomous Daemon Mode (Default)
 
 ```powershell
+# Start autonomous daemon - runs analysis every 4 hours
 python run.py
+
+# Custom interval (6 hours)
+python run.py --interval 6
+
+# Daemon without AI
+python run.py --no-ai
+```
+
+Press **Ctrl+C** to gracefully shutdown the daemon.
+
+#### Single Run Mode
+
+```powershell
+# Run once and exit
+python run.py --once
+
+# Run all analysis once
+python run.py --run
+
+# Quick daily journal only
+python run.py --daily
+```
+
+#### Interactive Menu Mode
+
+```powershell
+python run.py --interactive
 ```
 
 Displays a menu:
@@ -172,15 +210,18 @@ Select analysis mode:
 Enter choice (0-4):
 ```
 
-#### Command-Line Mode
+#### Command Reference
 
 | Command | Description |
 |---------|-------------|
-| `python run.py --mode daily` | Run daily journal with AI |
-| `python run.py --mode weekly` | Generate weekly rundown |
-| `python run.py --mode monthly` | Generate monthly report |
-| `python run.py --mode yearly` | Generate yearly report |
-| `python run.py --mode daily --no-ai` | Run without AI calls |
+| `python run.py` | **Autonomous daemon** - runs every 4 hours |
+| `python run.py --interval 6` | Daemon with 6-hour interval |
+| `python run.py --once` | Single run and exit |
+| `python run.py --run` | Run all analysis once |
+| `python run.py --daily` | Quick daily journal only |
+| `python run.py --interactive` | Interactive menu mode |
+| `python run.py --status` | Show system status |
+| `python run.py --no-ai` | Run without Gemini API |
 | `python run.py --help` | Show all options |
 
 ### GUI Dashboard
@@ -191,14 +232,17 @@ python gui.py
 
 The GUI provides:
 
-- **Mode Selection** - Radio buttons for Daily, Weekly, Monthly, Yearly
+- **Run All** - Execute complete analysis suite
+- **Start Daemon** - Launch autonomous mode (runs every 4 hours)
+- **Quick Daily** - Fast daily journal update
+- **Pre-Market** - Generate trading blueprint
 - **No AI Toggle** - Skip Gemini API calls for offline testing
 - **Live Console** - Real-time progress output with timestamps
 - **Results Dashboard** with four tabs:
-  - **Charts** - Gallery of generated chart images (click to view full size)
-  - **Reports** - List of markdown reports (double-click to preview)
-  - **Preview** - Full content viewer for selected reports
-  - **Journal** - Cortex memory stats and latest daily journal content
+  - **Journals** - Browse journals by date with content preview
+  - **Charts** - Gallery of generated chart images
+  - **Reports** - List of all generated reports
+  - **Trades** - Trade simulation history and stats
 
 ---
 
@@ -208,14 +252,14 @@ The GUI provides:
 
 The system generates professional candlestick charts with technical overlays:
 
-| Asset | Chart | Description |
-|-------|-------|-------------|
-| Gold (GC=F) | ![Gold Chart](output/charts/GOLD.png) | Primary asset with SMA 50/200 overlays |
-| Silver (SI=F) | ![Silver Chart](output/charts/SILVER.png) | Secondary precious metal tracking |
-| Dollar Index | ![DXY Chart](output/charts/DXY.png) | Inverse correlation benchmark |
-| 10Y Yield | ![Yield Chart](output/charts/YIELD.png) | Interest rate environment |
-| VIX | ![VIX Chart](output/charts/VIX.png) | Market volatility gauge |
-| S&P 500 | ![SPX Chart](output/charts/SPX.png) | Risk sentiment indicator |
+| Asset | Chart |
+|-------|-------|
+| Gold (GC=F) | ![Gold Chart](docs/images/GOLD.png) |
+| Silver (SI=F) | ![Silver Chart](docs/images/SILVER.png) |
+| Dollar Index | ![DXY Chart](docs/images/DXY.png) |
+| 10Y Yield | ![Yield Chart](docs/images/YIELD.png) |
+| VIX | ![VIX Chart](docs/images/VIX.png) |
+| S&P 500 | ![SPX Chart](docs/images/SPX.png) |
 
 ---
 
@@ -557,7 +601,8 @@ The project uses:
 | Issue | Solution |
 |-------|----------|
 | `GEMINI_API_KEY not set` | Create `.env` file with your API key or use `--no-ai` |
-| `pandas_ta import error` | Safe fallbacks are built-in; works on Python 3.14+ |
+| `numba not supported` | Use Python 3.10-3.13. Install with `winget install Python.Python.3.12` |
+| `pandas_ta import error` | Ensure Python 3.10-3.13 is used; numba required for pandas_ta |
 | `yfinance rate limit` | Wait a few minutes; the system uses backup tickers |
 | `Unicode errors in console` | Fixed in latest version; uses ASCII-only output |
 | `Charts not generating` | Check `output/charts/` folder; ensure matplotlib is installed |
