@@ -11,9 +11,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from pathlib import Path
 from datetime import date, datetime, timedelta
-import webbrowser
 import json
-import calendar
 
 # Project root
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -27,7 +25,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
-    from db_manager import get_db, JournalEntry
+    from db_manager import get_db
 except ImportError:
     get_db = None
 
@@ -188,7 +186,6 @@ class GoldStandardGUI:
 
     def _build_ui(self):
         """Build the main UI layout."""
-        t = self.theme
         
         # Main container
         main = ttk.Frame(self.root, style='Dark.TFrame')
@@ -709,7 +706,7 @@ class GoldStandardGUI:
                     date_str = f.stem.replace("Journal_", "")
                     if date_str not in dates:
                         dates.append(date_str)
-                except:
+                except Exception:
                     pass
         
         # Sort descending
@@ -746,7 +743,6 @@ class GoldStandardGUI:
 
     def _load_journal(self, date_str: str):
         """Load journal for selected date."""
-        t = self.theme
         self.journal_date_label.config(text=date_str)
         
         self.journal_text.config(state=tk.NORMAL)
@@ -769,7 +765,7 @@ class GoldStandardGUI:
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
-                except:
+                except Exception:
                     pass
         
         if content:
@@ -833,7 +829,7 @@ class GoldStandardGUI:
                         bg=t.BG_CARD,
                         fg=t.TEXT_DIM,
                         font=('Segoe UI', 9)).pack()
-            except:
+            except Exception:
                 pass
             
             tk.Button(card,
@@ -887,7 +883,7 @@ class GoldStandardGUI:
                         'size': f"{size_kb:.1f} KB",
                         'path': str(f)
                     })
-                except:
+                except Exception:
                     pass
         
         # Sort by date descending
@@ -909,7 +905,7 @@ class GoldStandardGUI:
                     memory = json.load(f)
             else:
                 memory = {}
-        except:
+        except Exception:
             memory = {}
         
         # Update stats
@@ -1155,7 +1151,7 @@ class GoldStandardGUI:
 def main():
     """Main entry point."""
     root = tk.Tk()
-    app = GoldStandardGUI(root)
+    _app = GoldStandardGUI(root)  # noqa: F841
     root.mainloop()
 
 

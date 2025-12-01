@@ -4,15 +4,12 @@ Gold Standard Database Manager
 SQLite-based storage for reports, journals, and analysis data.
 Provides intelligent redundancy control and date-wise organization.
 """
-import os
 import sqlite3
-import json
 from datetime import datetime, date
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
-import hashlib
 
 
 # Database path
