@@ -21,6 +21,45 @@ CHARTS_DIR = OUTPUT_DIR / "charts"
 MEMORY_FILE = PROJECT_ROOT / "cortex_memory.json"
 DATA_DIR = PROJECT_ROOT / "data"
 
+
+def ensure_venv():
+    """
+    Ensure we're running inside the virtual environment.
+    If not, re-execute this script with the venv Python.
+    """
+    # Check if already in venv
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        return  # Already in venv
+    
+    # Look for venv directories
+    venv_dirs = ['venv312', 'venv', '.venv']
+    venv_python = None
+    
+    for venv_name in venv_dirs:
+        venv_path = PROJECT_ROOT / venv_name
+        if venv_path.is_dir():
+            # Windows vs Unix paths
+            if sys.platform == 'win32':
+                candidate = venv_path / 'Scripts' / 'python.exe'
+            else:
+                candidate = venv_path / 'bin' / 'python'
+            
+            if candidate.is_file():
+                venv_python = str(candidate)
+                break
+    
+    if venv_python:
+        print(f"[VENV] Activating virtual environment: {Path(venv_python).parent.parent.name}")
+        # Re-execute with venv python
+        os.execv(venv_python, [venv_python] + sys.argv)
+    else:
+        print("[WARN] No virtual environment found. Running with system Python.")
+        print("       Consider creating venv312: python -m venv venv312")
+
+
+# Ensure venv before importing project modules
+ensure_venv()
+
 # Add to path for imports
 sys.path.insert(0, str(PROJECT_ROOT))
 

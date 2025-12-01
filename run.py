@@ -14,13 +14,52 @@ import signal
 import time
 from datetime import date
 
-import schedule
-
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
-from db_manager import get_db
+
+def ensure_venv():
+    """
+    Ensure we're running inside the virtual environment.
+    If not, re-execute this script with the venv Python.
+    """
+    # Check if already in venv
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        return  # Already in venv
+    
+    # Look for venv directories
+    venv_dirs = ['venv312', 'venv', '.venv']
+    venv_python = None
+    
+    for venv_name in venv_dirs:
+        venv_path = os.path.join(PROJECT_ROOT, venv_name)
+        if os.path.isdir(venv_path):
+            # Windows vs Unix paths
+            if sys.platform == 'win32':
+                candidate = os.path.join(venv_path, 'Scripts', 'python.exe')
+            else:
+                candidate = os.path.join(venv_path, 'bin', 'python')
+            
+            if os.path.isfile(candidate):
+                venv_python = candidate
+                break
+    
+    if venv_python:
+        print(f"[VENV] Activating virtual environment: {os.path.basename(os.path.dirname(os.path.dirname(venv_python)))}")
+        # Re-execute with venv python
+        os.execv(venv_python, [venv_python] + sys.argv)
+    else:
+        print("[WARN] No virtual environment found. Running with system Python.")
+        print("       Consider creating venv312: python -m venv venv312")
+
+
+# Ensure venv before importing project modules
+ensure_venv()
+
+import schedule  # noqa: E402
+
+from db_manager import get_db  # noqa: E402
 
 # Banner
 BANNER = r"""
@@ -157,7 +196,7 @@ def run_all(no_ai: bool = False, force: bool = False):
         print(f"  [SKIP] Weekly report for Week {iso_cal[1]} already exists")
         results['weekly'] = True
     else:
-        print(f"  [SKIP] Not weekend. Weekly reports generated on Sat/Sun")
+        print("  [SKIP] Not weekend. Weekly reports generated on Sat/Sun")
         results['weekly'] = True
     
     # 4. Monthly report (check if exists for current month)
