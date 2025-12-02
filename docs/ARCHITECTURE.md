@@ -171,10 +171,44 @@ Concurrency & integrity:
 - Add TA indicators: implement in indicators/ with tests comparing fallback implementations.
 - Add AI providers: implement new adapter conforming to Strategist.ai_adapter interface.
 
+## Vector Studio Integration
+Gold Standard includes a companion high-performance vector database and AI training platform (`../vector_database/`) for semantic search and future AI training:
+
+**Purpose:**
+- Store embeddings of charts, reports, and journals
+- Enable RAG (Retrieval Augmented Generation) for AI queries
+- Build training datasets for custom models
+
+**Architecture:**
+- C++20 with SIMD optimization (AVX2/AVX-512)
+- HNSW index for fast approximate nearest neighbor search
+- ONNX Runtime for local embeddings (no cloud API costs)
+- Text model: all-MiniLM-L6-v2 (384→512 dim)
+- Image model: CLIP ViT-B/32 (512 dim)
+
+**Build Requirements:**
+- CMake 3.20+
+- Visual Studio 2022 (or Build Tools)
+- Ninja (optional, for faster builds)
+
+**Setup:**
+```powershell
+cd ../vector_database
+.\scripts\build.ps1 -AutoInstall  # Installs missing deps
+python scripts\download_models.py --download
+```
+
+**Integration Points:**
+- `pyvdb` Python bindings for direct use from Gold Standard
+- CLI tool `vdb_cli` for manual operations
+- Memory-mapped storage for efficient large-scale data
+
 ## Troubleshooting
 - "pandas_ta missing": system falls back to NumPy; check logs for performance impact.
 - "DB locked": ensure filelock is operational and only one long-running write is executing; avoid networked filesystems for SQLite.
 - "Tests failing in CI": confirm Python 3.12 runner and that .env secrets are supplied via CI secrets (test_gemini).
+- "CMake not found": run `winget install Kitware.CMake` or use `build.ps1 -AutoInstall`
+- "Visual Studio not found": run `winget install Microsoft.VisualStudio.2022.BuildTools`
 
 ## Recent changes (session highlights)
 - CI pinned to Python 3.12
@@ -182,6 +216,8 @@ Concurrency & integrity:
 - Improved test .env handling
 - TA fallback parity tests added
 - UI polish: sharper corners, glass effects, Geist font
+- Vector Studio project added for semantic search and RAG
+- Automated dependency installation via winget
 
 ## Quick reference: file map
 - main.py, run.py, gui.py, db_manager.py
@@ -189,6 +225,7 @@ Concurrency & integrity:
 - scripts/: split_reports.py, pre_market.py, live_analysis.py, economic_calendar.py
 - tests/: test_*.py
 - docs/: ARCHITECTURE.md, GUIDE.md, index.html (sample outputs)
+- ../vector_database/: Vector Studio - C++ vector database for embeddings
 
 Contact / Ownership: See repository root CODEOWNERS for module maintainers.
 
