@@ -128,9 +128,19 @@ class Config:
     MAX_HISTORY_ENTRIES: int = 5
     MAX_CHART_AGE_DAYS: int = 7
     
-    # Scheduling
-    # Default to hourly runs for more frequent analysis
-    RUN_INTERVAL_HOURS: int = 1
+    # Scheduling - NEW: Minutes-based for high-frequency operation
+    # Default to 1-minute cycles for real-time intelligence
+    RUN_INTERVAL_MINUTES: int = 1
+    RUN_INTERVAL_HOURS: int = 0  # Legacy support - set to 0 when using minutes
+    
+    # Insights & Task Execution
+    ENABLE_INSIGHTS_EXTRACTION: bool = True
+    ENABLE_TASK_EXECUTION: bool = True
+    MAX_TASKS_PER_CYCLE: int = 10
+    
+    # File Organization
+    ENABLE_AUTO_ORGANIZE: bool = True
+    ARCHIVE_DAYS_THRESHOLD: int = 7
 
 
 # Asset Universe Configuration

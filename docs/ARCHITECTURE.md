@@ -93,22 +93,40 @@ Primary tables:
 - journals: daily analysis journals
   - id INTEGER PK
   - date TEXT (ISO)
-  - asset TEXT
+  - content TEXT
   - bias TEXT
-  - notes TEXT
-  - created_at TIMESTAMP
+  - gold_price REAL, silver_price REAL, gsr REAL
+  - ai_enabled INTEGER
+  - created_at, updated_at TIMESTAMP
 
 - reports: aggregated reports
-  - id, period_start, period_end, type, summary, payload (JSON)
+  - id, report_type, period, content, summary, ai_enabled, created_at
 
 - analysis_snapshots: technical data per asset/time
-  - id, asset, ts, indicators (JSON), prices (JSON)
+  - id, date, asset, price, rsi, sma_50, sma_200, atr, adx, trend, raw_data
 
-- premaket_plans: premarket plans
-  - id, date, plan (JSON), author
+- premarket_plans: premarket plans
+  - id, date, content, bias, catalysts, ai_enabled, created_at
 
 - trades: simulated trades
-  - id, asset, entry_ts, exit_ts, entry_price, exit_price, pnl, metadata (JSON)
+  - id, trade_id, direction, asset, entry_price, exit_price, stop_loss, take_profit
+  - status, result, pnl, pnl_pct, entry_date, exit_date, notes, created_at
+
+- **entity_insights** (NEW): extracted entities from reports
+  - id, entity_name, entity_type, context, relevance_score
+  - source_report, extracted_at, metadata
+
+- **action_insights** (NEW): actionable tasks from reports
+  - id, action_id (unique), action_type, title, description
+  - priority, status, source_report, source_context
+  - deadline, result, created_at, completed_at, metadata
+
+- **task_execution_log** (NEW): task execution audit trail
+  - id, action_id, success, result_data, execution_time_ms
+  - error_message, artifacts, executed_at
+
+- **system_config** (NEW): runtime configuration storage
+  - id, key (unique), value, description, updated_at
 
 Provide migrations via simple SQL files or a lightweight migration helper in `db_manager.py`. Example DDL:
 ```sql
@@ -141,6 +159,68 @@ Concurrency & integrity:
 - pre_market.py: generates pre-market plans for trading day.
 - live_analysis.py: produces intraday watchlists and categorizations.
 - economic_calendar.py: maintains Fed/ECB/NFP/CPI calendar via scraping; run periodically.
+- **insights_engine.py**: Extracts entity and action insights from generated reports. Powers autonomous task execution.
+- **task_executor.py**: Executes action insights (research, data fetch, monitoring, calculations) before next cycle.
+- **file_organizer.py**: Intelligently organizes, categorizes, dates, and archives reports and charts.
+
+## Insights & Task Execution System (NEW)
+
+Gold Standard now operates as an autonomous "doer" rather than passive "shower":
+
+### Entity Insights
+- Extracts named entities from reports: institutions (Fed, ECB, CME), indicators (CPI, RSI), assets, events, persons
+- Pattern-based extraction with relevance scoring
+- Stored in `entity_insights` table for historical analysis
+
+### Action Insights  
+- Identifies actionable tasks from report content:
+  - **research**: Topics requiring further investigation
+  - **data_fetch**: COT data, ETF flows, yields to retrieve
+  - **news_scan**: Headlines to monitor
+  - **calculation**: Position sizing, risk/reward ratios
+  - **monitoring**: Price levels, breakout/breakdown alerts
+  - **code_task**: Custom analysis code generation
+- Priority-based queue (critical → high → medium → low)
+- Deadline calculation based on priority
+
+### Task Executor
+- Processes action queue before next analysis cycle
+- AI-powered research and news analysis via Gemini
+- Data fetching via yfinance for real-time market data
+- Results saved to `output/research/` with full audit trail
+- Execution logged to `task_execution_log` table
+
+### Daemon Cycle Flow
+```
+1. Run analysis (reports, charts)
+2. Extract entity insights → save to DB
+3. Extract action insights → save to DB  
+4. Execute pending tasks (up to 10 per cycle)
+5. Log execution results
+6. Organize files (categorize, archive)
+7. Sleep until next interval (default: 1 minute)
+```
+
+## File Organization System (NEW)
+
+### Auto-Categorization
+Files are categorized by content patterns:
+- journals, premarket, weekly, monthly, yearly
+- catalysts, institutional, analysis, economic
+- research (task outputs), charts
+
+### Naming Convention
+Files renamed to: `{Category}_{YYYY-MM-DD}.{ext}`
+Examples:
+- `Journal_2025-12-03.md`
+- `PreMarket_2025-12-03.md`
+- `Weekly_W49_2025-12-03.md`
+- `InstMatrix_2025-12-03.md`
+
+### Archive Policy
+- Files older than 7 days automatically archived
+- Archive structure: `archive/{reports|charts}/{year}/{month}/`
+- File index maintained at `output/FILE_INDEX.md`
 
 ## Testing & CI
 - Test suite: pytest (total historically 33 tests — ensure updated counts).
@@ -211,6 +291,12 @@ python scripts\download_models.py --download
 - "Visual Studio not found": run `winget install Microsoft.VisualStudio.2022.BuildTools`
 
 ## Recent changes (session highlights)
+- **Daemon interval reduced to 1 minute** (configurable via --interval-min)
+- **Entity Insights extraction** - auto-identifies key entities in reports
+- **Action Insights extraction** - identifies actionable tasks from reports
+- **Task Executor** - autonomously executes pending tasks before next cycle
+- **File Organizer** - intelligent categorization, dating, and archiving
+- **New DB tables**: entity_insights, action_insights, task_execution_log, system_config
 - CI pinned to Python 3.12
 - Auto-venv activation added
 - Improved test .env handling
@@ -222,7 +308,7 @@ python scripts\download_models.py --download
 ## Quick reference: file map
 - main.py, run.py, gui.py, db_manager.py
 - core/: Cortex, QuantEngine, Strategist implementations
-- scripts/: split_reports.py, pre_market.py, live_analysis.py, economic_calendar.py
+- scripts/: split_reports.py, pre_market.py, live_analysis.py, economic_calendar.py, **insights_engine.py**, **task_executor.py**, **file_organizer.py**
 - tests/: test_*.py
 - docs/: ARCHITECTURE.md, GUIDE.md, index.html (sample outputs)
 - ../vector_database/: Vector Studio - C++ vector database for embeddings

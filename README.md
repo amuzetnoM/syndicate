@@ -59,18 +59,22 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 | Feature | Description |
 |---------|-------------|
-| **Autonomous Daemon** | Runs continuously, executing analysis every 4 hours (configurable) |
+| **Autonomous Daemon** | Runs continuously, executing analysis every minute (configurable) |
 | **Auto Venv Activation** | Scripts automatically detect and activate virtual environment |
 | **Multi-Asset Analysis** | Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, S&P 500 |
 | **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration |
 | **Intermarket Correlations** | Gold/Silver ratio analysis and divergence detection |
 | **AI-Powered Insights** | Google Gemini integration for natural-language analysis |
+| **Entity Insights** | Auto-extracts key entities (Fed, ECB, institutions) from reports |
+| **Action Insights** | Identifies actionable tasks (research, monitoring, calculations) |
+| **Task Executor** | Autonomously executes action insights before next cycle |
 | **Economic Calendar** | Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis |
 | **Live Analysis Suite** | Catalyst watchlist, institutional matrix, 1Y/3M analysis reports |
-| **Database Storage** | SQLite persistence for all reports with historical querying |
+| **Database Storage** | SQLite persistence for all reports, insights, and tasks |
 | **Persistent Memory** | Cortex system tracks predictions, grades performance, maintains win/loss streaks |
 | **Automated Charts** | Candlestick charts with SMA overlays via mplfinance |
 | **Multiple Report Types** | Daily journals, pre-market plans, weekly rundowns, monthly/yearly reports |
+| **Intelligent File Organization** | Auto-categorizes, dates, and archives reports (>7 days) |
 | **Dual Interface** | Command-line CLI and graphical GUI dashboard |
 | **No-AI Mode** | Run data analysis without API calls for testing or offline use |
 
@@ -168,16 +172,19 @@ python gui.py
 
 ### CLI Interface
 
-The unified CLI (`run.py`) runs as an autonomous daemon by default.
+The unified CLI (`run.py`) runs as an autonomous daemon by default with 1-minute cycles.
 
 #### Autonomous Daemon Mode (Default)
 
 ```powershell
-# Start autonomous daemon - runs analysis every 4 hours
+# Start autonomous daemon - runs analysis every 1 minute
 python run.py
 
-# Custom interval (6 hours)
-python run.py --interval 6
+# Custom interval in minutes (5 minutes)
+python run.py --interval-min 5
+
+# Legacy hours-based interval (2 hours)
+python run.py --interval 2
 
 # Daemon without AI
 python run.py --no-ai
@@ -227,8 +234,9 @@ Enter choice (0-4):
 
 | Command | Description |
 |---------|-------------|
-| `python run.py` | **Autonomous daemon** - runs every 4 hours |
-| `python run.py --interval 6` | Daemon with 6-hour interval |
+| `python run.py` | **Autonomous daemon** - runs every 1 minute (default) |
+| `python run.py --interval-min 5` | Daemon with 5-minute interval |
+| `python run.py --interval 2` | Daemon with 2-hour interval (legacy) |
 | `python run.py --once` | Single run and exit |
 | `python run.py --run` | Run all analysis once |
 | `python run.py --daily` | Quick daily journal only |
@@ -246,7 +254,7 @@ python gui.py
 The GUI provides:
 
 - **Run All** - Execute complete analysis suite
-- **Start Daemon** - Launch autonomous mode (runs every 4 hours)
+- **Start Daemon** - Launch autonomous mode (runs every minute)
 - **Quick Daily** - Fast daily journal update
 - **Pre-Market** - Generate trading blueprint
 - **No AI Toggle** - Skip Gemini API calls for offline testing

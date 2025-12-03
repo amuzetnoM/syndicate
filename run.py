@@ -12,7 +12,7 @@ import sys
 import argparse
 import signal
 import time
-from datetime import date
+from datetime import date, datetime
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -241,14 +241,15 @@ def _signal_handler(signum, frame):
     _shutdown_requested = True
 
 
-def run_daemon(no_ai: bool = False, interval_hours: int = 4):
+def run_daemon(no_ai: bool = False, interval_hours: int = 0, interval_minutes: int = 1):
     """
     Run Gold Standard as an autonomous daemon.
-    Executes analysis immediately, then every interval_hours.
+    Executes analysis immediately, then at specified intervals.
     
     Args:
         no_ai: Disable AI-generated content
-        interval_hours: Hours between analysis runs (default: 4)
+        interval_hours: Hours between analysis runs (legacy, use 0 with interval_minutes)
+        interval_minutes: Minutes between analysis runs (default: 1 for real-time)
     """
     global _shutdown_requested
     
@@ -256,22 +257,50 @@ def run_daemon(no_ai: bool = False, interval_hours: int = 4):
     signal.signal(signal.SIGINT, _signal_handler)
     signal.signal(signal.SIGTERM, _signal_handler)
     
+    # Determine effective interval
+    if interval_hours > 0:
+        interval_display = f"{interval_hours} hour(s)"
+        use_minutes = False
+        interval_value = interval_hours
+    else:
+        interval_display = f"{interval_minutes} minute(s)"
+        use_minutes = True
+        interval_value = interval_minutes
+    
     print("\n" + "=" * 60)
     print("       GOLD STANDARD - AUTONOMOUS MODE")
     print("=" * 60)
-    print(f"  Interval: Every {interval_hours} hours")
+    print(f"  Interval: Every {interval_display}")
     print(f"  AI Mode:  {'Disabled' if no_ai else 'Enabled'}")
     print("  Press Ctrl+C to shutdown gracefully")
     print("=" * 60 + "\n")
+    
+    # Import insights and task systems
+    try:
+        from scripts.insights_engine import InsightsExtractor
+        from scripts.task_executor import TaskExecutor
+        from scripts.file_organizer import FileOrganizer
+        insights_available = True
+        print("[DAEMON] Insights & Task systems loaded")
+    except ImportError as e:
+        insights_available = False
+        print(f"[DAEMON] Insights systems not available: {e}")
     
     # Run immediately on startup
     print("[DAEMON] Running initial analysis cycle...\n")
     run_all(no_ai=no_ai, force=False)
     
-    # Schedule recurring runs
-    schedule.every(interval_hours).hours.do(run_all, no_ai=no_ai, force=False)
+    # Run post-analysis tasks if available
+    if insights_available and not no_ai:
+        _run_post_analysis_tasks()
     
-    print(f"\n[DAEMON] Next run scheduled in {interval_hours} hours")
+    # Schedule recurring runs
+    if use_minutes:
+        schedule.every(interval_value).minutes.do(_daemon_cycle, no_ai=no_ai, run_tasks=insights_available and not no_ai)
+    else:
+        schedule.every(interval_value).hours.do(_daemon_cycle, no_ai=no_ai, run_tasks=insights_available and not no_ai)
+    
+    print(f"\n[DAEMON] Next run scheduled in {interval_display}")
     print("[DAEMON] System is now running autonomously...\n")
     
     # Main loop
@@ -284,6 +313,122 @@ def run_daemon(no_ai: bool = False, interval_hours: int = 4):
             time.sleep(5)
     
     print("\n[DAEMON] Shutdown complete. Goodbye!\n")
+
+
+def _daemon_cycle(no_ai: bool = False, run_tasks: bool = True):
+    """
+    Single daemon cycle:
+    1. Run analysis
+    2. Extract insights
+    3. Execute pending tasks
+    4. Organize files
+    """
+    print(f"\n[DAEMON] Starting cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Run main analysis
+    run_all(no_ai=no_ai, force=False)
+    
+    # Run post-analysis tasks
+    if run_tasks:
+        _run_post_analysis_tasks()
+
+
+def _run_post_analysis_tasks():
+    """Run insights extraction, task execution, and file organization."""
+    try:
+        from scripts.insights_engine import InsightsExtractor
+        from scripts.task_executor import TaskExecutor
+        from scripts.file_organizer import FileOrganizer
+        import google.generativeai as genai
+        from pathlib import Path
+        import os
+        
+        # Get config-like object
+        class RuntimeConfig:
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+        
+        config = RuntimeConfig()
+        
+        # Simple logger
+        import logging
+        logger = logging.getLogger("GoldStandard.Daemon")
+        
+        # Try to get model
+        model = None
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel("models/gemini-pro-latest")
+            except Exception:
+                pass
+        
+        # 1. Extract insights from today's reports
+        print("[DAEMON] Extracting insights from reports...")
+        extractor = InsightsExtractor(config, logger, model)
+        reports_dir = Path(config.OUTPUT_DIR) / "reports"
+        entities, actions = extractor.process_all_reports(reports_dir)
+        
+        # Save insights to database
+        from db_manager import get_db
+        db = get_db()
+        
+        for entity in entities:
+            db.save_entity_insight(
+                entity.entity_name,
+                entity.entity_type,
+                entity.context,
+                entity.relevance_score,
+                entity.source_report,
+                str(entity.metadata)
+            )
+        
+        for action in actions:
+            db.save_action_insight(
+                action.action_id,
+                action.action_type,
+                action.title,
+                action.description,
+                action.priority,
+                action.status,
+                action.source_report,
+                action.source_context,
+                action.deadline,
+                str(action.metadata)
+            )
+        
+        print(f"[DAEMON] Extracted {len(entities)} entities, {len(actions)} actions")
+        
+        # 2. Execute pending tasks
+        if model:
+            print("[DAEMON] Executing pending tasks...")
+            executor = TaskExecutor(config, logger, model, extractor)
+            results = executor.execute_all_pending(max_tasks=10)
+            
+            # Log execution results
+            for result in results:
+                db.log_task_execution(
+                    result.action_id,
+                    result.success,
+                    str(result.result_data),
+                    result.execution_time_ms,
+                    result.error_message,
+                    str(result.artifacts) if result.artifacts else None
+                )
+            
+            print(f"[DAEMON] Executed {len(results)} tasks")
+        
+        # 3. Organize files
+        print("[DAEMON] Organizing files...")
+        organizer = FileOrganizer(config, logger)
+        org_results = organizer.run_maintenance(archive_days=7)
+        print(f"[DAEMON] Organized {org_results['organized']} files, archived {org_results['archived']}")
+        
+    except ImportError as e:
+        print(f"[DAEMON] Post-analysis skipped (missing module): {e}")
+    except Exception as e:
+        print(f"[DAEMON] Post-analysis error: {e}")
 
 
 def interactive_mode(no_ai: bool = False):
@@ -357,10 +502,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run.py                  # Autonomous daemon mode (default)
+  python run.py                  # Autonomous daemon mode (1-minute cycles)
   python run.py --once           # Single run and exit
   python run.py --run            # Run all analysis once
-  python run.py --interval 6     # Daemon with 6-hour interval
+  python run.py --interval-min 5 # Daemon with 5-minute interval
+  python run.py --interval 2     # Daemon with 2-hour interval (legacy)
   python run.py --interactive    # Interactive menu
   python run.py --status         # Show current status
   python run.py --no-ai          # Daemon without AI
@@ -382,8 +528,10 @@ Examples:
                        help='Force interactive mode')
     parser.add_argument('--once', action='store_true',
                        help='Run once and exit (no daemon)')
-    parser.add_argument('--interval', type=int, default=4,
-                       help='Hours between daemon runs (default: 4)')
+    parser.add_argument('--interval', type=int, default=0,
+                       help='Hours between daemon runs (legacy, default: 0 = use minutes)')
+    parser.add_argument('--interval-min', type=int, default=1,
+                       help='Minutes between daemon runs (default: 1)')
     
     # Legacy support for --mode
     parser.add_argument('--mode', '-m', choices=['daily', 'weekly', 'monthly', 'yearly', 'premarket'],
@@ -437,7 +585,7 @@ Examples:
     
     # Default: Autonomous daemon mode
     print_banner()
-    run_daemon(no_ai=args.no_ai, interval_hours=args.interval)
+    run_daemon(no_ai=args.no_ai, interval_hours=args.interval, interval_minutes=args.interval_min)
 
 
 if __name__ == '__main__':
