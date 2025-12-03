@@ -57,6 +57,29 @@ def ensure_venv():
 # Ensure venv before importing project modules
 ensure_venv()
 
+
+def find_venv_python() -> str | None:
+    """Return the preferred venv Python executable path if available, else None."""
+    venv_dirs = ['venv312', 'venv', '.venv']
+    for venv_name in venv_dirs:
+        venv_path = os.path.join(PROJECT_ROOT, venv_name)
+        if os.path.isdir(venv_path):
+            if sys.platform == 'win32':
+                candidate = os.path.join(venv_path, 'Scripts', 'python.exe')
+            else:
+                candidate = os.path.join(venv_path, 'bin', 'python')
+            if os.path.isfile(candidate):
+                return candidate
+    return None
+
+
+def get_python_executable() -> str:
+    """Return the Python executable to use for subprocesses (prefer venv)."""
+    venv_python = find_venv_python()
+    if venv_python:
+        return venv_python
+    return sys.executable
+
 import schedule  # noqa: E402
 
 from db_manager import get_db  # noqa: E402
@@ -110,7 +133,7 @@ def print_status():
 def run_daily(no_ai: bool = False) -> bool:
     """Run the daily journal via main.py."""
     print("\n>> Running Daily Journal Analysis...\n")
-    cmd_parts = [sys.executable, "main.py", "--once"]
+    cmd_parts = [get_python_executable(), "main.py", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
     return os.system(" ".join(cmd_parts)) == 0
@@ -119,7 +142,7 @@ def run_daily(no_ai: bool = False) -> bool:
 def run_weekly(no_ai: bool = False) -> bool:
     """Run the weekly rundown via split_reports.py."""
     print("\n>> Generating Weekly Report...\n")
-    cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "weekly", "--once"]
+    cmd_parts = [get_python_executable(), "scripts/split_reports.py", "--mode", "weekly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
     return os.system(" ".join(cmd_parts)) == 0
@@ -128,7 +151,7 @@ def run_weekly(no_ai: bool = False) -> bool:
 def run_monthly(no_ai: bool = False) -> bool:
     """Run the monthly report via split_reports.py."""
     print("\n>> Generating Monthly Report...\n")
-    cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "monthly", "--once"]
+    cmd_parts = [get_python_executable(), "scripts/split_reports.py", "--mode", "monthly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
     return os.system(" ".join(cmd_parts)) == 0
@@ -137,7 +160,7 @@ def run_monthly(no_ai: bool = False) -> bool:
 def run_yearly(no_ai: bool = False) -> bool:
     """Run the yearly report via split_reports.py."""
     print("\n>> Generating Yearly Report...\n")
-    cmd_parts = [sys.executable, "scripts/split_reports.py", "--mode", "yearly", "--once"]
+    cmd_parts = [get_python_executable(), "scripts/split_reports.py", "--mode", "yearly", "--once"]
     if no_ai:
         cmd_parts.append("--no-ai")
     return os.system(" ".join(cmd_parts)) == 0
@@ -146,7 +169,7 @@ def run_yearly(no_ai: bool = False) -> bool:
 def run_premarket(no_ai: bool = False) -> bool:
     """Run the pre-market plan via pre_market.py."""
     print("\n>> Generating Pre-Market Plan...\n")
-    cmd_parts = [sys.executable, "scripts/pre_market.py"]
+    cmd_parts = [get_python_executable(), "scripts/pre_market.py"]
     if no_ai:
         cmd_parts.append("--no-ai")
     return os.system(" ".join(cmd_parts)) == 0
@@ -191,7 +214,7 @@ def run_all(no_ai: bool = False, force: bool = False):
     print("-" * 40)
     is_weekend = iso_cal[2] >= 6  # Saturday = 6, Sunday = 7
     if not db.has_weekly_report(today.year, iso_cal[1]) and (is_weekend or force):
-        results['weekly'] = run_weekly(no_ai=no_ai)
+        cmd = [python, str(PROJECT_ROOT / 'run.py'), '--interval-min', str(interval_min)]
     elif db.has_weekly_report(today.year, iso_cal[1]):
         print(f"  [SKIP] Weekly report for Week {iso_cal[1]} already exists")
         results['weekly'] = True
