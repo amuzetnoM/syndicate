@@ -26,7 +26,10 @@ ASCII data flow:
                            v               |
                        db_manager.sqlite <- run/gui -> user
                                    ^
-                                   +-- scripts/ (scheduler, split_reports)
+                                   +-- scripts/ (scheduler, split_reports, notion_publisher)
+                                               |
+                                               v
+                                           [Notion DB]
 ```
 
 ## Core modules (3‑module design)
@@ -36,6 +39,15 @@ ASCII data flow:
 | Memory   | Cortex      | Persistent memory; prediction grading; trade simulation; file locking; upserts to SQLite |
 | Data     | QuantEngine | Market data fetchers; data normalization; TA indicators (pandas_ta with fallbacks); chart generation; CSV/JSON export |
 | Strategy | Strategist  | Regime detection; bias synthesis; signal scoring; optional AI augmentation (Gemini) |
+
+## Support modules
+
+| Module | File | Responsibility |
+|--------|------|----------------|
+| Frontmatter | `scripts/frontmatter.py` | YAML metadata generation; type detection; tag extraction |
+| NotionPublisher | `scripts/notion_publisher.py` | Notion API integration; markdown conversion; database sync |
+| FileOrganizer | `scripts/file_organizer.py` | Directory organization; archiving; index maintenance |
+| EconomicCalendar | `scripts/economic_calendar.py` | Event tracking; gold impact analysis; self-maintenance |
 
 Key design notes:
 - Each module exposes a small public API surface, documented in docstrings and validated by unit tests.
