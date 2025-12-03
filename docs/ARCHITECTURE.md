@@ -163,9 +163,9 @@ Concurrency & integrity:
 - **task_executor.py**: Executes action insights (research, data fetch, monitoring, calculations) before next cycle.
 - **file_organizer.py**: Intelligently organizes, categorizes, dates, and archives reports and charts.
 
-## Insights & Task Execution System (NEW)
+## Insights & Task Execution System
 
-Gold Standard now operates as an autonomous "doer" rather than passive "shower":
+Gold Standard features a fully autonomous intelligence pipeline that extracts insights from generated reports and executes actionable tasks without manual intervention.
 
 ### Entity Insights
 - Extracts named entities from reports: institutions (Fed, ECB, CME), indicators (CPI, RSI), assets, events, persons
