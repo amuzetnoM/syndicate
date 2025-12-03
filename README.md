@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard 
-*version 3.2.1* [[CHANGELOG]](docs/CHANGELOG.md)
+*version 3.2.2* [[CHANGELOG]](docs/CHANGELOG.md)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
