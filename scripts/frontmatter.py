@@ -122,6 +122,17 @@ KEYWORD_TAG_PATTERNS = [
     r'\b(geopolitical|tariffs|sanctions)\b',
 ]
 
+# Default tags added per document type
+TYPE_DEFAULT_TAGS = {
+    'premarket': ['Insights', 'Strategy'],
+    'journal': ['Daily'],
+    'analysis': ['Technical'],
+    'research': ['Deep-Dive'],
+    'economic': ['Calendar', 'Events'],
+    'institutional': ['Flow', 'Positioning'],
+    'insights': ['AI-Generated'],
+}
+
 
 def detect_type(filename: str) -> str:
     """Detect Notion type from filename pattern."""
@@ -273,6 +284,16 @@ def generate_frontmatter(
     # Auto-extract tags if not provided
     if tags is None:
         tags = extract_tags_from_content(content)
+    
+    # Add type-specific default tags
+    if doc_type in TYPE_DEFAULT_TAGS:
+        default_tags = TYPE_DEFAULT_TAGS[doc_type]
+        # Merge default tags with extracted tags (defaults first)
+        merged_tags = list(default_tags)
+        for tag in tags:
+            if tag not in merged_tags:
+                merged_tags.append(tag)
+        tags = merged_tags[:15]  # Keep within limit
     
     # Extract title from first H1 if not provided
     if title is None:
