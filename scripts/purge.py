@@ -143,7 +143,7 @@ def purge_imgbb(dry_run=True, execute=False):
 
 # Notion purging
 
-def list_notion_pages(api_key: str, database_id: str):
+def list_notion_pages(api_key: str, database_id: str, patterns: list[str] = None):
     if not NOTION_AVAILABLE:
         raise ImportError("notion-client not installed")
 
@@ -183,7 +183,38 @@ def list_notion_pages(api_key: str, database_id: str):
             start_cursor = resp.get('next_cursor')
             if not start_cursor:
                 break
-    return pages
+    # If we found pages, or the caller didn't provide patterns, return results
+    if pages or not patterns:
+        return pages
+
+    # If no pages found and patterns provided, search by patterns to find pages with titles
+    found = []
+    for pat in patterns:
+        start_cursor = None
+        while True:
+            resp = client.search(query=pat, page_size=100, start_cursor=start_cursor)
+            for p in resp.get('results', []):
+                if p.get('object') != 'page':
+                    continue
+                title = 'Untitled'
+                props = p.get('properties', {})
+                name_prop = props.get('Name') or props.get('title')
+                if name_prop:
+                    title = name_prop.get('title', [{}])[0].get('plain_text', 'Untitled')
+                found.append({"id": p['id'], "title": title})
+            start_cursor = resp.get('next_cursor')
+            if not start_cursor:
+                break
+
+    # Deduplicate by ID
+    ids = set()
+    deduped = []
+    for p in found:
+        if p['id'] not in ids:
+            ids.add(p['id'])
+            deduped.append(p)
+
+    return deduped
 
 
 def archive_notion_pages(api_key: str, page_ids: list):
@@ -191,29 +222,34 @@ def archive_notion_pages(api_key: str, page_ids: list):
         raise ImportError("notion-client not installed")
     client = Client(auth=api_key)
     archived_count = 0
+    failed = []
     for pid in page_ids:
         try:
             client.pages.update(page_id=pid, archived=True)
             archived_count += 1
         except Exception as e:
+            failed.append({"id": pid, "error": str(e)})
             print(f"Failed to archive {pid}: {e}")
-    return archived_count
+    return {"archived": archived_count, "failed": failed}
 
 
-def purge_notion(dry_run=True, execute=False):
+def purge_notion(dry_run=True, execute=False, patterns: list[str] = None):
     api_key = os.getenv('NOTION_API_KEY') or ''
     db_id = os.getenv('NOTION_DATABASE_ID') or ''
 
     if not api_key or not db_id:
         return {"error": "Notion API key or database not configured"}
 
-    pages = list_notion_pages(api_key, db_id)
+    pages = list_notion_pages(api_key, db_id, patterns=patterns)
 
     if dry_run:
         return {"count": len(pages), "sample": pages[:50]}
 
     # Archive pages
     archived = archive_notion_pages(api_key, [p['id'] for p in pages])
+    # support both old numeric return and new dict return
+    if isinstance(archived, dict):
+        return archived
     return {"archived": archived}
 
 
@@ -222,6 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--execute', action='store_true', help='Perform destructive actions')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be done (default)')
     parser.add_argument('--force', action='store_true', help='Skip confirmations')
+    parser.add_argument('--notion-patterns', nargs='*', help='List of title-patterns to target for Notion deletion (space-separated)')
     parser.add_argument('--hard-delete', action='store_true', help='Hard-delete local outputs instead of archiving')
     args = parser.parse_args()
 
@@ -249,7 +286,7 @@ if __name__ == '__main__':
         print(f"[IMGBB] Result: {img_res}")
 
     # 3) Purge Notion pages
-    notion_res = purge_notion(dry_run=args.dry_run, execute=args.execute)
+    notion_res = purge_notion(dry_run=args.dry_run, execute=args.execute, patterns=args.notion_patterns)
     if 'error' in notion_res:
         print(f"[NOTION] Skipped: {notion_res['error']}")
     elif args.dry_run:
