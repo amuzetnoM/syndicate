@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 Gold Standard Database Manager
-SQLite-based storage for reports, journals, and analysis data.
-Provides intelligent redundancy control and date-wise organization.
+SQLite-based storage for reports, journals, analysis data, and insights.
+Provides intelligent redundancy control, date-wise organization, and task management.
 """
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
@@ -177,11 +177,75 @@ class DatabaseManager:
                 )
             """)
             
+            # Entity insights table - extracted entities from reports
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS entity_insights (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_name TEXT NOT NULL,
+                    entity_type TEXT NOT NULL,
+                    context TEXT,
+                    relevance_score REAL DEFAULT 0.5,
+                    source_report TEXT,
+                    extracted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    metadata TEXT,
+                    UNIQUE(entity_name, source_report)
+                )
+            """)
+            
+            # Action insights table - actionable tasks extracted from reports
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS action_insights (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action_id TEXT UNIQUE NOT NULL,
+                    action_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    priority TEXT DEFAULT 'medium',
+                    status TEXT DEFAULT 'pending',
+                    source_report TEXT,
+                    source_context TEXT,
+                    deadline TEXT,
+                    result TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT,
+                    metadata TEXT
+                )
+            """)
+            
+            # System configuration table - stores runtime settings
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_config (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT UNIQUE NOT NULL,
+                    value TEXT,
+                    description TEXT,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Task execution log - tracks task executor results
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS task_execution_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action_id TEXT NOT NULL,
+                    success INTEGER DEFAULT 0,
+                    result_data TEXT,
+                    execution_time_ms REAL,
+                    error_message TEXT,
+                    artifacts TEXT,
+                    executed_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             # Create indexes for faster queries
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_type_period ON reports(report_type, period)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_analysis_date_asset ON analysis_snapshots(date, asset)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_entity_insights_name ON entity_insights(entity_name)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_status ON action_insights(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_priority ON action_insights(priority)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_task_log_action ON task_execution_log(action_id)")
     
     # ==========================================
     # JOURNAL METHODS
@@ -580,6 +644,249 @@ class DatabaseManager:
                 'first_journal': date_range['first'],
                 'last_journal': date_range['last'],
             }
+    
+    # ==========================================
+    # ENTITY INSIGHTS METHODS
+    # ==========================================
+    
+    def save_entity_insight(self, entity_name: str, entity_type: str,
+                           context: str, relevance_score: float,
+                           source_report: str, metadata: str = None) -> bool:
+        """Save an entity insight."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                INSERT INTO entity_insights 
+                (entity_name, entity_type, context, relevance_score, source_report, extracted_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(entity_name, source_report) DO UPDATE SET
+                    context = excluded.context,
+                    relevance_score = excluded.relevance_score,
+                    metadata = excluded.metadata
+            """, (entity_name, entity_type, context, relevance_score, source_report, now, metadata))
+            
+            return True
+    
+    def get_entity_insights(self, entity_type: str = None, 
+                           min_relevance: float = 0.0,
+                           limit: int = 100) -> List[Dict]:
+        """Get entity insights with optional filtering."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if entity_type:
+                cursor.execute("""
+                    SELECT * FROM entity_insights 
+                    WHERE entity_type = ? AND relevance_score >= ?
+                    ORDER BY relevance_score DESC, extracted_at DESC
+                    LIMIT ?
+                """, (entity_type, min_relevance, limit))
+            else:
+                cursor.execute("""
+                    SELECT * FROM entity_insights 
+                    WHERE relevance_score >= ?
+                    ORDER BY relevance_score DESC, extracted_at DESC
+                    LIMIT ?
+                """, (min_relevance, limit))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_top_entities(self, days: int = 7, limit: int = 20) -> List[Dict]:
+        """Get most frequently mentioned entities in recent period."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cutoff = (date.today() - timedelta(days=days)).isoformat()
+            
+            cursor.execute("""
+                SELECT entity_name, entity_type, 
+                       COUNT(*) as mention_count,
+                       AVG(relevance_score) as avg_relevance
+                FROM entity_insights 
+                WHERE extracted_at >= ?
+                GROUP BY entity_name, entity_type
+                ORDER BY mention_count DESC, avg_relevance DESC
+                LIMIT ?
+            """, (cutoff, limit))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    # ==========================================
+    # ACTION INSIGHTS METHODS
+    # ==========================================
+    
+    def save_action_insight(self, action_id: str, action_type: str,
+                           title: str, description: str = None,
+                           priority: str = 'medium', status: str = 'pending',
+                           source_report: str = None, source_context: str = None,
+                           deadline: str = None, metadata: str = None) -> bool:
+        """Save an action insight."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                INSERT INTO action_insights 
+                (action_id, action_type, title, description, priority, status,
+                 source_report, source_context, deadline, created_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(action_id) DO UPDATE SET
+                    status = excluded.status,
+                    description = excluded.description
+            """, (action_id, action_type, title, description, priority, status,
+                  source_report, source_context, deadline, now, metadata))
+            
+            return True
+    
+    def get_pending_actions(self, priority: str = None, limit: int = 50) -> List[Dict]:
+        """Get pending action insights."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if priority:
+                cursor.execute("""
+                    SELECT * FROM action_insights 
+                    WHERE status = 'pending' AND priority = ?
+                    ORDER BY 
+                        CASE priority 
+                            WHEN 'critical' THEN 1 
+                            WHEN 'high' THEN 2 
+                            WHEN 'medium' THEN 3 
+                            ELSE 4 
+                        END,
+                        created_at ASC
+                    LIMIT ?
+                """, (priority, limit))
+            else:
+                cursor.execute("""
+                    SELECT * FROM action_insights 
+                    WHERE status = 'pending'
+                    ORDER BY 
+                        CASE priority 
+                            WHEN 'critical' THEN 1 
+                            WHEN 'high' THEN 2 
+                            WHEN 'medium' THEN 3 
+                            ELSE 4 
+                        END,
+                        created_at ASC
+                    LIMIT ?
+                """, (limit,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def update_action_status(self, action_id: str, status: str, 
+                            result: str = None) -> bool:
+        """Update action insight status."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                UPDATE action_insights 
+                SET status = ?, result = ?, completed_at = ?
+                WHERE action_id = ?
+            """, (status, result, now if status in ('completed', 'failed') else None, action_id))
+            
+            return cursor.rowcount > 0
+    
+    def get_action_stats(self) -> Dict[str, Any]:
+        """Get action insights statistics."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT status, COUNT(*) as count 
+                FROM action_insights 
+                GROUP BY status
+            """)
+            
+            stats = {'pending': 0, 'in_progress': 0, 'completed': 0, 'failed': 0, 'skipped': 0}
+            for row in cursor.fetchall():
+                stats[row['status']] = row['count']
+            
+            stats['total'] = sum(stats.values())
+            stats['completion_rate'] = (stats['completed'] / stats['total'] * 100) if stats['total'] > 0 else 0
+            
+            return stats
+    
+    # ==========================================
+    # TASK EXECUTION LOG METHODS
+    # ==========================================
+    
+    def log_task_execution(self, action_id: str, success: bool,
+                          result_data: str = None, execution_time_ms: float = 0,
+                          error_message: str = None, artifacts: str = None) -> bool:
+        """Log task execution result."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO task_execution_log 
+                (action_id, success, result_data, execution_time_ms, error_message, artifacts)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (action_id, 1 if success else 0, result_data, execution_time_ms, error_message, artifacts))
+            
+            return True
+    
+    def get_execution_history(self, action_id: str = None, 
+                             days: int = 7) -> List[Dict]:
+        """Get task execution history."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+            
+            if action_id:
+                cursor.execute("""
+                    SELECT * FROM task_execution_log 
+                    WHERE action_id = ? AND executed_at >= ?
+                    ORDER BY executed_at DESC
+                """, (action_id, cutoff))
+            else:
+                cursor.execute("""
+                    SELECT * FROM task_execution_log 
+                    WHERE executed_at >= ?
+                    ORDER BY executed_at DESC
+                    LIMIT 100
+                """, (cutoff,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    # ==========================================
+    # SYSTEM CONFIG METHODS
+    # ==========================================
+    
+    def get_config(self, key: str, default: str = None) -> Optional[str]:
+        """Get a system configuration value."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM system_config WHERE key = ?", (key,))
+            row = cursor.fetchone()
+            return row['value'] if row else default
+    
+    def set_config(self, key: str, value: str, description: str = None) -> bool:
+        """Set a system configuration value."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                INSERT INTO system_config (key, value, description, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                    value = excluded.value,
+                    description = COALESCE(excluded.description, system_config.description),
+                    updated_at = excluded.updated_at
+            """, (key, value, description, now))
+            
+            return True
+    
+    def get_all_config(self) -> Dict[str, str]:
+        """Get all system configuration values."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT key, value FROM system_config")
+            return {row['key']: row['value'] for row in cursor.fetchall()}
 
 
 # Singleton instance
