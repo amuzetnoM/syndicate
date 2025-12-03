@@ -77,6 +77,8 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **Automated Charts** | Candlestick charts with SMA overlays via mplfinance |
 | **Multiple Report Types** | Daily journals, pre-market plans, weekly rundowns, monthly/yearly reports |
 | **Intelligent File Organization** | Auto-categorizes, dates, and archives reports (>7 days) |
+| **YAML Frontmatter** | Auto-generates metadata headers for categorization and tagging |
+| **Notion Integration** | Automatic publishing to Notion database with type/tag mapping |
 | **Dual Interface** | Command-line CLI and graphical GUI dashboard |
 | **No-AI Mode** | Run data analysis without API calls for testing or offline use |
 
@@ -471,6 +473,8 @@ The system is organized into modular components:
 | **DBManager** | `db_manager.py` | SQLite database for report storage and historical queries |
 | **LiveAnalyzer** | `scripts/live_analysis.py` | Live analysis suite with catalyst/matrix/period reports |
 | **EconomicCalendar** | `scripts/economic_calendar.py` | Self-maintaining economic event calendar |
+| **Frontmatter** | `scripts/frontmatter.py` | YAML metadata generator for reports |
+| **NotionPublisher** | `scripts/notion_publisher.py` | Syncs reports to Notion database |
 
 ---
 
@@ -481,6 +485,8 @@ The system is organized into modular components:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes* | Google Gemini API key (*not needed with `--no-ai`) |
+| `NOTION_API_KEY` | No | Notion integration API key (for auto-publishing) |
+| `NOTION_DATABASE_ID` | No | Notion database ID to publish reports to |
 
 ### Config Class Parameters (main.py)
 

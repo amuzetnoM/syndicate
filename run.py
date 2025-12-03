@@ -456,6 +456,27 @@ def _run_post_analysis_tasks():
         except Exception as fm_err:
             print(f"[DAEMON] Frontmatter error: {fm_err}")
         
+        # 5. Publish to Notion
+        print("[DAEMON] Publishing to Notion...")
+        try:
+            from scripts.notion_publisher import sync_all_outputs
+            
+            results = sync_all_outputs()
+            success_count = len(results.get('success', []))
+            failed_count = len(results.get('failed', []))
+            
+            if success_count > 0:
+                print(f"[DAEMON] Published {success_count} files to Notion")
+            if failed_count > 0:
+                print(f"[DAEMON] Failed to publish {failed_count} files")
+        except ImportError:
+            print("[DAEMON] Notion publisher not available, skipping")
+        except ValueError as e:
+            # Missing API keys
+            print(f"[DAEMON] Notion not configured: {e}")
+        except Exception as notion_err:
+            print(f"[DAEMON] Notion publishing error: {notion_err}")
+        
     except ImportError as e:
         print(f"[DAEMON] Post-analysis skipped (missing module): {e}")
     except Exception as e:

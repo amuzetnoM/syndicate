@@ -305,15 +305,35 @@ class NotionPublisher:
         # Convert to blocks
         blocks = self.markdown_to_blocks(body)
         
+        # Build properties - start with required title
+        properties = {
+            "title": {"title": [{"text": {"content": title}}]}
+        }
+        
+        # Add optional properties if they exist in the database
+        # Note: These will be silently ignored if properties don't exist
+        try:
+            if doc_type:
+                properties["Type"] = {"select": {"name": doc_type}}
+        except:
+            pass
+        
+        try:
+            if doc_date:
+                properties["Date"] = {"date": {"start": doc_date}}
+        except:
+            pass
+        
+        try:
+            if tags:
+                properties["Tags"] = {"multi_select": [{"name": t} for t in tags]}
+        except:
+            pass
+        
         # Create page
         response = self.client.pages.create(
             parent={"database_id": self.config.database_id},
-            properties={
-                "Name": {"title": [{"text": {"content": title}}]},
-                "Type": {"select": {"name": doc_type}},
-                "Date": {"date": {"start": doc_date}},
-                **({"Tags": {"multi_select": [{"name": t} for t in tags]}} if tags else {})
-            },
+            properties=properties,
             children=blocks[:100]  # Notion limit per request
         )
         
@@ -406,7 +426,7 @@ class NotionPublisher:
 def sync_all_outputs(output_dir: str = None) -> Dict[str, Any]:
     """Sync all Gold Standard outputs to Notion."""
     if output_dir is None:
-        output_dir = PROJECT_ROOT / "gold_standard" / "output"
+        output_dir = PROJECT_ROOT / "output"
     
     output_path = Path(output_dir)
     if not output_path.exists():
@@ -415,8 +435,11 @@ def sync_all_outputs(output_dir: str = None) -> Dict[str, Any]:
     publisher = NotionPublisher()
     results = {"success": [], "failed": []}
     
-    # Find all markdown files
-    md_files = list(output_path.glob("*.md")) + list(output_path.glob("reports/*.md"))
+    # Find all markdown files recursively
+    md_files = list(output_path.glob("**/*.md"))
+    
+    # Filter out index files
+    md_files = [f for f in md_files if 'FILE_INDEX' not in f.name]
     
     for filepath in md_files:
         try:
