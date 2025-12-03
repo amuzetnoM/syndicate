@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2025-12-03
+
+### Added
+- **Notion Integration**
+  - Automatic publishing of all reports to Notion database
+  - New `scripts/notion_publisher.py` with full markdown-to-blocks conversion
+  - Supports tables, code blocks, headers, lists, and callouts
+  - Configurable via `NOTION_API_KEY` and `NOTION_DATABASE_ID` environment variables
+
+- **Frontmatter System**
+  - YAML metadata headers for all generated reports
+  - New `scripts/frontmatter.py` with intelligent type detection
+  - Auto-extracts tags from content (tickers, keywords)
+  - Journal-specific metadata: bias extraction, gold price
+  - Report categorization: journal, premarket, catalyst, institutional, technical, economic
+
+- **Publishing Pipeline**
+  - Notion sync integrated into `run.py` as Step 5
+  - Frontmatter applied automatically after report generation
+
+- **Documentation Site Redesign**
+  - Complete overhaul of `docs/index.html`
+  - Glass morphism UI with gold accent theming
+  - Animated background with floating orbs and parallax effects
+  - Notion workspace quick-link in navigation and hero
+  - Bold uppercase "GOLD STANDARD" branding
+
+### Changed
+- Updated `README.md` with Notion integration instructions
+- Updated `GUIDE.md` with frontmatter and Notion sections
+- Updated `ARCHITECTURE.md` with new module documentation
+- Simplified `.env` and `.env.template` formatting
+
+### Fixed
+- Notion API property mapping (title vs Name)
+- Output path resolution in notion_publisher.py
+- Removed residual frontmatter code from economic_calendar.py
+
+---
+
 ## [3.0.0] - 2025-12-03
 
 ### Added
@@ -162,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[3.1.0]: https://github.com/amuzetnoM/gold_standard/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/amuzetnoM/gold_standard/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/amuzetnoM/gold_standard/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/amuzetnoM/gold_standard/compare/v1.5.0...v2.0.0
