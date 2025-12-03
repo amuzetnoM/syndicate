@@ -1,0 +1,104 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Prometheus Alert Rules - Gold Standard
+# ══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: gold_standard_alerts
+    rules:
+      # Application Health
+      - alert: GoldStandardDown
+        expr: up{job="gold-standard"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gold Standard application is down"
+          description: "Gold Standard has been unreachable for more than 1 minute."
+
+      - alert: GoldStandardHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name="gold-standard"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gold Standard high CPU usage"
+          description: "Gold Standard CPU usage is above 80% for 5 minutes."
+
+      - alert: GoldStandardHighMemory
+        expr: container_memory_usage_bytes{name="gold-standard"} / container_spec_memory_limit_bytes{name="gold-standard"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gold Standard high memory usage"
+          description: "Gold Standard memory usage is above 85% of limit."
+
+      # Task Execution Alerts
+      - alert: StuckTasksDetected
+        expr: gold_standard_stuck_tasks > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stuck tasks detected in Gold Standard"
+          description: "{{ $value }} tasks have been stuck for more than 10 minutes."
+
+      - alert: HighFailureRate
+        expr: rate(gold_standard_task_failures_total[15m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High task failure rate"
+          description: "Task failure rate is above 10% over the last 15 minutes."
+
+      # System Resources
+      - alert: HighDiskUsage
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage on host"
+          description: "Disk usage is above 85% on root filesystem."
+
+      - alert: ContainerRestarting
+        expr: changes(container_start_time_seconds{name="gold-standard"}[15m]) > 2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gold Standard container restarting"
+          description: "Container has restarted more than 2 times in the last 15 minutes."
+
+  - name: infrastructure_alerts
+    rules:
+      # Prometheus Health
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target missing"
+          description: "A Prometheus target has been down for more than 5 minutes."
+
+      # Alertmanager Health
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alertmanager is down"
+          description: "Alertmanager has been unreachable for more than 2 minutes."
+
+      # Grafana Health
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard has been unreachable for more than 2 minutes."

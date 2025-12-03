@@ -1,0 +1,17 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Grafana Dashboard Provisioning - Gold Standard
+# ══════════════════════════════════════════════════════════════════════════════
+
+apiVersion: 1
+
+providers:
+  - name: 'Gold Standard Dashboards'
+    orgId: 1
+    folder: 'Gold Standard'
+    folderUid: 'gold-standard'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

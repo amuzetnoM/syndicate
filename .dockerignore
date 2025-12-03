@@ -1,0 +1,91 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Docker Ignore - Gold Standard
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Development
+.vscode/
+.idea/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv*/
+.venv/
+env/
+.env.local
+.env.development
+.env.test
+
+# Test files
+tests/
+*.test.py
+test_*.py
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+MANIFEST
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.bak
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Local configuration
+.env
+cortex_memory.json
+data/*.db
+output/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+docker/
+.docker/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+Jenkinsfile
+
+# Misc
+*.tar.gz
+*.zip
+scripts/setup.*
+Makefile

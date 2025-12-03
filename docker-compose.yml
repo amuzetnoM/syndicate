@@ -1,0 +1,278 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  _________._____________.___ ____ ___  _________      .__         .__            
+# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____   
+# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \  
+# /        \|   ||    |   \   |    |  / /        \/ __ \|  |_|  |_> >   Y  \/ __ \_
+# /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
+#         \/             \/                     \/     \/     |__|        \/     \/ 
+#
+# Gold Standard - Precious Metals Intelligence System
+# Copyright (c) 2025 SIRIUS Alpha
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Full Stack with Monitoring
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose --profile dev up   # Start with development tools
+#   docker compose logs -f gost       # Follow Gold Standard logs
+#   docker compose down               # Stop all services
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ===========================================================================
+  # Gold Standard - Main Application
+  # ===========================================================================
+  gost:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: ghcr.io/amuzetnom/gold_standard:latest
+    container_name: gold-standard
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+      - PYTHONUNBUFFERED=1
+      # API Keys - Use .env file or Docker secrets
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+      # Prometheus metrics
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+    volumes:
+      # Persistent data
+      - gost_data:/app/data
+      - gost_output:/app/output
+      # Configuration (optional mount)
+      - ./cortex_memory.json:/app/cortex_memory.json:ro
+    networks:
+      - gost-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "from db_manager import get_db; get_db()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=8080"
+      - "prometheus.path=/metrics"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================================================
+  # Prometheus - Metrics Collection
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: gost-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - gost-network
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Grafana - Visualization & Dashboards
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: gost-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-goldstandard}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - gost-network
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Alertmanager - Alert Routing
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: gost-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    volumes:
+      - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - gost-network
+    ports:
+      - "9093:9093"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Node Exporter - Host Metrics (Optional)
+  # ===========================================================================
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: gost-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - gost-network
+    ports:
+      - "9100:9100"
+    profiles:
+      - monitoring
+    pid: host
+
+  # ===========================================================================
+  # cAdvisor - Container Metrics
+  # ===========================================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: gost-cadvisor
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - gost-network
+    ports:
+      - "8080:8080"
+    profiles:
+      - monitoring
+
+  # ===========================================================================
+  # Loki - Log Aggregation
+  # ===========================================================================
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: gost-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./docker/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    networks:
+      - gost-network
+    ports:
+      - "3100:3100"
+    profiles:
+      - logging
+
+  # ===========================================================================
+  # Promtail - Log Collector
+  # ===========================================================================
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: gost-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./docker/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - gost-network
+    depends_on:
+      - loki
+    profiles:
+      - logging
+
+  # ===========================================================================
+  # Development Tools
+  # ===========================================================================
+  gost-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: gold-standard-dev
+    environment:
+      - TZ=UTC
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+    volumes:
+      - .:/app
+      - gost_data:/app/data
+    networks:
+      - gost-network
+    profiles:
+      - dev
+    stdin_open: true
+    tty: true
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  gost-network:
+    driver: bridge
+    name: gold-standard-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  gost_data:
+    name: gold-standard-data
+  gost_output:
+    name: gold-standard-output
+  prometheus_data:
+    name: gold-standard-prometheus
+  grafana_data:
+    name: gold-standard-grafana
+  alertmanager_data:
+    name: gold-standard-alertmanager
+  loki_data:
+    name: gold-standard-loki

@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.2] - 2025-12-04
+
+### Added
+- **Complete Docker Suite**
+  - Multi-stage `Dockerfile` with builder/runtime/development stages
+  - Non-root user security (`goldstandard` user)
+  - Health check with database connectivity validation
+  - Support for `linux/amd64` and `linux/arm64` platforms
+
+- **Docker Compose Stack**
+  - Full monitoring stack: Prometheus, Grafana, Alertmanager
+  - Optional logging stack: Loki + Promtail (profile: logging)
+  - Optional host metrics: cAdvisor, Node Exporter (profile: monitoring)
+  - Development container with live code mounting (profile: dev)
+  - Persistent volumes for data, metrics, and dashboards
+
+- **Prometheus Metrics Endpoint**
+  - `scripts/metrics_server.py` - Standalone metrics exporter
+  - Metrics: tasks_ready, tasks_scheduled, stuck_tasks, completions, failures
+  - Application uptime and last execution timestamp
+  - `/metrics` and `/health` HTTP endpoints
+
+- **Pre-configured Grafana Dashboard**
+  - Gold Standard Overview with system health panels
+  - CPU/Memory usage graphs
+  - Task execution rate charts
+  - Duration percentile tracking (p50, p95, p99)
+
+- **Alert Rules**
+  - GoldStandardDown - Application unreachable
+  - StuckTasksDetected - Tasks stuck > 10 minutes
+  - HighFailureRate - Task failure rate > 10%
+  - HighDiskUsage, ContainerRestarting alerts
+
+- **GitHub Actions Docker Workflow**
+  - Automated build on release and version tags
+  - Multi-platform builds (amd64 + arm64)
+  - Security scanning with Trivy
+  - Push to GitHub Container Registry (ghcr.io)
+  - Build attestation and SBOM generation
+
+### Changed
+- Added `.dockerignore` for optimized builds
+- All project files now have SIRIUS Alpha branding headers
+
+### Documentation
+- `docker/README.md` - Complete Docker deployment guide
+- Architecture diagrams for containerized deployment
+- Alertmanager configuration templates (Slack, email, webhooks)
+
+---
+
 ## [3.2.1] - 2025-12-04
 
 ### Added

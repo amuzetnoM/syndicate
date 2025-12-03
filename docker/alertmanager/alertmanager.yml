@@ -1,0 +1,75 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Alertmanager Configuration - Gold Standard
+# ══════════════════════════════════════════════════════════════════════════════
+
+global:
+  # How long to wait before sending a notification again
+  resolve_timeout: 5m
+
+# The root route - all alerts start here
+route:
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity']
+  # How long to wait before sending initial notification for a group
+  group_wait: 30s
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 5m
+  # How long to wait before re-sending a notification
+  repeat_interval: 4h
+  # Default receiver
+  receiver: 'default-receiver'
+  
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+    
+    # Warning alerts - batched
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      group_wait: 1m
+      repeat_interval: 4h
+
+# Inhibition rules - suppress notifications
+inhibit_rules:
+  # If GoldStandardDown is firing, suppress all other Gold Standard alerts
+  - source_match:
+      alertname: 'GoldStandardDown'
+    target_match_re:
+      alertname: 'GoldStandard.*'
+    equal: ['job']
+
+# Notification receivers
+receivers:
+  - name: 'default-receiver'
+    # Configure your notification channels here
+    # Example: Webhook
+    # webhook_configs:
+    #   - url: 'http://your-webhook-endpoint/alerts'
+    #     send_resolved: true
+
+  - name: 'critical-receiver'
+    # Example: Slack for critical alerts
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#alerts-critical'
+    #     send_resolved: true
+    #     title: '🚨 Critical Alert'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  - name: 'warning-receiver'
+    # Example: Slack for warnings
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#alerts-warning'
+    #     send_resolved: true
+    #     title: '⚠️ Warning'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+# Templates for notifications
+templates: []
