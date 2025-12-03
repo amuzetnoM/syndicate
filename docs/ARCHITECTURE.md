@@ -99,6 +99,14 @@ logging:
   level: INFO
 ```
 
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes* | Google Gemini API key (*not needed with `--no-ai`) |
+| `NOTION_API_KEY` | No | Notion integration API key |
+| `NOTION_DATABASE_ID` | No | Target Notion database ID |
+
 ## Database schema (SQLite) & migration
 Primary tables:
 
