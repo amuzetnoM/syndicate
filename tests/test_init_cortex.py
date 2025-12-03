@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+# ══════════════════════════════════════════════════════════════════════════════
+#  _________._____________.___ ____ ___  _________      .__         .__            
+# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____   
+# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \  
+# /        \|   ||    |   \   |    |  / /        \/ __ \|  |_|  |_> >   Y  \/ __ \_
+# /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
+#         \/             \/                     \/     \/     |__|        \/     \/ 
+#
+# Gold Standard - Precious Metals Intelligence System
+# Copyright (c) 2025 SIRIUS Alpha
+# All rights reserved.
+# ══════════════════════════════════════════════════════════════════════════════
 """
 Small test harness to validate that the Cortex class initializes `cortex_memory.json` from the template when missing.
 This does not run the full suite; it's only a small functional check.

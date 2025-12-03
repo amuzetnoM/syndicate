@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+# ══════════════════════════════════════════════════════════════════════════════
+#  _________._____________.___ ____ ___  _________      .__         .__            
+# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____   
+# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \  
+# /        \|   ||    |   \   |    |  / /        \/ __ \|  |_|  |_> >   Y  \/ __ \_
+# /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
+#         \/             \/                     \/     \/     |__|        \/     \/ 
+#
+# Gold Standard - Precious Metals Intelligence System
+# Copyright (c) 2025 SIRIUS Alpha
+# All rights reserved.
+# ══════════════════════════════════════════════════════════════════════════════
 """
 Initialize `cortex_memory.json` from the repository template if it doesn't already exist.
 This is a small helper for new users who want a starting memory file in their local clone.
