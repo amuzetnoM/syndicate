@@ -8,6 +8,7 @@ to create professional-looking pages.
 """
 import re
 from typing import Dict, List, Any, Optional, Tuple
+import html as _html
 from dataclasses import dataclass
 from enum import Enum
 
@@ -405,6 +406,71 @@ def parse_markdown_table(lines: List[str], start_idx: int) -> Tuple[List[List[st
     return rows, i
 
 
+def _strip_html_tags(text: str) -> str:
+    """Remove HTML tags and unescape HTML entities."""
+    if not text:
+        return ''
+    cleaned = re.sub(r'<[^>]+>', '', text)
+    return _html.unescape(cleaned).strip()
+
+
+def convert_html_table_to_markdown(table_html: str) -> str:
+    """Convert a single HTML table block into a markdown table (code fenced)."""
+    # Extract header cells
+    headers = re.findall(r'<th[^>]*>(.*?)</th>', table_html, flags=re.S | re.I)
+
+    # Extract all rows
+    rows_html = re.findall(r'<tr[^>]*>(.*?)</tr>', table_html, flags=re.S | re.I)
+    rows = []
+    for tr in rows_html:
+        # extract both td and th cells
+        cells = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', tr, flags=re.S | re.I)
+        if cells:
+            rows.append([_strip_html_tags(c) for c in cells])
+
+    # Build markdown table
+    md_lines = []
+    if headers:
+        header_texts = [_strip_html_tags(h) for h in headers]
+        md_lines.append('| ' + ' | '.join(header_texts) + ' |')
+        md_lines.append('| ' + ' | '.join(['---'] * len(header_texts)) + ' |')
+        # Append rows, skipping any that are exactly the header
+        for r in rows:
+            if r == header_texts:
+                continue
+            # Normalize row length to header length
+            row = r + [''] * (len(header_texts) - len(r))
+            md_lines.append('| ' + ' | '.join(row) + ' |')
+    else:
+        # No header: use first row as header if present
+        if rows:
+            maxcols = max(len(r) for r in rows)
+            # Use empty header names
+            md_lines.append('| ' + ' | '.join([''] * maxcols) + ' |')
+            md_lines.append('| ' + ' | '.join(['---'] * maxcols) + ' |')
+            for r in rows:
+                r = r + [''] * (maxcols - len(r))
+                md_lines.append('| ' + ' | '.join(r) + ' |')
+        else:
+            return ''
+
+    md = '\n'.join(md_lines)
+    # Return raw markdown table text so the markdown parser can pick it up as a table
+    return '\n' + md + '\n'
+
+
+def convert_all_html_tables_to_markdown(content: str) -> str:
+    """Find all <table>...</table> blocks and replace them with markdown tables."""
+    table_pattern = re.compile(r'<table[^>]*>.*?</table>', flags=re.S | re.I)
+    def _repl(match):
+        table_html = match.group(0)
+        try:
+            return convert_html_table_to_markdown(table_html)
+        except Exception:
+            return ''
+    return table_pattern.sub(_repl, content)
+
+
 class NotionFormatter:
     """Transform markdown to enhanced Notion blocks."""
     
@@ -428,6 +494,9 @@ class NotionFormatter:
                         self.bias = match.group(1).upper()
                 content = parts[2].strip()
         
+        # Convert HTML tables to Markdown to improve Notion conversion
+        content = convert_all_html_tables_to_markdown(content)
+
         # Add header callout based on doc type
         self._add_header_callout(doc_type)
         
