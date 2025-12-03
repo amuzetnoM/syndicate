@@ -1,8 +1,8 @@
 # Gold Standard Technical Booklet
 
-> Educational Guide and Technical Reference
+> Educational Guide and Technical Reference — v3.0
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.0 introduces autonomous intelligence with insights extraction, task execution, and intelligent file organization.
 
 ---
 
@@ -17,9 +17,12 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 7. [Live Analysis Suite](#live-analysis-suite)
 8. [Economic Calendar Module](#economic-calendar-module)
 9. [Database Manager](#database-manager)
-10. [Testing Guidelines](#testing-guidelines)
-11. [Deployment Notes](#deployment-notes)
-12. [Extension Patterns](#extension-patterns)
+10. [Insights Engine](#insights-engine)
+11. [Task Executor](#task-executor)
+12. [File Organizer](#file-organizer)
+13. [Testing Guidelines](#testing-guidelines)
+14. [Deployment Notes](#deployment-notes)
+15. [Extension Patterns](#extension-patterns)
 
 ---
 
@@ -449,6 +452,166 @@ CREATE TABLE journals (
 - Historical analysis queries
 - Performance tracking over time
 - Data export capabilities
+- Entity and action insights storage
+- Task execution history
+
+---
+
+## Insights Engine
+
+The `scripts/insights_engine.py` module extracts actionable intelligence from generated reports.
+
+### Overview
+
+The Insights Engine scans reports for:
+- **Entity Insights**: Named entities (Fed, ECB, CME, indicators, assets)
+- **Action Insights**: Research tasks, data to fetch, news to scan, calculations
+
+### InsightsExtractor Class
+
+```python
+from scripts.insights_engine import InsightsExtractor
+
+extractor = InsightsExtractor(config, logger, model)
+
+# Extract from a report
+entities = extractor.extract_entities(report_content, "Journal_2025-12-01.md")
+actions = extractor.extract_actions(report_content, "Journal_2025-12-01.md")
+```
+
+### Entity Types
+
+| Type | Examples |
+|------|----------|
+| Institution | Fed, ECB, BOJ, CME, Goldman Sachs |
+| Indicator | CPI, NFP, GDP, RSI, ADX |
+| Asset | Gold, Silver, DXY, VIX, S&P 500 |
+| Event | FOMC Meeting, Rate Decision, OpEx |
+| Person | Powell, Lagarde, Yellen |
+
+### Action Types
+
+| Type | Description |
+|------|-------------|
+| `research` | Topics requiring further investigation |
+| `data_fetch` | Data to retrieve (COT, ETF flows) |
+| `news_scan` | News/headlines to monitor |
+| `calculation` | Math/risk calculations to perform |
+| `monitoring` | Price levels or conditions to watch |
+
+### Action Priorities
+
+- **critical**: Requires immediate attention
+- **high**: Important for current session
+- **medium**: Should be addressed soon
+- **low**: Background task
+
+---
+
+## Task Executor
+
+The `scripts/task_executor.py` module autonomously executes extracted action insights.
+
+### Overview
+
+The Task Executor moves the system from "showing" to "doing" by automatically executing actionable tasks identified by the Insights Engine.
+
+### TaskExecutor Class
+
+```python
+from scripts.task_executor import TaskExecutor
+
+executor = TaskExecutor(config, logger, db_manager, model)
+
+# Execute a single action
+result = executor.execute_action(action_insight)
+
+# Process the entire queue
+executor.process_queue()
+```
+
+### Task Handlers
+
+| Handler | Action Type | Description |
+|---------|-------------|-------------|
+| `_handle_research` | research | AI-powered research synthesis |
+| `_handle_data_fetch` | data_fetch | Retrieve market data and COT reports |
+| `_handle_news_scan` | news_scan | Scan for relevant news headlines |
+| `_handle_calculation` | calculation | Execute quantitative calculations |
+| `_handle_monitoring` | monitoring | Set up price level monitoring |
+| `_handle_code_task` | code_task | Generate or modify code |
+
+### Execution Flow
+
+1. Insights Engine extracts actions from reports
+2. Actions are queued with priorities
+3. Task Executor processes queue (critical → high → medium → low)
+4. Results are logged and stored in database
+5. Failed tasks can be retried with fallback handlers
+
+---
+
+## File Organizer
+
+The `scripts/file_organizer.py` module provides intelligent file organization for outputs.
+
+### Overview
+
+Automatically organizes generated reports, charts, and exports into a structured directory hierarchy based on file type, date, and content category.
+
+### FileOrganizer Class
+
+```python
+from scripts.file_organizer import FileOrganizer
+
+organizer = FileOrganizer(config, logger)
+
+# Organize all files in output directory
+organizer.organize_output_directory()
+
+# Organize a specific file
+organizer.organize_file(file_path)
+```
+
+### Directory Structure
+
+```
+output/
+├── journals/
+│   └── 2025/
+│       └── 12/
+│           └── Journal_2025-12-01.md
+├── reports/
+│   ├── daily/
+│   ├── weekly/
+│   └── monthly/
+├── charts/
+│   ├── gold/
+│   ├── silver/
+│   └── intermarket/
+├── exports/
+│   ├── csv/
+│   └── json/
+└── archive/
+```
+
+### File Categories
+
+| Category | Patterns | Destination |
+|----------|----------|-------------|
+| journal | `Journal_*.md` | `journals/YYYY/MM/` |
+| weekly | `weekly_*.md` | `reports/weekly/` |
+| monthly | `monthly_*.md` | `reports/monthly/` |
+| chart | `*.png`, `*.svg` | `charts/{asset}/` |
+| data | `*.csv`, `*.json` | `exports/{format}/` |
+
+### Auto-Organization
+
+When running in daemon mode, the File Organizer automatically processes new files:
+
+```bash
+python run.py --daemon --interval-min 1
+```
 
 ---
 
@@ -456,7 +619,7 @@ CREATE TABLE journals (
 
 ### Test Suite Overview
 
-The project includes **33 tests** across 4 test files:
+The project includes comprehensive tests across multiple test files:
 
 | File | Tests | Description |
 |------|-------|-------------|
@@ -464,6 +627,7 @@ The project includes **33 tests** across 4 test files:
 | `test_gemini.py` | 27 | Gemini AI integration (includes 4 live API tests) |
 | `test_split_reports.py` | 2 | Report generation |
 | `test_ta_fallback.py` | 2 | Technical analysis fallback |
+| `test_integration.py` | 1 | Integration tests for v3.0 modules |
 
 ### Running Tests
 
@@ -479,6 +643,9 @@ pytest tests/test_gemini.py -v
 
 # Run live API tests (requires GEMINI_API_KEY in .env)
 pytest tests/test_gemini.py::TestGeminiLiveConnection -v
+
+# Run integration tests for new modules
+pytest tests/test_integration.py -v
 ```
 
 ### Live API Tests
@@ -558,7 +725,22 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["python", "run.py", "--mode", "daily"]
+CMD ["python", "run.py", "--daemon", "--interval-min", "1"]
+```
+
+### Daemon Mode (v3.0)
+
+The system supports autonomous background operation:
+
+```bash
+# Run with 1-minute intervals (default for v3.0)
+python run.py --daemon --interval-min 1
+
+# Legacy 4-hour intervals
+python run.py --daemon --interval-hours 4
+
+# Run once and exit
+python run.py --mode daily --once
 ```
 
 ### Scheduling
@@ -566,11 +748,28 @@ CMD ["python", "run.py", "--mode", "daily"]
 For automated runs, use system scheduler:
 
 ```bash
-# Cron (Unix) - Daily at 8 AM
-0 8 * * * cd /path/to/gold_standard && python run.py --mode daily
+# Cron (Unix) - Daemon mode with 1-minute intervals
+@reboot cd /path/to/gold_standard && python run.py --daemon --interval-min 1
+
+# Single daily run at 8 AM
+0 8 * * * cd /path/to/gold_standard && python run.py --mode daily --once
 
 # Task Scheduler (Windows) - Similar configuration
 ```
+
+### GUI Mode
+
+Launch the desktop dashboard:
+
+```bash
+python run.py --gui
+```
+
+Features:
+- Dual-pane architecture (Data View + AI Workspace)
+- Real-time chart grid with click-to-analyze
+- Task queue and execution log
+- Journal and rationale display
 
 ### Security
 
@@ -637,9 +836,12 @@ def get_february_2026_events(self) -> List[EconomicEvent]:
 | File | Purpose |
 |------|---------|
 | `run.py` | Unified CLI entry point |
-| `gui.py` | GUI dashboard application |
+| `gui.py` | GUI dashboard application (v3.0) |
 | `main.py` | Core pipeline and modules |
 | `db_manager.py` | SQLite database manager |
+| `scripts/insights_engine.py` | Entity and action extraction (v3.0) |
+| `scripts/task_executor.py` | Autonomous task execution (v3.0) |
+| `scripts/file_organizer.py` | Intelligent file organization (v3.0) |
 | `scripts/live_analysis.py` | Live analysis suite |
 | `scripts/economic_calendar.py` | Economic calendar system |
 | `scripts/pre_market.py` | Pre-market plan generator |
@@ -648,6 +850,50 @@ def get_february_2026_events(self) -> List[EconomicEvent]:
 | `scripts/prevent_secrets.py` | Pre-commit secret detection |
 | `cortex_memory.json` | Persistent memory (auto-created) |
 | `cortex_memory.template.json` | Safe template for new users |
+
+---
+
+## Appendix: CLI Reference
+
+### Run Modes
+
+```bash
+# Daemon mode with 1-minute intervals (v3.0 default)
+python run.py --daemon --interval-min 1
+
+# Single execution
+python run.py --mode daily --once
+
+# GUI mode
+python run.py --gui
+
+# Interactive menu
+python run.py --interactive
+```
+
+### Mode Options
+
+| Mode | Description |
+|------|-------------|
+| `daily` | Full daily analysis with journal |
+| `weekly` | Weekly tactical rundown |
+| `monthly` | Monthly/yearly report |
+| `catalyst` | Catalyst watchlist |
+| `institutional` | Institutional matrix |
+| `calendar` | Economic calendar |
+| `premarket` | Pre-market preparation |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--daemon` | Run continuously in background |
+| `--interval-min N` | Set daemon interval (minutes) |
+| `--interval-hours N` | Set daemon interval (hours) |
+| `--once` | Run once and exit |
+| `--no-ai` | Skip AI analysis |
+| `--gui` | Launch desktop dashboard |
+| `--debug` | Enable debug logging |
 
 ---
 
