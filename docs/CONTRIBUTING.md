@@ -1,12 +1,13 @@
 # Contributing to Gold Standard
 
-Thank you for your interest in contributing to Gold Standard! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Gold Standard! This document provides guidelines and instructions for contributing to v3.0 and beyond.
 
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
+- [Project Architecture](#project-architecture)
 - [Making Changes](#making-changes)
 - [Testing](#testing)
 - [Pull Request Process](#pull-request-process)
@@ -45,7 +46,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Prerequisites
 
-- **Python 3.10 - 3.13** (Python 3.14+ not supported due to numba)
+- **Python 3.10 - 3.14** (full support including fallback indicators)
 - Git
 
 ### Setup Steps
@@ -73,6 +74,56 @@ cp .env.template .env
 ```
 
 Add your `GEMINI_API_KEY` for AI features (optional for development with `--no-ai`).
+
+---
+
+## Project Architecture
+
+### Directory Structure
+
+```
+gold_standard/
+├── main.py              # Core: Config, Cortex, QuantEngine, Strategist
+├── run.py               # CLI: Daemon mode, interactive menu, GUI launcher
+├── gui.py               # GUI: Modern dual-pane dashboard (v3.0)
+├── db_manager.py        # Storage: SQLite persistence
+├── scripts/
+│   ├── insights_engine.py    # v3.0: Entity & action extraction
+│   ├── task_executor.py      # v3.0: Autonomous task execution
+│   ├── file_organizer.py     # v3.0: Intelligent file organization
+│   ├── live_analysis.py      # Live analysis suite
+│   ├── economic_calendar.py  # Economic calendar
+│   ├── pre_market.py         # Pre-market preparation
+│   ├── split_reports.py      # Report generation
+│   └── init_cortex.py        # Memory initialization
+├── tests/                # Test suite
+├── docs/                 # Documentation
+└── output/               # Generated reports and charts
+```
+
+### Key Classes
+
+| Class | Module | Purpose |
+|-------|--------|---------|
+| `Config` | main.py | Central configuration (env, thresholds, paths) |
+| `Cortex` | main.py | Persistent memory (predictions, history, trades) |
+| `QuantEngine` | main.py | Data fetching, indicators, charting |
+| `Strategist` | main.py | AI integration, bias generation |
+| `DBManager` | db_manager.py | SQLite persistence layer |
+| `InsightsExtractor` | insights_engine.py | Entity and action extraction (v3.0) |
+| `TaskExecutor` | task_executor.py | Autonomous task execution (v3.0) |
+| `FileOrganizer` | file_organizer.py | Intelligent file organization (v3.0) |
+| `GoldStandardGUI` | gui.py | Desktop dashboard interface (v3.0) |
+
+### v3.0 Modules
+
+The v3.0 release introduces autonomous intelligence:
+
+1. **InsightsExtractor** - Scans reports for entities (Fed, ECB, indicators) and actionable items (research tasks, data to fetch, calculations)
+
+2. **TaskExecutor** - Automatically executes extracted actions with priority-based queuing (critical → high → medium → low)
+
+3. **FileOrganizer** - Organizes output files into structured directories by type, date, and category
 
 ---
 
@@ -123,11 +174,14 @@ pytest tests/test_gemini.py -v
 
 # Run tests matching pattern
 pytest tests/ -k "test_fetch" -v
+
+# Run integration tests for v3.0 modules
+pytest tests/test_integration.py -v
 ```
 
 ### Test Categories
 
-The project includes **33 tests** across 4 test files:
+The project includes comprehensive tests across multiple files:
 
 | Test File | Tests | Purpose |
 |-----------|-------|---------|
@@ -135,6 +189,7 @@ The project includes **33 tests** across 4 test files:
 | `test_gemini.py` | 27 | AI integration and API handling (includes 4 live API tests) |
 | `test_ta_fallback.py` | 2 | Technical analysis with fallbacks |
 | `test_split_reports.py` | 2 | Report generation |
+| `test_integration.py` | 1+ | v3.0 module integration (InsightsEngine, TaskExecutor, FileOrganizer) |
 
 ### Live API Tests
 
@@ -264,23 +319,42 @@ If you discover a security vulnerability:
 
 ## Architecture Overview
 
-```
-gold_standard/
-├── main.py           # Core: Config, Cortex, QuantEngine, Strategist
-├── run.py            # CLI: Daemon mode, interactive menu
-├── gui.py            # GUI: Tkinter dashboard
-├── db_manager.py     # Storage: SQLite persistence
-└── scripts/          # Utilities: Calendar, reports, analysis
-```
+See [Project Architecture](#project-architecture) above for the full module breakdown.
 
-### Key Classes
+### Core Data Flow
 
-| Class | Purpose |
-|-------|---------|
-| `Config` | Central configuration (env, thresholds, paths) |
-| `Cortex` | Persistent memory (predictions, history, trades) |
-| `QuantEngine` | Data fetching, indicators, charting |
-| `Strategist` | AI integration, bias generation |
+```
+                    ┌─────────────────────────────────────────────────────┐
+                    │                   Gold Standard v3.0                │
+                    └─────────────────────────────────────────────────────┘
+                                           │
+           ┌───────────────────────────────┼───────────────────────────────┐
+           ▼                               ▼                               ▼
+    ┌─────────────┐               ┌─────────────┐               ┌─────────────┐
+    │ QuantEngine │               │  Strategist │               │   Cortex    │
+    │ (Data/TA)   │               │    (AI)     │               │  (Memory)   │
+    └─────────────┘               └─────────────┘               └─────────────┘
+           │                               │                               │
+           └───────────────────────────────┼───────────────────────────────┘
+                                           ▼
+                                  ┌─────────────────┐
+                                  │  Report Output  │
+                                  └─────────────────┘
+                                           │
+           ┌───────────────────────────────┼───────────────────────────────┐
+           ▼                               ▼                               ▼
+    ┌─────────────────┐           ┌─────────────────┐           ┌─────────────────┐
+    │ InsightsEngine  │           │  TaskExecutor   │           │  FileOrganizer  │
+    │ (Extract)       │    →      │  (Execute)      │    →      │  (Organize)     │
+    └─────────────────┘           └─────────────────┘           └─────────────────┘
+           │                               │                               │
+           └───────────────────────────────┼───────────────────────────────┘
+                                           ▼
+                                   ┌─────────────┐
+                                   │  DBManager  │
+                                   │  (Persist)  │
+                                   └─────────────┘
+```
 
 ---
 

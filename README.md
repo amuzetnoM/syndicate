@@ -11,7 +11,9 @@
             
 ```
 
-# Gold Standard
+# Gold Standard 
+*version 3.0.0*
+
 
 > **Precious Metals Intelligence Complex** — Quantitative Analysis System
 
@@ -27,7 +29,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 [![Coverage](https://img.shields.io/codecov/c/github/amuzetnoM/gold_standard?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/amuzetnoM/gold_standard)
 
 <!-- Tech Stack -->
-[![Python](https://img.shields.io/badge/python-3.10--3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10--3.14-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Gemini](https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
