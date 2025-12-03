@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.1] - 2025-12-04
+
+### Added
+- **Natural Language Date Extraction**
+  - `_extract_scheduled_date()` method in InsightsExtractor
+  - Parses dates from task descriptions: "Dec 18", "December 18", "Jan 10th", "2025-12-25"
+  - Automatic year rollover logic (past dates schedule to next year)
+  - Default 9 AM execution time for scheduled tasks
+
+- **Execution State Machine**
+  - `claim_action()` - Atomic task claiming to prevent duplicate execution across processes
+  - `release_action()` - Release tasks back to pending state for retry
+  - `get_execution_context()` - Comprehensive state info for monitoring and debugging
+  - Worker ID tracking in task metadata
+
+- **System Health Monitoring**
+  - `get_system_health()` method in DatabaseManager
+  - Real-time metrics: ready_now, scheduled_future, stuck_in_progress counts
+  - 24-hour execution statistics: total, success, avg_time_ms
+  - Schedule tracker status overview
+
+- **Self-Healing Recovery**
+  - Enhanced startup recovery detects and resets stuck tasks
+  - Automatic release of failed tasks back to pending for retry
+  - Exponential backoff with retry count tracking in database
+  - `retry_count` and `last_error` columns in action_insights table
+
+- **Documentation Overhaul**
+  - ARCHITECTURE.md: Full scheduling system documentation with state diagrams
+  - GUIDE.md: User-facing scheduling guide with examples and tables
+  - index_docs.html: New "Intelligent Scheduling" sidebar section with feature cards
+  - index.html: Highlighted scheduling and self-healing features
+
+### Changed
+- Daemon now uses atomic claim/release pattern for race-condition-free execution
+- Task execution logs success/fail counts with emoji indicators
+- Health check runs before each execution cycle with automatic stuck task recovery
+- Clear separation between "ready now" and "scheduled future" tasks
+
+### Fixed
+- Tasks with future dates (e.g., "Dec 18 FOMC") now properly wait until scheduled time
+- Race conditions when multiple daemon processes run simultaneously
+- Stuck tasks from previous crashes now automatically recover on startup
+
+### Removed
+- Temporary debugging scripts: `check_dec18.py`, `check_tasks.py`, `update_task_schedules.py`
+- Cleaned `__pycache__` directories
+
+---
+
 ## [3.2.0] - 2025-12-04
 
 ### Added
