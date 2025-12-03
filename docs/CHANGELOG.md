@@ -10,11 +10,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.1.0] - 2025-12-03
 
 ### Added
+- **Rich Notion Formatting**
+  - New `scripts/notion_formatter.py` with enhanced block generation
+  - Header callouts with document type and bias indicators
+  - Table of contents for longer documents
+  - Section headers with contextual icons
+  - Color-coded bullet points (green=bullish, red=bearish, yellow=neutral)
+  - Proper table rendering with column headers
+  - Visual dividers and professional styling
+
+- **Smart Chart Integration**
+  - New `scripts/chart_publisher.py` for image hosting
+  - Auto-detects ticker mentions in reports (GOLD, SILVER, SPX, VIX, DXY, YIELD)
+  - Uploads charts to imgbb (free 32MB/month)
+  - Embeds relevant charts in "Related Charts" section
+  - File hash caching to avoid re-uploading unchanged charts
+
+- **Usage & Cleanup Management**
+  - New `scripts/cleanup_manager.py` for retention policies
+  - Tracks imgbb and Notion API usage
+  - Monthly counter reset
+  - Configurable retention: 30 days (charts), 90 days (Notion), 180 days (local)
+  - Dry-run mode for safe preview
+  - Warns when approaching free-tier limits
+
 - **Notion Integration**
   - Automatic publishing of all reports to Notion database
   - New `scripts/notion_publisher.py` with full markdown-to-blocks conversion
   - Supports tables, code blocks, headers, lists, and callouts
-  - Configurable via `NOTION_API_KEY` and `NOTION_DATABASE_ID` environment variables
+  - Configurable via `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `IMGBB_API_KEY`
 
 - **Frontmatter System**
   - YAML metadata headers for all generated reports
@@ -23,27 +47,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Journal-specific metadata: bias extraction, gold price
   - Report categorization: journal, premarket, catalyst, institutional, technical, economic
 
-- **Publishing Pipeline**
-  - Notion sync integrated into `run.py` as Step 5
-  - Frontmatter applied automatically after report generation
-
 - **Documentation Site Redesign**
   - Complete overhaul of `docs/index.html`
+  - Professional SVG icons replacing emojis
   - Glass morphism UI with gold accent theming
   - Animated background with floating orbs and parallax effects
   - Notion workspace quick-link in navigation and hero
-  - Bold uppercase "GOLD STANDARD" branding
 
 ### Changed
-- Updated `README.md` with Notion integration instructions
+- Updated `README.md` with chart integration and cleanup commands
 - Updated `GUIDE.md` with frontmatter and Notion sections
 - Updated `ARCHITECTURE.md` with new module documentation
 - Simplified `.env` and `.env.template` formatting
+- Version bump to 3.1.0
 
 ### Fixed
 - Notion API property mapping (title vs Name)
 - Output path resolution in notion_publisher.py
 - Removed residual frontmatter code from economic_calendar.py
+- Moved test_init_cortex.py to tests/ folder
 
 ---
 
