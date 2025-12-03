@@ -3,6 +3,9 @@
 Gold Standard Task Executor
 Executes action insights extracted from reports before the next analysis cycle.
 Transforms the system from passive "showing" to active "doing".
+
+PERSISTENCE MODE: Tasks are executed until completion. On quota errors,
+the executor waits and retries. All completed research is published to Notion.
 """
 import os
 import sys
@@ -28,6 +31,20 @@ except ImportError:
 
 
 # ==========================================
+# RETRY CONFIGURATION
+# ==========================================
+
+# Retry settings for AI quota issues
+MAX_RETRIES = 10
+INITIAL_BACKOFF_SECONDS = 30
+MAX_BACKOFF_SECONDS = 600  # 10 minutes max wait
+QUOTA_ERROR_PATTERNS = [
+    'quota', 'rate limit', 'too many requests', '429', 
+    'resource exhausted', 'capacity', 'overloaded'
+]
+
+
+# ==========================================
 # TASK RESULT
 # ==========================================
 
@@ -40,6 +57,7 @@ class TaskResult:
     execution_time_ms: float
     error_message: Optional[str] = None
     artifacts: List[str] = None  # File paths created
+    retries: int = 0
     
     def __post_init__(self):
         if self.artifacts is None:
@@ -53,7 +71,8 @@ class TaskResult:
 class TaskExecutor:
     """
     Executes action insights from the InsightsExtractor.
-    Runs tasks in priority order before the next analysis cycle.
+    Runs ALL tasks to completion, with retry logic for quota issues.
+    Publishes completed research to Notion automatically.
     """
     
     def __init__(self, config, logger: logging.Logger, model=None, insights_extractor=None):
@@ -81,12 +100,111 @@ class TaskExecutor:
             'successful': 0,
             'failed': 0,
             'skipped': 0,
-            'total_time_ms': 0
+            'retried': 0,
+            'total_time_ms': 0,
+            'notion_published': 0
         }
+        
+        # Notion publisher (lazy loaded)
+        self._notion_publisher = None
     
-    def execute_all_pending(self, max_tasks: int = 20, timeout_per_task: int = 60) -> List[TaskResult]:
+    def _get_notion_publisher(self):
+        """Lazy load Notion publisher."""
+        if self._notion_publisher is None:
+            try:
+                from scripts.notion_publisher import NotionPublisher
+                self._notion_publisher = NotionPublisher()
+                self.logger.info("[EXECUTOR] Notion publisher initialized")
+            except Exception as e:
+                self.logger.warning(f"[EXECUTOR] Notion publisher not available: {e}")
+        return self._notion_publisher
+    
+    def _is_quota_error(self, error_msg: str) -> bool:
+        """Check if an error is a quota/rate limit error."""
+        error_lower = str(error_msg).lower()
+        return any(pattern in error_lower for pattern in QUOTA_ERROR_PATTERNS)
+    
+    def _wait_for_quota(self, retry_count: int) -> int:
+        """Calculate and wait for quota reset. Returns seconds waited."""
+        backoff = min(INITIAL_BACKOFF_SECONDS * (2 ** retry_count), MAX_BACKOFF_SECONDS)
+        self.logger.warning(f"[EXECUTOR] Quota limit hit. Waiting {backoff}s before retry {retry_count + 1}/{MAX_RETRIES}...")
+        print(f"[EXECUTOR] ⏳ Waiting {backoff}s for API quota reset (retry {retry_count + 1}/{MAX_RETRIES})...")
+        time.sleep(backoff)
+        return backoff
+    
+    def _execute_with_retry(self, action, handler: Callable) -> TaskResult:
+        """Execute a task with retry logic for quota errors."""
+        last_error = None
+        
+        for retry in range(MAX_RETRIES + 1):
+            try:
+                result = handler(action)
+                
+                if result.success:
+                    result.retries = retry
+                    return result
+                
+                # Check if failure is due to quota
+                if result.error_message and self._is_quota_error(result.error_message):
+                    if retry < MAX_RETRIES:
+                        self._wait_for_quota(retry)
+                        self.stats['retried'] += 1
+                        continue
+                
+                # Non-quota error, return failure
+                return result
+                
+            except Exception as e:
+                last_error = str(e)
+                if self._is_quota_error(last_error):
+                    if retry < MAX_RETRIES:
+                        self._wait_for_quota(retry)
+                        self.stats['retried'] += 1
+                        continue
+                
+                return TaskResult(
+                    action_id=action.action_id,
+                    success=False,
+                    result_data=None,
+                    execution_time_ms=0,
+                    error_message=last_error,
+                    retries=retry
+                )
+        
+        # All retries exhausted
+        return TaskResult(
+            action_id=action.action_id,
+            success=False,
+            result_data=None,
+            execution_time_ms=0,
+            error_message=f"Max retries ({MAX_RETRIES}) exceeded. Last error: {last_error}",
+            retries=MAX_RETRIES
+        )
+    
+    def _publish_to_notion(self, filepath: str, doc_type: str = 'research') -> bool:
+        """Publish a completed research file to Notion."""
+        publisher = self._get_notion_publisher()
+        if not publisher:
+            return False
+        
+        try:
+            result = publisher.sync_file(filepath, doc_type=doc_type, force=True)
+            if not result.get('skipped'):
+                self.stats['notion_published'] += 1
+                self.logger.info(f"[EXECUTOR] Published to Notion: {Path(filepath).name}")
+                return True
+        except Exception as e:
+            self.logger.warning(f"[EXECUTOR] Failed to publish to Notion: {e}")
+        return False
+
+    def execute_all_pending(self, max_tasks: int = None, timeout_per_task: int = 300) -> List[TaskResult]:
         """
-        Execute all pending actions up to max_tasks.
+        Execute ALL pending actions until completion.
+        
+        Args:
+            max_tasks: Optional limit (None = process ALL tasks)
+            timeout_per_task: Timeout per task in seconds (default 5 min)
+            
         Returns list of TaskResults.
         """
         if not self.insights_extractor:
@@ -95,39 +213,65 @@ class TaskExecutor:
         
         pending = self.insights_extractor.get_pending_actions()
         self.logger.info(f"[EXECUTOR] Found {len(pending)} pending tasks")
+        print(f"[EXECUTOR] 📋 Processing {len(pending)} pending tasks...")
         
         if not pending:
             return []
         
-        # Limit to max_tasks
-        tasks_to_execute = pending[:max_tasks]
+        # Process all tasks unless max_tasks specified
+        tasks_to_execute = pending if max_tasks is None else pending[:max_tasks]
         results = []
         
-        for action in tasks_to_execute:
+        for i, action in enumerate(tasks_to_execute, 1):
             try:
+                print(f"[EXECUTOR] 🔄 Task {i}/{len(tasks_to_execute)}: {action.title[:50]}...")
+                
                 # Mark as in progress
                 action.status = 'in_progress'
                 
-                # Execute with timeout
-                start_time = time.time()
-                result = self._execute_single(action, timeout_per_task)
-                execution_time = (time.time() - start_time) * 1000
+                # Get the handler
+                handler = self.handlers.get(action.action_type)
+                if not handler:
+                    result = TaskResult(
+                        action_id=action.action_id,
+                        success=False,
+                        result_data=None,
+                        execution_time_ms=0,
+                        error_message=f"Unknown action type: {action.action_type}"
+                    )
+                else:
+                    # Execute with retry logic for quota errors
+                    start_time = time.time()
+                    result = self._execute_with_retry(action, handler)
+                    execution_time = (time.time() - start_time) * 1000
+                    result.execution_time_ms = execution_time
                 
-                result.execution_time_ms = execution_time
                 results.append(result)
                 
                 # Update statistics
                 self.stats['total_executed'] += 1
-                self.stats['total_time_ms'] += execution_time
+                self.stats['total_time_ms'] += result.execution_time_ms
                 
                 if result.success:
                     self.stats['successful'] += 1
+                    print(f"[EXECUTOR] ✅ Completed: {action.title[:40]}")
+                    
                     self.insights_extractor.mark_action_complete(
                         action.action_id, 
                         json.dumps(result.result_data) if isinstance(result.result_data, dict) else str(result.result_data)
                     )
+                    
+                    # Publish artifacts to Notion
+                    if result.artifacts:
+                        for artifact_path in result.artifacts:
+                            if artifact_path.endswith('.md'):
+                                self._publish_to_notion(artifact_path, doc_type='research')
+                            elif artifact_path.endswith('.json'):
+                                # Convert JSON to markdown for Notion
+                                self._convert_and_publish_json(artifact_path)
                 else:
                     self.stats['failed'] += 1
+                    print(f"[EXECUTOR] ❌ Failed: {action.title[:40]} - {result.error_message[:50] if result.error_message else 'Unknown'}")
                     self.insights_extractor.mark_action_failed(action.action_id, result.error_message)
                 
             except Exception as e:
@@ -144,8 +288,41 @@ class TaskExecutor:
         self._log_summary(results)
         return results
     
+    def _convert_and_publish_json(self, json_path: str) -> bool:
+        """Convert a JSON data file to markdown and publish to Notion."""
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Create markdown version
+            md_path = json_path.replace('.json', '.md')
+            
+            with open(md_path, 'w', encoding='utf-8') as f:
+                f.write(f"# Data Report: {Path(json_path).stem}\n\n")
+                f.write(f"**Generated:** {data.get('fetched_at', datetime.now().isoformat())}\n")
+                f.write(f"**Action ID:** {data.get('action_id', 'N/A')}\n\n")
+                f.write("---\n\n")
+                
+                # Format the data nicely
+                if 'data' in data:
+                    for key, value in data['data'].items():
+                        f.write(f"## {key.replace('_', ' ').title()}\n\n")
+                        if isinstance(value, dict):
+                            for k, v in value.items():
+                                f.write(f"- **{k}**: {v}\n")
+                        else:
+                            f.write(f"{value}\n")
+                        f.write("\n")
+            
+            # Publish the markdown
+            return self._publish_to_notion(md_path, doc_type='research')
+            
+        except Exception as e:
+            self.logger.warning(f"[EXECUTOR] Failed to convert JSON to markdown: {e}")
+            return False
+    
     def _execute_single(self, action, timeout: int) -> TaskResult:
-        """Execute a single action."""
+        """Execute a single action (legacy method, use _execute_with_retry instead)."""
         handler = self.handlers.get(action.action_type)
         
         if not handler:
@@ -157,16 +334,7 @@ class TaskExecutor:
                 error_message=f"Unknown action type: {action.action_type}"
             )
         
-        try:
-            return handler(action)
-        except Exception as e:
-            return TaskResult(
-                action_id=action.action_id,
-                success=False,
-                result_data=None,
-                execution_time_ms=0,
-                error_message=str(e)
-            )
+        return self._execute_with_retry(action, handler)
     
     # ==========================================
     # TASK HANDLERS
@@ -644,12 +812,26 @@ Provide the complete Python code."""
         successful = sum(1 for r in results if r.success)
         failed = sum(1 for r in results if not r.success)
         total_time = sum(r.execution_time_ms for r in results)
+        total_retries = sum(r.retries for r in results)
+        
+        print("\n" + "=" * 50)
+        print("[EXECUTOR] 📊 Execution Summary")
+        print("=" * 50)
+        print(f"  Total Tasks:      {len(results)}")
+        print(f"  ✅ Successful:    {successful}")
+        print(f"  ❌ Failed:        {failed}")
+        print(f"  🔄 Total Retries: {total_retries}")
+        print(f"  📤 Notion Published: {self.stats.get('notion_published', 0)}")
+        print(f"  ⏱️  Total Time:    {total_time/1000:.1f}s")
+        print("=" * 50 + "\n")
         
         self.logger.info("=" * 50)
         self.logger.info("[EXECUTOR] Execution Summary")
         self.logger.info(f"  Total Tasks: {len(results)}")
         self.logger.info(f"  Successful: {successful}")
         self.logger.info(f"  Failed: {failed}")
+        self.logger.info(f"  Retries: {total_retries}")
+        self.logger.info(f"  Notion Published: {self.stats.get('notion_published', 0)}")
         self.logger.info(f"  Total Time: {total_time:.0f}ms")
         self.logger.info("=" * 50)
     

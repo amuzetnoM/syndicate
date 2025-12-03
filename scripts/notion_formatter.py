@@ -57,7 +57,38 @@ SECTION_EMOJIS = {
     "resistance": "🚧",
     "trend": "📉",
     "momentum": "🚀",
+    "economic": "📅",
+    "calendar": "📆",
+    "institutional": "🏦",
+    "research": "🔬",
+    "premarket": "🌅",
+    "journal": "📓",
+    "report": "📑",
+    "weekly": "📰",
+    "monthly": "📊",
+    "yearly": "📈",
+    "insight": "💡",
+    "data": "📉",
+    "fed": "🏛️",
+    "fomc": "🏛️",
+    "gold": "🥇",
+    "silver": "🥈",
     "default": "📌",
+}
+
+# Document type emoji mapping
+DOC_TYPE_EMOJIS = {
+    "journal": "📓",
+    "premarket": "🌅",
+    "reports": "📑",
+    "analysis": "🔍",
+    "research": "🔬",
+    "economic": "📅",
+    "institutional": "🏦",
+    "insights": "💡",
+    "notes": "📝",
+    "announcements": "📢",
+    "charts": "📊",
 }
 
 # Bias color mapping
@@ -513,35 +544,58 @@ class NotionFormatter:
     
     def _add_header_callout(self, doc_type: str):
         """Add a styled header callout based on document type."""
+        # Comprehensive emoji mapping for all document types
         emoji_map = {
-            "journal": "📔",
-            "reports": "📊",
-            "research": "🔬",
-            "insights": "💡",
-            "articles": "📰",
+            "journal": "📓",
             "premarket": "🌅",
+            "reports": "📑",
+            "analysis": "🔍",
+            "research": "🔬",
+            "economic": "📅",
+            "institutional": "🏦",
+            "insights": "💡",
+            "notes": "📝",
+            "announcements": "📢",
+            "charts": "📊",
             "catalyst": "⚡",
+            "articles": "📰",
+            "weekly": "📰",
+            "monthly": "📊",
+            "yearly": "📈",
         }
         
+        # Comprehensive color mapping for all document types
         color_map = {
             "journal": "yellow_background",
-            "reports": "blue_background",
-            "research": "purple_background",
-            "insights": "green_background",
-            "articles": "gray_background",
             "premarket": "orange_background",
+            "reports": "blue_background",
+            "analysis": "purple_background",
+            "research": "purple_background",
+            "economic": "green_background",
+            "institutional": "blue_background",
+            "insights": "green_background",
+            "notes": "gray_background",
+            "announcements": "red_background",
+            "charts": "blue_background",
             "catalyst": "red_background",
+            "articles": "gray_background",
+            "weekly": "blue_background",
+            "monthly": "purple_background",
+            "yearly": "brown_background",
         }
         
         emoji = emoji_map.get(doc_type, "📄")
         color = color_map.get(doc_type, "default")
         
+        # Format document type for display
+        display_type = doc_type.replace('_', ' ').upper()
+        
         # Add bias indicator if present
         if self.bias:
             bias_emoji = {"BULLISH": "🟢", "BEARISH": "🔴", "NEUTRAL": "🟡"}.get(self.bias, "⚪")
-            header_text = f"**{doc_type.upper()}** | Bias: {bias_emoji} {self.bias}"
+            header_text = f"**{display_type}** | Bias: {bias_emoji} {self.bias}"
         else:
-            header_text = f"**{doc_type.upper()}**"
+            header_text = f"**{display_type}**"
         
         self.blocks.append(callout_block(header_text, emoji=emoji, color=color))
     

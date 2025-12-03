@@ -237,6 +237,33 @@ class DatabaseManager:
                 )
             """)
             
+            # Notion sync tracking - prevents duplicate publishing
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS notion_sync (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    file_path TEXT NOT NULL,
+                    file_hash TEXT NOT NULL,
+                    notion_page_id TEXT,
+                    notion_url TEXT,
+                    doc_type TEXT,
+                    synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(file_path)
+                )
+            """)
+            
+            # Schedule tracking - controls frequency of different operations
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS schedule_tracker (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_name TEXT UNIQUE NOT NULL,
+                    last_run TEXT,
+                    next_run TEXT,
+                    frequency TEXT NOT NULL,
+                    enabled INTEGER DEFAULT 1,
+                    metadata TEXT
+                )
+            """)
+            
             # Create indexes for faster queries
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_type_period ON reports(report_type, period)")
@@ -246,7 +273,213 @@ class DatabaseManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_status ON action_insights(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_priority ON action_insights(priority)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_task_log_action ON task_execution_log(action_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_notion_sync_path ON notion_sync(file_path)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_schedule_task ON schedule_tracker(task_name)")
+            
+            # Initialize default schedules if not present
+            self._init_default_schedules(cursor)
     
+    def _init_default_schedules(self, cursor):
+        """Initialize default task schedules."""
+        default_schedules = [
+            # Daily tasks
+            ('journal_publish', 'daily', 'Publish daily journal to Notion'),
+            ('notion_sync', 'daily', 'Sync all outputs to Notion (skips unchanged files)'),
+            ('insights_extraction', 'daily', 'Extract insights from reports'),
+            
+            # Weekly tasks
+            ('economic_calendar', 'weekly', 'Generate economic calendar'),
+            ('institution_watchlist', 'weekly', 'Update institution watchlist'),
+            ('task_execution', 'weekly', 'Execute pending research/data tasks'),
+            ('weekly_report_publish', 'weekly', 'Publish weekly report to Notion'),
+            
+            # Monthly tasks
+            ('monthly_report_publish', 'monthly', 'Publish monthly report to Notion'),
+            
+            # Yearly tasks
+            ('yearly_report_publish', 'yearly', 'Publish yearly report to Notion'),
+        ]
+        
+        for task_name, frequency, description in default_schedules:
+            cursor.execute("""
+                INSERT OR IGNORE INTO schedule_tracker (task_name, frequency, metadata)
+                VALUES (?, ?, ?)
+            """, (task_name, frequency, description))
+    
+    # ==========================================
+    # SCHEDULE TRACKING METHODS
+    # ==========================================
+    
+    def should_run_task(self, task_name: str) -> bool:
+        """
+        Check if a scheduled task should run based on its frequency.
+        Returns True if the task should run now.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT last_run, frequency, enabled 
+                FROM schedule_tracker 
+                WHERE task_name = ?
+            """, (task_name,))
+            row = cursor.fetchone()
+            
+            if not row:
+                return True  # Unknown task, allow it
+            
+            if not row['enabled']:
+                return False
+            
+            if not row['last_run']:
+                return True  # Never run before
+            
+            last_run = datetime.fromisoformat(row['last_run'])
+            now = datetime.now()
+            frequency = row['frequency']
+            
+            if frequency == 'daily':
+                return last_run.date() < now.date()
+            elif frequency == 'weekly':
+                days_since = (now - last_run).days
+                return days_since >= 7
+            elif frequency == 'monthly':
+                return (last_run.year, last_run.month) < (now.year, now.month)
+            elif frequency == 'yearly':
+                return last_run.year < now.year
+            elif frequency == 'hourly':
+                return (now - last_run).total_seconds() >= 3600
+            else:
+                return True  # Unknown frequency, allow
+    
+    def mark_task_run(self, task_name: str) -> bool:
+        """Mark a scheduled task as having just run."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                UPDATE schedule_tracker 
+                SET last_run = ?
+                WHERE task_name = ?
+            """, (now, task_name))
+            
+            if cursor.rowcount == 0:
+                # Task doesn't exist, create it
+                cursor.execute("""
+                    INSERT INTO schedule_tracker (task_name, last_run, frequency)
+                    VALUES (?, ?, 'daily')
+                """, (task_name, now))
+            
+            return True
+    
+    def get_schedule_status(self) -> List[Dict]:
+        """Get status of all scheduled tasks."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT task_name, last_run, frequency, enabled, metadata
+                FROM schedule_tracker
+                ORDER BY task_name
+            """)
+            
+            results = []
+            now = datetime.now()
+            for row in cursor.fetchall():
+                task = dict(row)
+                task['should_run'] = self.should_run_task(row['task_name'])
+                if row['last_run']:
+                    last = datetime.fromisoformat(row['last_run'])
+                    task['time_since_last'] = str(now - last)
+                else:
+                    task['time_since_last'] = 'Never'
+                results.append(task)
+            
+            return results
+    
+    # ==========================================
+    # NOTION SYNC TRACKING METHODS
+    # ==========================================
+    
+    def get_file_hash(self, file_path: str) -> str:
+        """Calculate a simple hash of file contents for change detection."""
+        import hashlib
+        try:
+            with open(file_path, 'rb') as f:
+                return hashlib.md5(f.read()).hexdigest()
+        except Exception:
+            return ''
+    
+    def is_file_synced(self, file_path: str) -> bool:
+        """Check if a file has been synced to Notion and hasn't changed."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT file_hash FROM notion_sync WHERE file_path = ?
+            """, (file_path,))
+            row = cursor.fetchone()
+            
+            if not row:
+                return False
+            
+            # Check if file has changed
+            current_hash = self.get_file_hash(file_path)
+            return row['file_hash'] == current_hash
+    
+    def record_notion_sync(self, file_path: str, page_id: str, 
+                          url: str, doc_type: str = None) -> bool:
+        """Record that a file has been synced to Notion."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            file_hash = self.get_file_hash(file_path)
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                INSERT INTO notion_sync (file_path, file_hash, notion_page_id, notion_url, doc_type, synced_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(file_path) DO UPDATE SET
+                    file_hash = excluded.file_hash,
+                    notion_page_id = excluded.notion_page_id,
+                    notion_url = excluded.notion_url,
+                    doc_type = excluded.doc_type,
+                    synced_at = excluded.synced_at
+            """, (file_path, file_hash, page_id, url, doc_type, now))
+            
+            return True
+    
+    def get_notion_page_for_file(self, file_path: str) -> Optional[Dict]:
+        """Get Notion page info for a synced file."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM notion_sync WHERE file_path = ?
+            """, (file_path,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+    
+    def get_all_synced_files(self) -> List[Dict]:
+        """Get all files that have been synced to Notion."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM notion_sync 
+                ORDER BY synced_at DESC
+            """)
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def clear_sync_for_file(self, file_path: str) -> bool:
+        """Clear sync record for a file (forces re-sync)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM notion_sync WHERE file_path = ?", (file_path,))
+            return cursor.rowcount > 0
+    
+    def clear_all_sync_records(self) -> int:
+        """Clear all sync records (forces full re-sync)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM notion_sync")
+            return cursor.rowcount
+
     # ==========================================
     # JOURNAL METHODS
     # ==========================================
@@ -787,39 +1020,40 @@ class DatabaseManager:
             
             return True
     
-    def get_pending_actions(self, priority: str = None, limit: int = 50) -> List[Dict]:
-        """Get pending action insights."""
+    def get_pending_actions(self, priority: str = None, limit: int = None) -> List[Dict]:
+        """
+        Get pending action insights.
+        
+        Args:
+            priority: Filter by priority level
+            limit: Max number of actions to return (None = ALL pending actions)
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
-            if priority:
-                cursor.execute("""
-                    SELECT * FROM action_insights 
-                    WHERE status = 'pending' AND priority = ?
-                    ORDER BY 
-                        CASE priority 
-                            WHEN 'critical' THEN 1 
-                            WHEN 'high' THEN 2 
-                            WHEN 'medium' THEN 3 
-                            ELSE 4 
-                        END,
-                        created_at ASC
-                    LIMIT ?
-                """, (priority, limit))
+            base_query = """
+                SELECT * FROM action_insights 
+                WHERE status = 'pending'
+            """
+            order_by = """
+                ORDER BY 
+                    CASE priority 
+                        WHEN 'critical' THEN 1 
+                        WHEN 'high' THEN 2 
+                        WHEN 'medium' THEN 3 
+                        ELSE 4 
+                    END,
+                    created_at ASC
+            """
+            
+            if priority and limit:
+                cursor.execute(f"{base_query} AND priority = ? {order_by} LIMIT ?", (priority, limit))
+            elif priority:
+                cursor.execute(f"{base_query} AND priority = ? {order_by}", (priority,))
+            elif limit:
+                cursor.execute(f"{base_query} {order_by} LIMIT ?", (limit,))
             else:
-                cursor.execute("""
-                    SELECT * FROM action_insights 
-                    WHERE status = 'pending'
-                    ORDER BY 
-                        CASE priority 
-                            WHEN 'critical' THEN 1 
-                            WHEN 'high' THEN 2 
-                            WHEN 'medium' THEN 3 
-                            ELSE 4 
-                        END,
-                        created_at ASC
-                    LIMIT ?
-                """, (limit,))
+                cursor.execute(f"{base_query} {order_by}")
             
             return [dict(row) for row in cursor.fetchall()]
     

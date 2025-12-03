@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.2.0] - 2025-12-04
+
+### Added
+- **Intelligent Scheduling System**
+  - New `schedule_tracker` table in database for frequency-based task execution
+  - `should_run_task()` and `mark_task_run()` methods in DBManager
+  - Configurable schedules: daily (journal), weekly (economic, institutional, task execution), monthly, yearly
+  - Prevents redundant Notion publishing cycles during daemon loops
+
+- **Notion Sync Deduplication**
+  - New `notion_sync` table tracks file_path, file_hash, notion_page_id
+  - Content hashing with SHA-256 to skip unchanged files
+  - `is_file_synced()` and `record_notion_sync()` methods
+  - `get_file_hash()` for deterministic content comparison
+
+- **Persistent Task Execution**
+  - Exponential backoff retry logic (30s to 10min, max 10 retries)
+  - Automatic quota error detection and waiting
+  - Processes ALL pending tasks (no limits)
+  - Auto-publishes task artifacts to Notion database
+
+- **Comprehensive File Tagging**
+  - Expanded TYPE_PATTERNS covering all file organizer categories
+  - New KEYWORD_PATTERNS for Fed, FOMC, CPI, NFP, PCE, etc.
+  - Enhanced TICKER_PATTERNS (GOLD, SILVER, DXY, VIX, SPY, TLT, GDX, etc.)
+  - DOC_TYPE_EMOJIS mapping for visual distinction in Notion
+
+- **Rich Notion Formatting Enhancements**
+  - Expanded SECTION_EMOJIS (economic, institutional, research, premarket, etc.)
+  - Comprehensive emoji_map and color_map in `_add_header_callout()`
+  - Support for: analysis, economic, institutional, notes, announcements, charts
+
+### Changed
+- Updated `run.py` daemon to use schedule-based task triggering
+- Task executor now loads ALL pending actions from database (no limit)
+- Notion publisher respects daily sync schedule to prevent duplication
+- Version bump to 3.2.0
+
+### Fixed
+- Massive duplication issue when daemon loop force-published on every cycle
+- Task executor losing queued actions between daemon restarts
+- Incomplete file type coverage causing missed Notion uploads
+
+---
+
 ## [3.1.0] - 2025-12-03
 
 ### Added

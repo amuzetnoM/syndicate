@@ -127,6 +127,20 @@ def print_status():
     print(f"    Weekly Report:   {'[OK] EXISTS' if not missing['weekly_report'] else '[--] MISSING'}")
     print(f"    Monthly Report:  {'[OK] EXISTS' if not missing['monthly_report'] else '[--] MISSING'}")
     print(f"    Yearly Report:   {'[OK] EXISTS' if not missing['yearly_report'] else '[--] MISSING'}")
+    print("-" * 60)
+    
+    # Show schedule status
+    print("  Scheduled Tasks:")
+    try:
+        schedules = db.get_schedule_status()
+        for sched in schedules:
+            status = "[READY]" if sched['should_run'] else "[DONE] "
+            freq = sched['frequency'].upper()[:3]
+            last = sched['last_run'][:16] if sched['last_run'] else 'Never'
+            print(f"    {status} {sched['task_name']:<25} ({freq}) Last: {last}")
+    except Exception as e:
+        print(f"    (Schedule info unavailable: {e})")
+    
     print("=" * 60 + "\n")
 
 
@@ -357,7 +371,13 @@ def _daemon_cycle(no_ai: bool = False, run_tasks: bool = True):
 
 
 def _run_post_analysis_tasks():
-    """Run insights extraction, task execution, and file organization."""
+    """
+    Run insights extraction, task execution, file organization, and Notion publishing.
+    Uses intelligent scheduling to prevent duplicate work:
+    - Insights extraction: runs daily
+    - Task execution: runs weekly  
+    - Notion sync: runs daily (but skips unchanged files)
+    """
     try:
         from scripts.insights_engine import InsightsExtractor
         from scripts.task_executor import TaskExecutor
@@ -377,6 +397,10 @@ def _run_post_analysis_tasks():
         import logging
         logger = logging.getLogger("GoldStandard.Daemon")
         
+        # Get database for schedule tracking
+        from db_manager import get_db
+        db = get_db()
+        
         # Try to get model
         model = None
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -387,68 +411,109 @@ def _run_post_analysis_tasks():
             except Exception:
                 pass
         
-        # 1. Extract insights from today's reports
-        print("[DAEMON] Extracting insights from reports...")
-        extractor = InsightsExtractor(config, logger, model)
-        reports_dir = Path(config.OUTPUT_DIR) / "reports"
-        entities, actions = extractor.process_all_reports(reports_dir)
-        
-        # Save insights to database
-        from db_manager import get_db
-        db = get_db()
-        
-        for entity in entities:
-            db.save_entity_insight(
-                entity.entity_name,
-                entity.entity_type,
-                entity.context,
-                entity.relevance_score,
-                entity.source_report,
-                str(entity.metadata)
-            )
-        
-        for action in actions:
-            db.save_action_insight(
-                action.action_id,
-                action.action_type,
-                action.title,
-                action.description,
-                action.priority,
-                action.status,
-                action.source_report,
-                action.source_context,
-                action.deadline,
-                str(action.metadata)
-            )
-        
-        print(f"[DAEMON] Extracted {len(entities)} entities, {len(actions)} actions")
-        
-        # 2. Execute pending tasks
-        if model:
-            print("[DAEMON] Executing pending tasks...")
-            executor = TaskExecutor(config, logger, model, extractor)
-            results = executor.execute_all_pending(max_tasks=10)
+        # 1. Extract insights from today's reports (DAILY)
+        if db.should_run_task('insights_extraction'):
+            print("[DAEMON] Extracting insights from reports...")
+            extractor = InsightsExtractor(config, logger, model)
+            reports_dir = Path(config.OUTPUT_DIR) / "reports"
+            entities, actions = extractor.process_all_reports(reports_dir)
             
-            # Log execution results
-            for result in results:
-                db.log_task_execution(
-                    result.action_id,
-                    result.success,
-                    str(result.result_data),
-                    result.execution_time_ms,
-                    result.error_message,
-                    str(result.artifacts) if result.artifacts else None
+            # Save insights to database
+            for entity in entities:
+                db.save_entity_insight(
+                    entity.entity_name,
+                    entity.entity_type,
+                    entity.context,
+                    entity.relevance_score,
+                    entity.source_report,
+                    str(entity.metadata)
                 )
             
-            print(f"[DAEMON] Executed {len(results)} tasks")
+            for action in actions:
+                db.save_action_insight(
+                    action.action_id,
+                    action.action_type,
+                    action.title,
+                    action.description,
+                    action.priority,
+                    action.status,
+                    action.source_report,
+                    action.source_context,
+                    action.deadline,
+                    str(action.metadata)
+                )
+            
+            print(f"[DAEMON] Extracted {len(entities)} entities, {len(actions)} actions")
+            db.mark_task_run('insights_extraction')
+        else:
+            print("[DAEMON] Insights extraction already done today, skipping")
         
-        # 3. Organize files
+        # 2. Execute pending tasks (WEEKLY)
+        # Load ALL pending actions from database - executor will process them all with retry logic
+        if model and db.should_run_task('task_execution'):
+            print("[DAEMON] Executing pending tasks from database...")
+            
+            # Get ALL pending actions from database (no limit)
+            pending_actions = db.get_pending_actions(limit=None)
+            
+            if pending_actions:
+                print(f"[DAEMON] Found {len(pending_actions)} pending tasks")
+                
+                # Create executor
+                extractor = InsightsExtractor(config, logger, model)
+                
+                # Load actions into extractor from database
+                from scripts.insights_engine import ActionInsight
+                for action_dict in pending_actions:
+                    action = ActionInsight(
+                        action_id=action_dict['action_id'],
+                        action_type=action_dict['action_type'],
+                        title=action_dict['title'],
+                        description=action_dict.get('description', ''),
+                        priority=action_dict.get('priority', 'medium'),
+                        status='pending',
+                        source_report=action_dict.get('source_report', ''),
+                        source_context=action_dict.get('source_context', ''),
+                        deadline=action_dict.get('deadline'),
+                    )
+                    extractor.action_queue.append(action)
+                
+                # Execute ALL pending tasks (no limit) - will retry on quota errors
+                executor = TaskExecutor(config, logger, model, extractor)
+                results = executor.execute_all_pending(max_tasks=None)  # Process ALL tasks
+                
+                # Log execution results and update database
+                for result in results:
+                    db.log_task_execution(
+                        result.action_id,
+                        result.success,
+                        str(result.result_data),
+                        result.execution_time_ms,
+                        result.error_message,
+                        str(result.artifacts) if result.artifacts else None
+                    )
+                    
+                    # Update action status in database
+                    if result.success:
+                        db.update_action_status(result.action_id, 'completed', str(result.result_data))
+                    else:
+                        db.update_action_status(result.action_id, 'failed', result.error_message)
+                
+                print(f"[DAEMON] Executed {len(results)} tasks, {executor.stats['notion_published']} published to Notion")
+            else:
+                print("[DAEMON] No pending tasks found")
+            
+            db.mark_task_run('task_execution')
+        elif model:
+            print("[DAEMON] Task execution runs weekly, skipping")
+        
+        # 3. Organize files (runs every cycle - lightweight)
         print("[DAEMON] Organizing files...")
         organizer = FileOrganizer(config, logger)
         org_results = organizer.run_maintenance(archive_days=7)
         print(f"[DAEMON] Organized {org_results['organized']} files, archived {org_results['archived']}")
         
-        # 4. Apply frontmatter to all output files (FINAL STEP)
+        # 4. Apply frontmatter to all output files (runs every cycle - lightweight)
         print("[DAEMON] Applying frontmatter tags...")
         try:
             from scripts.frontmatter import add_frontmatter, has_frontmatter
@@ -473,32 +538,44 @@ def _run_post_analysis_tasks():
                 except Exception as fm_err:
                     logger.debug(f"Frontmatter failed for {md_file.name}: {fm_err}")
             
-            print(f"[DAEMON] Applied frontmatter to {frontmatter_count} files")
+            if frontmatter_count > 0:
+                print(f"[DAEMON] Applied frontmatter to {frontmatter_count} files")
         except ImportError:
             print("[DAEMON] Frontmatter module not available, skipping")
         except Exception as fm_err:
             print(f"[DAEMON] Frontmatter error: {fm_err}")
         
-        # 5. Publish to Notion
-        print("[DAEMON] Publishing to Notion...")
-        try:
-            from scripts.notion_publisher import sync_all_outputs
-            
-            results = sync_all_outputs()
-            success_count = len(results.get('success', []))
-            failed_count = len(results.get('failed', []))
-            
-            if success_count > 0:
-                print(f"[DAEMON] Published {success_count} files to Notion")
-            if failed_count > 0:
-                print(f"[DAEMON] Failed to publish {failed_count} files")
-        except ImportError:
-            print("[DAEMON] Notion publisher not available, skipping")
-        except ValueError as e:
-            # Missing API keys
-            print(f"[DAEMON] Notion not configured: {e}")
-        except Exception as notion_err:
-            print(f"[DAEMON] Notion publishing error: {notion_err}")
+        # 5. Publish to Notion (DAILY - with file-level deduplication)
+        # The notion_publisher will check if files have changed since last sync
+        if db.should_run_task('notion_sync'):
+            print("[DAEMON] Publishing to Notion...")
+            try:
+                from scripts.notion_publisher import sync_all_outputs
+                
+                results = sync_all_outputs()
+                success_count = len(results.get('success', []))
+                skipped_count = len(results.get('skipped', []))
+                failed_count = len(results.get('failed', []))
+                
+                if success_count > 0:
+                    print(f"[DAEMON] Published {success_count} new/changed files to Notion")
+                if skipped_count > 0:
+                    print(f"[DAEMON] Skipped {skipped_count} unchanged files")
+                if failed_count > 0:
+                    print(f"[DAEMON] Failed to publish {failed_count} files")
+                    
+                # Mark as run even if some failed
+                db.mark_task_run('notion_sync')
+                    
+            except ImportError:
+                print("[DAEMON] Notion publisher not available, skipping")
+            except ValueError as e:
+                # Missing API keys
+                print(f"[DAEMON] Notion not configured: {e}")
+            except Exception as notion_err:
+                print(f"[DAEMON] Notion publishing error: {notion_err}")
+        else:
+            print("[DAEMON] Notion sync already done today, skipping")
         
     except ImportError as e:
         print(f"[DAEMON] Post-analysis skipped (missing module): {e}")
