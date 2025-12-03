@@ -14,6 +14,8 @@
 # Gold Standard 
 *version 3.2.1* [[CHANGELOG]](docs/CHANGELOG.md)
 
+![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
+
 > **Precious Metals Intelligence Complex** — Quantitative Analysis System
 
 A comprehensive end-to-end system combining real-time market data, technical indicators, economic calendar intelligence, and Google Gemini AI to generate structured trading reports for gold and intermarket assets.
@@ -31,6 +33,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 [![Python](https://img.shields.io/badge/python-3.10--3.14-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Gemini](https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+
 
 <!-- Meta -->
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
@@ -793,3 +796,4 @@ For detailed technical documentation, indicator explanations, and extension guid
 <br/>
 <em>Quantitative Analysis • AI Insights • Economic Calendar • Live Reports</em>
 </p>
+
