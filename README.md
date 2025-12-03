@@ -478,6 +478,59 @@ The system is organized into modular components:
 
 ---
 
+## Notion Integration
+
+Gold Standard can automatically publish reports to a Notion database after each analysis cycle.
+
+### Setup
+
+1. **Create a Notion Integration**
+   - Go to [Notion My Integrations](https://www.notion.so/my-integrations)
+   - Create a new integration, copy the API key (starts with `ntn_`)
+
+2. **Create/Share Database**
+   - Create a Notion database (or use existing)
+   - Click Share → Invite your integration
+   - Copy the database ID from the URL: `notion.so/{database_id}?v=...`
+
+3. **Configure Environment**
+   ```env
+   NOTION_API_KEY=ntn_xxxxxxxxxxxxx
+   NOTION_DATABASE_ID=your-database-id
+   ```
+
+### Document Types
+
+Reports are automatically categorized:
+
+| Pattern | Notion Type |
+|---------|-------------|
+| `Journal_*` | journal |
+| `catalysts_*`, `research_*` | research |
+| `1y_*`, `3m_*`, `weekly_*`, `monthly_*` | reports |
+| `inst_matrix_*`, `*_insights_*` | insights |
+| `premarket_*`, `economic_calendar_*` | articles |
+| `*chart*` | charts |
+| Default | notes |
+
+### Manual Publishing
+
+```powershell
+# Test connection
+python scripts/notion_publisher.py --test
+
+# Publish single file
+python scripts/notion_publisher.py --file output/reports/journals/Journal_2025-12-03.md
+
+# Sync all outputs
+python scripts/notion_publisher.py --sync-all
+
+# List published pages
+python scripts/notion_publisher.py --list
+```
+
+---
+
 ## Configuration
 
 ### Environment Variables
@@ -530,6 +583,8 @@ gold_standard/
 │   ├── economic_calendar.py  # Self-maintaining economic calendar
 │   ├── pre_market.py         # Pre-market plan generator
 │   ├── split_reports.py      # Weekly/monthly/yearly report generator
+│   ├── frontmatter.py        # YAML frontmatter generator for reports
+│   ├── notion_publisher.py   # Notion database sync and publishing
 │   ├── init_cortex.py        # Initialize memory from template
 │   ├── get_gold_price.py     # Quick gold price check utility
 │   ├── list_gemini_models.py # List available Gemini models

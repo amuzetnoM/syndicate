@@ -2,7 +2,7 @@
 
 > Educational Guide and Technical Reference — v3.0
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.0 introduces autonomous intelligence with insights extraction, task execution, and intelligent file organization.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.0 introduces autonomous intelligence with insights extraction, task execution, intelligent file organization, and Notion integration.
 
 ---
 
@@ -20,9 +20,11 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 10. [Insights Engine](#insights-engine)
 11. [Task Executor](#task-executor)
 12. [File Organizer](#file-organizer)
-13. [Testing Guidelines](#testing-guidelines)
-14. [Deployment Notes](#deployment-notes)
-15. [Extension Patterns](#extension-patterns)
+13. [Frontmatter System](#frontmatter-system)
+14. [Notion Integration](#notion-integration)
+15. [Testing Guidelines](#testing-guidelines)
+16. [Deployment Notes](#deployment-notes)
+17. [Extension Patterns](#extension-patterns)
 
 ---
 
@@ -611,6 +613,172 @@ When running in daemon mode, the File Organizer automatically processes new file
 
 ```bash
 python run.py --daemon --interval-min 1
+```
+
+---
+
+## Frontmatter System
+
+The `scripts/frontmatter.py` module generates YAML frontmatter metadata for all reports, enabling automated categorization and Notion integration.
+
+### Overview
+
+Frontmatter is applied as the **final step** after file organization, ensuring all files have proper metadata headers.
+
+### Frontmatter Structure
+
+```yaml
+---
+type: journal
+title: "Journal 2025 12 03"
+date: 2025-12-03
+generated: 2025-12-03T21:47:56.739323
+tags: [DXY, GOLD, Risk, SILVER, SPY, VIX]
+bias: BULLISH
+gold_price: 2650.50
+---
+```
+
+### Auto-Detection
+
+The module automatically detects document types based on filename patterns:
+
+| Pattern | Type |
+|---------|------|
+| `Journal_*` | journal |
+| `catalysts_*`, `research_*` | research |
+| `1y_*`, `3m_*`, `weekly_*`, `monthly_*` | reports |
+| `inst_matrix_*`, `*_insights_*` | insights |
+| `premarket_*`, `analysis_*` | articles |
+| `economic_calendar_*` | articles |
+| `*chart*` | charts |
+| Default | notes |
+
+### Tag Extraction
+
+Tags are automatically extracted from content:
+
+- **Ticker symbols**: GOLD, SILVER, DXY, SPY, VIX, etc.
+- **Keywords**: Fed, FOMC, CPI, NFP, Inflation, Bullish, Bearish
+
+### Journal-Specific Metadata
+
+For journal documents, additional metadata is extracted:
+
+- **bias**: BULLISH, BEARISH, or NEUTRAL (from content analysis)
+- **gold_price**: Current gold price mentioned in report
+
+### Usage
+
+```python
+from scripts.frontmatter import add_frontmatter, has_frontmatter
+
+# Check if content has frontmatter
+if not has_frontmatter(content):
+    content = add_frontmatter(content, filename)
+
+# With custom fields
+content = add_frontmatter(content, filename, custom_fields={
+    'bias': 'BULLISH',
+    'gold_price': 2650.50
+})
+```
+
+---
+
+## Notion Integration
+
+The `scripts/notion_publisher.py` module syncs reports to a Notion database automatically.
+
+### Overview
+
+After each analysis cycle, reports are:
+1. Generated and saved locally
+2. Organized into directories
+3. Tagged with frontmatter
+4. **Published to Notion**
+
+### Setup
+
+1. Create a Notion integration at [notion.so/my-integrations](https://www.notion.so/my-integrations)
+2. Share your database with the integration
+3. Add credentials to `.env`:
+
+```env
+NOTION_API_KEY=ntn_xxxxxxxxxxxxx
+NOTION_DATABASE_ID=your-database-id
+```
+
+### NotionPublisher Class
+
+```python
+from scripts.notion_publisher import NotionPublisher, sync_all_outputs
+
+# Initialize publisher
+publisher = NotionPublisher()
+
+# Publish single file
+result = publisher.sync_file("output/reports/journals/Journal_2025-12-03.md")
+print(result['url'])  # Notion page URL
+
+# Sync all outputs
+results = sync_all_outputs()
+print(f"Published: {len(results['success'])} files")
+```
+
+### Type Mapping
+
+Documents are mapped to Notion types based on frontmatter:
+
+| Frontmatter Type | Notion Select |
+|------------------|---------------|
+| journal | journal |
+| research | research |
+| reports | reports |
+| insights | insights |
+| articles | articles |
+| charts | charts |
+| notes | notes |
+
+### Markdown Conversion
+
+The publisher converts Markdown to Notion blocks:
+
+- Headers → Heading blocks (H1-H3)
+- Paragraphs → Paragraph blocks
+- Lists → Bulleted/Numbered list items
+- Code blocks → Code blocks with language
+- Tables → Table blocks
+- Blockquotes → Quote blocks
+
+### CLI Commands
+
+```bash
+# Test connection
+python scripts/notion_publisher.py --test
+
+# Publish single file
+python scripts/notion_publisher.py --file path/to/report.md
+
+# Sync all outputs
+python scripts/notion_publisher.py --sync-all
+
+# List published pages
+python scripts/notion_publisher.py --list
+```
+
+### Automatic Publishing
+
+Publishing is integrated into the daemon workflow in `run.py`:
+
+```
+Analysis Cycle:
+1. Generate reports (main.py)
+2. Run live analysis (catalysts, matrix)
+3. Split reports (weekly/monthly)
+4. Organize files
+5. Apply frontmatter
+6. Publish to Notion  ← Automatic
 ```
 
 ---
