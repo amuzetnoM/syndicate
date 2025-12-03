@@ -7,18 +7,32 @@
 
 ## Overview
 
-Gold Standard is a comprehensive precious metals intelligence system that combines real-time market data, AI-powered analysis, and automated report generation. This release marks the first public availability of the platform.
+Gold Standard is a comprehensive precious metals intelligence system that combines real-time market data, AI-powered analysis, and automated report generation. This release marks the first public availability of the platform with full Notion integration and smart chart embedding.
+
+---
+
+## Highlights in v3.1.0
+
+### Rich Notion Publishing
+- **Enhanced Formatting** — Callouts, colored text, tables, table of contents
+- **Smart Charts** — Auto-detects tickers and embeds relevant charts
+- **Usage Management** — Tracks API limits, caches uploads, manages retention
+
+### Professional Documentation
+- **SVG Icons** — Clean, professional iconography replacing emojis
+- **Glass UI** — Modern glass morphism design with gold accents
+- **Live Demo** — Notion workspace link for browsing actual reports
 
 ---
 
 ## What's Included
 
-### 🤖 AI-Powered Analysis
+### AI-Powered Analysis
 - **Gemini 2.0 Flash Integration** — Natural language market analysis with Google's latest AI model
 - **Multi-Asset Coverage** — Gold, Silver, DXY, VIX, 10Y Treasury, S&P 500
 - **Technical Indicators** — RSI, ADX, ATR, SMA (50/200) with pandas_ta
 
-### 📊 Report Generation
+### Report Generation
 - **Daily Journals** — Comprehensive market summaries with bias detection
 - **Pre-Market Plans** — Morning briefings with key levels and catalysts
 - **Horizon Analysis** — 3-month and 1-year outlook reports
@@ -26,32 +40,33 @@ Gold Standard is a comprehensive precious metals intelligence system that combin
 - **Institutional Matrix** — Fund flows and positioning analysis
 - **Economic Calendar** — Scheduled events and impact analysis
 
-### 📈 Automated Charts
+### Automated Charts
 - Candlestick charts with SMA overlays
-- Auto-generated and organized by date
-- PNG export for reports and sharing
+- Auto-uploaded to imgbb (free tier)
+- Embedded in Notion pages when relevant
 
-### 🧠 Cortex Memory System
+### Cortex Memory System
 - Prediction tracking with performance grading
 - Historical accuracy metrics
 - Win/loss streak maintenance
 
-### 🔄 Autonomous Operation
-- **Daemon Mode** — Continuous analysis at configurable intervals
+### Autonomous Operation
+- **Daemon Mode** — Continuous analysis at configurable intervals (default: 5 min)
 - **Task Execution** — Priority-based action queue (research, monitoring, alerts)
 - **Insights Engine** — Entity and action extraction from reports
 - **File Organization** — Auto-categorization and archiving
 
-### 🖥️ Modern GUI
+### Modern GUI
 - Dual-pane architecture with charts grid and AI workspace
 - Real-time status indicators
 - Task queue visualization
 - Premium dark theme with gold accents
 
-### 📤 Notion Integration (New in v3.1)
+### Notion Integration
 - Automatic publishing to Notion database
-- Full markdown conversion (tables, code, callouts)
-- Frontmatter metadata for categorization
+- Rich formatting with callouts, colors, and icons
+- Smart chart detection and embedding
+- Usage tracking and cleanup tools
 
 ---
 
@@ -71,10 +86,10 @@ cd gold_standard
 # Configure
 cp .env.template .env
 # Add your GEMINI_API_KEY (required)
-# Add NOTION_API_KEY and NOTION_DATABASE_ID (optional)
+# Add NOTION_API_KEY, NOTION_DATABASE_ID, IMGBB_API_KEY (optional)
 
 # Run
-python run.py --full
+python run.py --interval-min 5
 ```
 
 ---
@@ -83,7 +98,7 @@ python run.py --full
 
 - **Python** 3.10 – 3.13
 - **OS** Windows, macOS, Linux
-- **API Keys** Google Gemini (required), Notion (optional)
+- **API Keys** Google Gemini (required), Notion + imgbb (optional)
 
 ---
 
