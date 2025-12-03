@@ -50,9 +50,12 @@ class ActionInsight:
     source_report: str = ''
     source_context: str = ''  # The text that triggered this action
     deadline: Optional[str] = None  # ISO timestamp
+    scheduled_for: Optional[str] = None  # ISO timestamp - when to execute (None = immediately)
     result: Optional[str] = None  # Output when completed
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     completed_at: Optional[str] = None
+    retry_count: int = 0
+    last_error: Optional[str] = None
     metadata: Dict = field(default_factory=dict)
 
 
@@ -255,6 +258,9 @@ class InsightsExtractor:
                     # Determine priority
                     priority = self._determine_action_priority(target, context)
                     
+                    # Extract scheduled date from description/context
+                    scheduled_for = self._extract_scheduled_date(target, context)
+                    
                     action = ActionInsight(
                         action_id=self._generate_action_id(),
                         action_type=action_type,
@@ -264,6 +270,7 @@ class InsightsExtractor:
                         source_report=report_name,
                         source_context=context[:500],
                         deadline=self._calculate_deadline(priority),
+                        scheduled_for=scheduled_for,
                         metadata={'pattern_matched': pattern, 'raw_match': match.group(0)[:200]}
                     )
                     actions.append(action)
@@ -334,6 +341,105 @@ class InsightsExtractor:
         
         return deadline.isoformat()
     
+    def _extract_scheduled_date(self, description: str, context: str = '') -> Optional[str]:
+        """
+        Extract a scheduled execution date from task description.
+        
+        Looks for patterns like:
+        - "Dec 18", "December 18", "Dec 18, 2025"
+        - "on December 5-6", "before Dec 18"
+        - "January 10", "Jan 29"
+        
+        Returns ISO timestamp if a future date is found, None for immediate execution.
+        """
+        import calendar
+        
+        combined = f"{description} {context}"
+        now = datetime.now()
+        current_year = now.year
+        
+        # Month name mappings
+        month_names = {
+            'jan': 1, 'january': 1,
+            'feb': 2, 'february': 2,
+            'mar': 3, 'march': 3,
+            'apr': 4, 'april': 4,
+            'may': 5,
+            'jun': 6, 'june': 6,
+            'jul': 7, 'july': 7,
+            'aug': 8, 'august': 8,
+            'sep': 9, 'september': 9,
+            'oct': 10, 'october': 10,
+            'nov': 11, 'november': 11,
+            'dec': 12, 'december': 12,
+        }
+        
+        # Patterns to match dates
+        # "Dec 18", "December 18", "Dec 18, 2025", "December 18th"
+        date_patterns = [
+            r'\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s*(\d{4}))?\b',
+            r'\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:,?\s*(\d{4}))?\b',
+        ]
+        
+        # ISO date pattern: 2025-01-15
+        iso_pattern = r'\b(\d{4})-(\d{2})-(\d{2})\b'
+        
+        found_dates = []
+        
+        # Check ISO dates first
+        for match in re.finditer(iso_pattern, combined, re.IGNORECASE):
+            try:
+                year = int(match.group(1))
+                month = int(match.group(2))
+                day = int(match.group(3))
+                if 1 <= month <= 12 and 1 <= day <= 31:
+                    target_date = datetime(year, month, day, 9, 0, 0)
+                    if target_date > now:
+                        found_dates.append(target_date)
+            except (ValueError, IndexError):
+                continue
+        
+        for pattern in date_patterns:
+            matches = re.findall(pattern, combined, re.IGNORECASE)
+            for match in matches:
+                try:
+                    if match[0].isdigit():
+                        # Pattern 2: "18 December"
+                        day = int(match[0])
+                        month = month_names.get(match[1].lower()[:3], 0)
+                        year = int(match[2]) if match[2] else current_year
+                    else:
+                        # Pattern 1: "December 18"
+                        month = month_names.get(match[0].lower()[:3], 0)
+                        day = int(match[1])
+                        year = int(match[2]) if match[2] else current_year
+                    
+                    if month and 1 <= day <= 31:
+                        # Create date, handle year rollover
+                        try:
+                            target_date = datetime(year, month, day, 9, 0, 0)  # Default to 9 AM
+                            
+                            # If date is in the past this year, try next year
+                            if target_date < now and year == current_year:
+                                target_date = datetime(year + 1, month, day, 9, 0, 0)
+                            
+                            # Only schedule if it's in the future
+                            if target_date > now:
+                                found_dates.append(target_date)
+                        except ValueError:
+                            continue  # Invalid date
+                except (ValueError, IndexError):
+                    continue
+        
+        # Return the earliest future date found
+        if found_dates:
+            earliest = min(found_dates)
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.debug(f"[INSIGHTS] Extracted scheduled date: {earliest.isoformat()}")
+            return earliest.isoformat()
+        
+        return None  # No date found = execute immediately
+    
     def _deduplicate_actions(self, actions: List[ActionInsight]) -> List[ActionInsight]:
         """Remove duplicate or very similar actions."""
         seen_titles = set()
@@ -381,15 +487,22 @@ Extract 3-5 most important actionable tasks. Focus on specific, executable tasks
                 
                 actions = []
                 for task in tasks[:5]:  # Limit to 5
+                    description = task.get('description', '')
+                    title = task.get('title', 'AI-extracted task')
+                    
+                    # Extract scheduled date from AI response
+                    scheduled_for = self._extract_scheduled_date(description, title)
+                    
                     action = ActionInsight(
                         action_id=self._generate_action_id(),
                         action_type=task.get('action_type', 'research'),
-                        title=task.get('title', 'AI-extracted task'),
-                        description=task.get('description', ''),
+                        title=title,
+                        description=description,
                         priority=task.get('priority', 'medium'),
                         source_report=report_name,
                         source_context='AI-extracted',
                         deadline=self._calculate_deadline(task.get('priority', 'medium')),
+                        scheduled_for=scheduled_for,
                         metadata={'source': 'ai_extraction'}
                     )
                     actions.append(action)

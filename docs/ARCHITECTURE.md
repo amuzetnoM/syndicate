@@ -203,6 +203,140 @@ Gold Standard features a fully autonomous intelligence pipeline that extracts in
 - Priority-based queue (critical → high → medium → low)
 - Deadline calculation based on priority
 
+---
+
+## Intelligent Scheduling System
+
+Gold Standard v3.2 introduces an industry-leading intelligent task scheduling system that transforms the daemon from a simple periodic runner into a sophisticated execution engine.
+
+### Core Philosophy
+
+The scheduling system follows three fundamental principles:
+
+1. **Immediate by Default**: Tasks without explicit dates execute immediately upon creation
+2. **Context-Aware Scheduling**: Natural language date extraction from task descriptions
+3. **Autonomous Recovery**: Self-healing on crashes, restarts, and quota exhaustion
+
+### Date Extraction Engine
+
+The system automatically parses temporal references from task descriptions:
+
+```
+Supported Patterns:
+├── "Dec 18", "December 18"           → 2025-12-18T09:00:00
+├── "Dec 18, 2025"                    → 2025-12-18T09:00:00
+├── "January 10th"                    → 2026-01-10T09:00:00
+├── "2025-12-25" (ISO format)         → 2025-12-25T09:00:00
+└── No date found                     → NULL (execute immediately)
+```
+
+**Year Rollover Logic**: If a parsed date is in the past for the current year, the system automatically schedules for the next year (e.g., "Jan 10" in December 2025 → January 10, 2026).
+
+### Execution State Machine
+
+Tasks follow a deterministic state machine with atomic transitions:
+
+```
+                    ┌─────────────────────────────────────┐
+                    │                                     │
+                    ▼                                     │
+┌─────────┐    ┌────────────┐    ┌───────────┐    ┌──────┴────┐
+│ CREATED │───▶│  PENDING   │───▶│IN_PROGRESS│───▶│ COMPLETED │
+└─────────┘    └────────────┘    └───────────┘    └───────────┘
+                    ▲                   │
+                    │                   │ (failure)
+                    │                   ▼
+                    │              ┌─────────┐
+                    └──────────────│ RETRY   │ (if retries < MAX)
+                                   └─────────┘
+                                        │
+                                        │ (max retries exceeded)
+                                        ▼
+                                   ┌─────────┐
+                                   │ FAILED  │
+                                   └─────────┘
+```
+
+**Atomic Operations**:
+- `claim_action()`: Atomically claims a pending task for execution (prevents duplicates)
+- `release_action()`: Returns a task to pending state (for retry or voluntary release)
+- `update_action_status()`: Marks completion or failure with result data
+
+### Scheduling SQL Logic
+
+The `get_ready_actions()` method implements the core scheduling query:
+
+```sql
+SELECT * FROM action_insights 
+WHERE status = 'pending'
+  AND (scheduled_for IS NULL OR scheduled_for <= ?)  -- ? = NOW
+ORDER BY 
+    CASE priority 
+        WHEN 'critical' THEN 1 
+        WHEN 'high' THEN 2 
+        WHEN 'medium' THEN 3 
+        ELSE 4 
+    END,
+    scheduled_for ASC NULLS FIRST,  -- Immediate tasks first
+    created_at ASC                   -- FIFO within priority
+```
+
+### Retry & Recovery System
+
+**Exponential Backoff**:
+```python
+backoff = min(INITIAL_BACKOFF * (2 ** retry_count), MAX_BACKOFF)
+# Initial: 30s, Max: 600s (10 minutes)
+# Sequence: 30s → 60s → 120s → 240s → 480s → 600s...
+```
+
+**Quota Error Detection**:
+```python
+QUOTA_PATTERNS = ['quota', 'rate limit', 'too many requests', 
+                  '429', 'resource exhausted', 'capacity']
+```
+
+**Startup Recovery**:
+```python
+def reset_stuck_actions(max_age_hours=24):
+    """Reset tasks stuck in 'in_progress' from previous crash."""
+    # Returns tasks to 'pending' state for re-execution
+```
+
+### Database Schema Extensions
+
+```sql
+-- Core scheduling columns
+ALTER TABLE action_insights ADD COLUMN scheduled_for TEXT;
+ALTER TABLE action_insights ADD COLUMN retry_count INTEGER DEFAULT 0;
+ALTER TABLE action_insights ADD COLUMN last_error TEXT;
+
+-- Indexes for efficient scheduling queries
+CREATE INDEX idx_action_scheduled ON action_insights(scheduled_for);
+CREATE INDEX idx_action_status_scheduled ON action_insights(status, scheduled_for);
+```
+
+### System Health Monitoring
+
+The `get_system_health()` method provides real-time metrics:
+
+```python
+health = {
+    'tasks': {
+        'ready_now': 56,           # Execute immediately
+        'scheduled_future': 9,      # Waiting for schedule time
+        'stuck_in_progress': 0      # Need recovery
+    },
+    'execution': {
+        'last_24h_total': 150,
+        'last_24h_success': 142,
+        'last_24h_avg_time_ms': 2340.5
+    }
+}
+```
+
+---
+
 ### Task Executor
 - Processes action queue before next analysis cycle
 - AI-powered research and news analysis via Gemini

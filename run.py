@@ -18,6 +18,9 @@ from datetime import date, datetime
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
+# Task execution configuration
+MAX_RETRIES = 10  # Max retries before marking task as failed
+
 
 def ensure_venv():
     """
@@ -323,6 +326,28 @@ def run_daemon(no_ai: bool = False, interval_hours: int = 0, interval_minutes: i
         insights_available = False
         print(f"[DAEMON] Insights systems not available: {e}")
     
+    # STARTUP RECOVERY: Reset stuck tasks and resume from where we left off
+    try:
+        from db_manager import DatabaseManager
+        db = DatabaseManager()
+        
+        # Reset any tasks stuck in 'in_progress' from previous crash
+        reset_count = db.reset_stuck_actions(max_age_hours=24)
+        if reset_count > 0:
+            print(f"[DAEMON] Recovered {reset_count} stuck tasks from previous session")
+        
+        # Check for ready tasks on startup
+        ready_count = len(db.get_ready_actions(limit=None) or [])
+        if ready_count > 0:
+            print(f"[DAEMON] Found {ready_count} tasks ready for immediate execution")
+        
+        # Check scheduled tasks
+        scheduled = db.get_scheduled_actions()
+        if scheduled:
+            print(f"[DAEMON] {len(scheduled)} tasks scheduled for future execution")
+    except Exception as e:
+        print(f"[DAEMON] Startup recovery check failed: {e}")
+    
     # Run immediately on startup
     print("[DAEMON] Running initial analysis cycle...\n")
     run_all(no_ai=no_ai, force=False)
@@ -440,6 +465,7 @@ def _run_post_analysis_tasks():
                     action.source_report,
                     action.source_context,
                     action.deadline,
+                    getattr(action, 'scheduled_for', None),
                     str(action.metadata)
                 )
             
@@ -448,64 +474,111 @@ def _run_post_analysis_tasks():
         else:
             print("[DAEMON] Insights extraction already done today, skipping")
         
-        # 2. Execute pending tasks (WEEKLY)
-        # Load ALL pending actions from database - executor will process them all with retry logic
-        if model and db.should_run_task('task_execution'):
-            print("[DAEMON] Executing pending tasks from database...")
+        # 2. Execute READY tasks with atomic claim/release pattern
+        # Tasks execute when: scheduled_for <= now OR scheduled_for IS NULL
+        if model:
+            print("[DAEMON] Checking for ready-to-execute tasks...")
             
-            # Get ALL pending actions from database (no limit)
-            pending_actions = db.get_pending_actions(limit=None)
+            # Get system health first
+            try:
+                health = db.get_system_health()
+                ready_count = health['tasks'].get('ready_now', 0)
+                future_count = health['tasks'].get('scheduled_future', 0)
+                stuck_count = health['tasks'].get('stuck_in_progress', 0)
+                
+                if stuck_count > 0:
+                    print(f"[DAEMON] ⚠️  {stuck_count} stuck tasks detected, recovering...")
+                    db.reset_stuck_actions(max_age_hours=1)
+                
+                print(f"[DAEMON] Queue status: {ready_count} ready, {future_count} scheduled")
+            except Exception as e:
+                print(f"[DAEMON] Health check failed: {e}")
             
-            if pending_actions:
-                print(f"[DAEMON] Found {len(pending_actions)} pending tasks")
+            # Get actions that are ready to execute NOW
+            ready_actions = db.get_ready_actions(limit=None)
+            
+            if ready_actions:
+                print(f"[DAEMON] Executing {len(ready_actions)} ready tasks...")
                 
                 # Create executor
                 extractor = InsightsExtractor(config, logger, model)
                 
-                # Load actions into extractor from database
+                # Load ready actions with atomic claiming
                 from scripts.insights_engine import ActionInsight
-                for action_dict in pending_actions:
-                    action = ActionInsight(
-                        action_id=action_dict['action_id'],
-                        action_type=action_dict['action_type'],
-                        title=action_dict['title'],
-                        description=action_dict.get('description', ''),
-                        priority=action_dict.get('priority', 'medium'),
-                        status='pending',
-                        source_report=action_dict.get('source_report', ''),
-                        source_context=action_dict.get('source_context', ''),
-                        deadline=action_dict.get('deadline'),
-                    )
-                    extractor.action_queue.append(action)
+                claimed_actions = []
                 
-                # Execute ALL pending tasks (no limit) - will retry on quota errors
-                executor = TaskExecutor(config, logger, model, extractor)
-                results = executor.execute_all_pending(max_tasks=None)  # Process ALL tasks
-                
-                # Log execution results and update database
-                for result in results:
-                    db.log_task_execution(
-                        result.action_id,
-                        result.success,
-                        str(result.result_data),
-                        result.execution_time_ms,
-                        result.error_message,
-                        str(result.artifacts) if result.artifacts else None
-                    )
+                for action_dict in ready_actions:
+                    action_id = action_dict['action_id']
                     
-                    # Update action status in database
-                    if result.success:
-                        db.update_action_status(result.action_id, 'completed', str(result.result_data))
+                    # Atomic claim - prevents duplicate execution
+                    if db.claim_action(action_id, worker_id='daemon'):
+                        action = ActionInsight(
+                            action_id=action_id,
+                            action_type=action_dict['action_type'],
+                            title=action_dict['title'],
+                            description=action_dict.get('description', ''),
+                            priority=action_dict.get('priority', 'medium'),
+                            status='in_progress',
+                            source_report=action_dict.get('source_report', ''),
+                            source_context=action_dict.get('source_context', ''),
+                            deadline=action_dict.get('deadline'),
+                            scheduled_for=action_dict.get('scheduled_for'),
+                            retry_count=action_dict.get('retry_count', 0),
+                            last_error=action_dict.get('last_error'),
+                        )
+                        extractor.action_queue.append(action)
+                        claimed_actions.append(action_id)
                     else:
-                        db.update_action_status(result.action_id, 'failed', result.error_message)
+                        print(f"[DAEMON] Skipped {action_id} (already claimed)")
                 
-                print(f"[DAEMON] Executed {len(results)} tasks, {executor.stats['notion_published']} published to Notion")
+                if not claimed_actions:
+                    print("[DAEMON] All ready tasks already claimed by another process")
+                else:
+                    print(f"[DAEMON] Claimed {len(claimed_actions)} tasks for execution")
+                    
+                    # Execute ALL claimed tasks - will retry on quota errors
+                    executor = TaskExecutor(config, logger, model, extractor)
+                    results = executor.execute_all_pending(max_tasks=None)
+                    
+                    # Log execution results and update database
+                    success_count = 0
+                    fail_count = 0
+                    
+                    for result in results:
+                        db.log_task_execution(
+                            result.action_id,
+                            result.success,
+                            str(result.result_data),
+                            result.execution_time_ms,
+                            result.error_message,
+                            str(result.artifacts) if result.artifacts else None
+                        )
+                        
+                        # Update action status in database
+                        if result.success:
+                            db.update_action_status(result.action_id, 'completed', str(result.result_data))
+                            success_count += 1
+                        else:
+                            # Increment retry count on failure
+                            retry_count = db.increment_retry_count(result.action_id, result.error_message)
+                            if retry_count >= MAX_RETRIES:
+                                db.update_action_status(result.action_id, 'failed', f"Max retries exceeded: {result.error_message}")
+                                fail_count += 1
+                            else:
+                                # Release back to pending for retry
+                                db.release_action(result.action_id, reason=f"retry_{retry_count}")
+                    
+                    notion_count = executor.stats.get('notion_published', 0)
+                    print(f"[DAEMON] ✅ Completed: {success_count} | ❌ Failed: {fail_count} | 📤 Published: {notion_count}")
             else:
-                print("[DAEMON] No pending tasks found")
+                print("[DAEMON] No tasks ready to execute")
             
-            db.mark_task_run('task_execution')
-        elif model:
-            print("[DAEMON] Task execution runs weekly, skipping")
+            # Show scheduled tasks info
+            scheduled = db.get_scheduled_actions()
+            if scheduled:
+                print(f"[DAEMON] {len(scheduled)} tasks scheduled for future execution")
+        else:
+            print("[DAEMON] No AI model available, skipping task execution")
         
         # 3. Organize files (runs every cycle - lightweight)
         print("[DAEMON] Organizing files...")

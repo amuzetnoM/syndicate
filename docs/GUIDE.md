@@ -481,19 +481,176 @@ CREATE TABLE notion_sync (
 
 ## Intelligent Scheduling
 
-Version 3.2 introduces frequency-based task execution to prevent redundant operations.
+Version 3.2 introduces a revolutionary intelligent task scheduling system that transforms Gold Standard from a periodic runner into a sophisticated autonomous execution engine.
 
-### Overview
+### Core Principles
 
-The scheduling system ensures tasks run at appropriate intervals:
+1. **Immediate by Default**: Tasks without explicit scheduling execute immediately
+2. **Natural Language Dates**: Automatic extraction of dates from task descriptions
+3. **Self-Healing**: Automatic recovery from crashes, restarts, and API quota exhaustion
+4. **Atomic Operations**: Race-condition-free task claiming and execution
+
+### Task Scheduling Architecture
+
+#### Date Extraction Engine
+
+The system automatically parses temporal references from task descriptions:
+
+```
+Input: "Track FOMC meeting for Dec 18"
+Output: scheduled_for = "2025-12-18T09:00:00"
+
+Input: "Monitor employment data for Jan 10"  
+Output: scheduled_for = "2026-01-10T09:00:00"
+
+Input: "Research gold correlation patterns"
+Output: scheduled_for = NULL (execute immediately)
+```
+
+**Supported Date Formats:**
+| Format | Example | Result |
+|--------|---------|--------|
+| Short month + day | "Dec 18" | 2025-12-18T09:00:00 |
+| Full month + day | "December 18" | 2025-12-18T09:00:00 |
+| With year | "Dec 18, 2025" | 2025-12-18T09:00:00 |
+| Ordinal | "January 10th" | 2026-01-10T09:00:00 |
+| ISO format | "2025-12-25" | 2025-12-25T09:00:00 |
+| No date | Any text | NULL (immediate) |
+
+**Year Rollover Logic:**
+- If a parsed date is in the past for the current year, the system schedules for next year
+- Example: "Jan 10" parsed in December 2025 → January 10, 2026
+
+#### Execution State Machine
+
+Tasks follow a deterministic state machine:
+
+```
+┌─────────┐    ┌────────────┐    ┌───────────┐    ┌───────────┐
+│ CREATED │───▶│  PENDING   │───▶│IN_PROGRESS│───▶│ COMPLETED │
+└─────────┘    └────────────┘    └───────────┘    └───────────┘
+                    ▲                   │
+                    │                   │ failure
+                    │                   ▼
+                    │              ┌─────────┐
+                    └──────────────│  RETRY  │
+                                   └─────────┘
+                                        │ max retries
+                                        ▼
+                                   ┌─────────┐
+                                   │ FAILED  │
+                                   └─────────┘
+```
+
+#### Atomic Task Claiming
+
+To prevent duplicate execution across multiple daemon processes:
+
+```python
+from db_manager import get_db
+
+db = get_db()
+
+# Atomically claim a task for execution
+if db.claim_action(action_id, worker_id='worker_1'):
+    try:
+        # Execute the task
+        result = execute_task(action)
+        db.update_action_status(action_id, 'completed', result)
+    except Exception as e:
+        # Release back to pending for retry
+        db.release_action(action_id, reason=str(e))
+else:
+    print("Task already claimed by another process")
+```
+
+### Ready vs Scheduled Tasks
+
+The system distinguishes between:
+
+| Category | Criteria | Behavior |
+|----------|----------|----------|
+| **Ready** | `scheduled_for IS NULL` OR `scheduled_for <= NOW` | Execute immediately |
+| **Scheduled** | `scheduled_for > NOW` | Wait until scheduled time |
+
+**Query for Ready Tasks:**
+```sql
+SELECT * FROM action_insights 
+WHERE status = 'pending'
+  AND (scheduled_for IS NULL OR scheduled_for <= datetime('now'))
+ORDER BY 
+    CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 ELSE 3 END,
+    scheduled_for ASC NULLS FIRST,
+    created_at ASC;
+```
+
+### Retry & Recovery System
+
+#### Exponential Backoff
+
+When API quota errors occur, the system waits with exponential backoff:
+
+```python
+INITIAL_BACKOFF = 30    # seconds
+MAX_BACKOFF = 600       # 10 minutes
+MAX_RETRIES = 10
+
+# Backoff sequence: 30s → 60s → 120s → 240s → 480s → 600s → 600s...
+backoff = min(INITIAL_BACKOFF * (2 ** retry_count), MAX_BACKOFF)
+```
+
+#### Quota Error Detection
+
+```python
+QUOTA_PATTERNS = [
+    'quota', 'rate limit', 'too many requests', 
+    '429', 'resource exhausted', 'capacity', 'overloaded'
+]
+```
+
+#### Crash Recovery
+
+On daemon startup, stuck tasks are automatically recovered:
+
+```python
+# Reset tasks stuck in 'in_progress' from previous crash
+reset_count = db.reset_stuck_actions(max_age_hours=24)
+if reset_count > 0:
+    print(f"Recovered {reset_count} stuck tasks from previous session")
+```
+
+### System Health Monitoring
+
+```python
+health = db.get_system_health()
+
+# Example output:
+{
+    'timestamp': '2025-12-04T10:30:00',
+    'tasks': {
+        'ready_now': 56,           # Execute immediately
+        'scheduled_future': 9,      # Waiting for schedule time
+        'stuck_in_progress': 0      # Need recovery
+    },
+    'execution': {
+        'last_24h_total': 150,
+        'last_24h_success': 142,
+        'last_24h_avg_time_ms': 2340.5
+    }
+}
+```
+
+### Frequency-Based Scheduling
+
+In addition to task-level scheduling, the system supports operation-level frequency control:
 
 | Task | Frequency | Description |
 |------|-----------|-------------|
 | Journal | Daily | Once per day |
 | Notion Sync | Daily | Publish new/changed files |
+| Insights Extraction | Daily | Extract from new reports |
 | Economic Calendar | Weekly | Update calendar events |
 | Institution Watchlist | Weekly | Refresh institutional analysis |
-| Task Execution | Weekly | Process action queue |
 | Monthly Reports | Monthly | Generate monthly summaries |
 | Yearly Reports | Yearly | Generate annual reviews |
 

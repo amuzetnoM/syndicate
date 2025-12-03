@@ -205,12 +205,28 @@ class DatabaseManager:
                     source_report TEXT,
                     source_context TEXT,
                     deadline TEXT,
+                    scheduled_for TEXT,
                     result TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     completed_at TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    last_error TEXT,
                     metadata TEXT
                 )
             """)
+            
+            # Add scheduled_for column if it doesn't exist (migration)
+            try:
+                cursor.execute("ALTER TABLE action_insights ADD COLUMN scheduled_for TEXT")
+            except:
+                pass  # Column already exists
+            
+            # Add retry tracking columns if they don't exist (migration)
+            try:
+                cursor.execute("ALTER TABLE action_insights ADD COLUMN retry_count INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE action_insights ADD COLUMN last_error TEXT")
+            except:
+                pass  # Columns already exist
             
             # System configuration table - stores runtime settings
             cursor.execute("""
@@ -988,6 +1004,7 @@ class DatabaseManager:
                         source_report=action.source_report,
                         source_context=action.source_context,
                         deadline=action.deadline,
+                        scheduled_for=getattr(action, 'scheduled_for', None),
                         metadata=str(action.metadata) if action.metadata else None
                     )
                 else:
@@ -1001,8 +1018,15 @@ class DatabaseManager:
                            title: str, description: str = None,
                            priority: str = 'medium', status: str = 'pending',
                            source_report: str = None, source_context: str = None,
-                           deadline: str = None, metadata: str = None) -> bool:
-        """Save an action insight."""
+                           deadline: str = None, scheduled_for: str = None,
+                           metadata: str = None) -> bool:
+        """
+        Save an action insight.
+        
+        Args:
+            scheduled_for: ISO timestamp when task should execute.
+                          If None, task executes immediately.
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
@@ -1010,13 +1034,14 @@ class DatabaseManager:
             cursor.execute("""
                 INSERT INTO action_insights 
                 (action_id, action_type, title, description, priority, status,
-                 source_report, source_context, deadline, created_at, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source_report, source_context, deadline, scheduled_for, created_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(action_id) DO UPDATE SET
                     status = excluded.status,
-                    description = excluded.description
+                    description = excluded.description,
+                    scheduled_for = excluded.scheduled_for
             """, (action_id, action_type, title, description, priority, status,
-                  source_report, source_context, deadline, now, metadata))
+                  source_report, source_context, deadline, scheduled_for, now, metadata))
             
             return True
     
@@ -1056,6 +1081,99 @@ class DatabaseManager:
                 cursor.execute(f"{base_query} {order_by}")
             
             return [dict(row) for row in cursor.fetchall()]
+    
+    def get_ready_actions(self, limit: int = None) -> List[Dict]:
+        """
+        Get actions that are ready to execute NOW.
+        
+        Returns actions where:
+        - status = 'pending' AND
+        - (scheduled_for IS NULL OR scheduled_for <= now)
+        
+        Tasks without scheduled_for execute immediately.
+        Tasks with scheduled_for execute when that time arrives.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            query = """
+                SELECT * FROM action_insights 
+                WHERE status = 'pending'
+                  AND (scheduled_for IS NULL OR scheduled_for <= ?)
+                ORDER BY 
+                    CASE priority 
+                        WHEN 'critical' THEN 1 
+                        WHEN 'high' THEN 2 
+                        WHEN 'medium' THEN 3 
+                        ELSE 4 
+                    END,
+                    scheduled_for ASC NULLS FIRST,
+                    created_at ASC
+            """
+            
+            if limit:
+                cursor.execute(query + " LIMIT ?", (now, limit))
+            else:
+                cursor.execute(query, (now,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_scheduled_actions(self) -> List[Dict]:
+        """
+        Get actions that are scheduled for the future.
+        Useful for displaying upcoming tasks.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                SELECT * FROM action_insights 
+                WHERE status = 'pending'
+                  AND scheduled_for IS NOT NULL
+                  AND scheduled_for > ?
+                ORDER BY scheduled_for ASC
+            """, (now,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def increment_retry_count(self, action_id: str, error_message: str = None) -> int:
+        """
+        Increment retry count for a failed action and record the error.
+        Returns the new retry count.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE action_insights 
+                SET retry_count = COALESCE(retry_count, 0) + 1,
+                    last_error = ?
+                WHERE action_id = ?
+            """, (error_message, action_id))
+            
+            cursor.execute("SELECT retry_count FROM action_insights WHERE action_id = ?", (action_id,))
+            row = cursor.fetchone()
+            return row['retry_count'] if row else 0
+    
+    def reset_stuck_actions(self, max_age_hours: int = 24) -> int:
+        """
+        Reset actions that got stuck in 'in_progress' status.
+        Called on daemon startup to recover from crashes.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cutoff = (datetime.now() - timedelta(hours=max_age_hours)).isoformat()
+            
+            cursor.execute("""
+                UPDATE action_insights 
+                SET status = 'pending'
+                WHERE status = 'in_progress'
+                  AND created_at < ?
+            """, (cutoff,))
+            
+            return cursor.rowcount
     
     def update_action_status(self, action_id: str, status: str, 
                             result: str = None) -> bool:
@@ -1169,6 +1287,232 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("SELECT key, value FROM system_config")
             return {row['key']: row['value'] for row in cursor.fetchall()}
+    
+    # ==========================================
+    # EXECUTION STATE MACHINE
+    # ==========================================
+    # 
+    # Task State Transitions:
+    #   pending -> in_progress (claim_action)
+    #   in_progress -> completed (mark_complete)
+    #   in_progress -> pending (release_action, retry)
+    #   in_progress -> failed (max retries exceeded)
+    #   
+    # Scheduling States:
+    #   scheduled_for IS NULL -> execute immediately
+    #   scheduled_for <= NOW -> execute immediately
+    #   scheduled_for > NOW -> wait until scheduled time
+    #
+    # ==========================================
+    
+    def claim_action(self, action_id: str, worker_id: str = None) -> bool:
+        """
+        Atomically claim an action for execution.
+        
+        Uses optimistic locking pattern:
+        - Only claims if action is still 'pending'
+        - Records claim timestamp and worker ID
+        - Prevents duplicate execution across processes
+        
+        Args:
+            action_id: The action to claim
+            worker_id: Optional worker identifier for debugging
+            
+        Returns:
+            True if claim succeeded, False if action was already claimed
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            worker = worker_id or f"worker_{now}"
+            
+            # Atomic claim: only succeeds if status is still 'pending'
+            cursor.execute("""
+                UPDATE action_insights 
+                SET status = 'in_progress',
+                    metadata = json_set(
+                        COALESCE(metadata, '{}'),
+                        '$.claimed_at', ?,
+                        '$.claimed_by', ?
+                    )
+                WHERE action_id = ? 
+                  AND status = 'pending'
+            """, (now, worker, action_id))
+            
+            return cursor.rowcount > 0
+    
+    def release_action(self, action_id: str, reason: str = 'released') -> bool:
+        """
+        Release a claimed action back to pending state.
+        
+        Used when:
+        - Worker crashes and needs to release claims
+        - Task needs to be rescheduled for later
+        - Voluntary release before completion
+        
+        Args:
+            action_id: The action to release
+            reason: Why the action was released
+            
+        Returns:
+            True if release succeeded
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            cursor.execute("""
+                UPDATE action_insights 
+                SET status = 'pending',
+                    metadata = json_set(
+                        COALESCE(metadata, '{}'),
+                        '$.released_at', ?,
+                        '$.release_reason', ?
+                    )
+                WHERE action_id = ? 
+                  AND status = 'in_progress'
+            """, (now, reason, action_id))
+            
+            return cursor.rowcount > 0
+    
+    def get_execution_context(self, action_id: str) -> Optional[Dict]:
+        """
+        Get full execution context for an action.
+        
+        Returns comprehensive state info for debugging and monitoring:
+        - Current status and timestamps
+        - Retry history
+        - Scheduling information
+        - Execution metadata
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now()
+            
+            cursor.execute("""
+                SELECT 
+                    a.*,
+                    (SELECT COUNT(*) FROM task_execution_log WHERE action_id = a.action_id) as execution_attempts,
+                    (SELECT MAX(executed_at) FROM task_execution_log WHERE action_id = a.action_id) as last_execution
+                FROM action_insights a
+                WHERE a.action_id = ?
+            """, (action_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                return None
+            
+            context = dict(row)
+            
+            # Add computed fields
+            scheduled_for = context.get('scheduled_for')
+            if scheduled_for:
+                scheduled_dt = datetime.fromisoformat(scheduled_for)
+                context['is_ready'] = scheduled_dt <= now
+                context['time_until_ready'] = max(0, (scheduled_dt - now).total_seconds())
+            else:
+                context['is_ready'] = True
+                context['time_until_ready'] = 0
+            
+            context['can_retry'] = (context.get('retry_count', 0) or 0) < 10
+            
+            return context
+    
+    def get_system_health(self) -> Dict[str, Any]:
+        """
+        Get comprehensive system health metrics.
+        
+        Returns real-time statistics for monitoring:
+        - Task queue depth and distribution
+        - Execution rates and failures
+        - Scheduling status
+        - Resource utilization indicators
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            
+            health = {
+                'timestamp': now,
+                'tasks': {},
+                'schedules': {},
+                'execution': {},
+            }
+            
+            # Task queue metrics
+            cursor.execute("""
+                SELECT 
+                    status,
+                    priority,
+                    COUNT(*) as count,
+                    SUM(CASE WHEN scheduled_for IS NULL OR scheduled_for <= ? THEN 1 ELSE 0 END) as ready_count
+                FROM action_insights
+                GROUP BY status, priority
+            """, (now,))
+            
+            task_stats = {}
+            for row in cursor.fetchall():
+                key = f"{row['status']}_{row['priority']}"
+                task_stats[key] = {
+                    'count': row['count'],
+                    'ready': row['ready_count']
+                }
+            health['tasks'] = task_stats
+            
+            # Ready to execute
+            cursor.execute("""
+                SELECT COUNT(*) as ready_now
+                FROM action_insights
+                WHERE status = 'pending'
+                  AND (scheduled_for IS NULL OR scheduled_for <= ?)
+            """, (now,))
+            health['tasks']['ready_now'] = cursor.fetchone()['ready_now']
+            
+            # Scheduled for future
+            cursor.execute("""
+                SELECT COUNT(*) as scheduled_future
+                FROM action_insights
+                WHERE status = 'pending'
+                  AND scheduled_for > ?
+            """, (now,))
+            health['tasks']['scheduled_future'] = cursor.fetchone()['scheduled_future']
+            
+            # Stuck in progress (> 1 hour)
+            one_hour_ago = (datetime.now() - timedelta(hours=1)).isoformat()
+            cursor.execute("""
+                SELECT COUNT(*) as stuck
+                FROM action_insights
+                WHERE status = 'in_progress'
+                  AND created_at < ?
+            """, (one_hour_ago,))
+            health['tasks']['stuck_in_progress'] = cursor.fetchone()['stuck']
+            
+            # Recent execution stats (last 24h)
+            yesterday = (datetime.now() - timedelta(days=1)).isoformat()
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(success) as successful,
+                    AVG(execution_time_ms) as avg_time_ms
+                FROM task_execution_log
+                WHERE executed_at >= ?
+            """, (yesterday,))
+            row = cursor.fetchone()
+            health['execution'] = {
+                'last_24h_total': row['total'] or 0,
+                'last_24h_success': row['successful'] or 0,
+                'last_24h_avg_time_ms': round(row['avg_time_ms'] or 0, 2)
+            }
+            
+            # Schedule status
+            cursor.execute("""
+                SELECT task_name, last_run, frequency, enabled
+                FROM schedule_tracker
+                ORDER BY task_name
+            """)
+            health['schedules'] = [dict(row) for row in cursor.fetchall()]
+            
+            return health
 
 
 # Singleton instance
