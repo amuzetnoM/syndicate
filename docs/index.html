@@ -3,46 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Standard | Precious Metals Intelligence Complex</title>
-    <meta name="description" content="Quantitative analysis system combining real-time market data, technical indicators, and Google Gemini AI for gold trading insights.">
-    
-    <!-- Fonts -->
+    <title>Gold Standard | Autonomous Gold Analysis System</title>
+    <meta name="description" content="Professional autonomous gold market analysis with AI-powered insights, technical indicators, and Notion integration.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!-- Favicon SVG -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FFD700'/%3E%3Cstop offset='50%25' stop-color='%23FFA500'/%3E%3Cstop offset='100%25' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='50,8 61,35 90,35 67,54 76,82 50,66 24,82 33,54 10,35 39,35' fill='url(%23gold)'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23050507'/%3E%3Ccircle cx='50' cy='50' r='8' fill='url(%23gold)'/%3E%3C/svg%3E">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gold: #FFD700;
-            --gold-dark: #B8860B;
-            --gold-light: #FFF8DC;
-            --gold-glow: rgba(255, 215, 0, 0.15);
-            --bg-dark: #050507;
-            --bg-card: #0a0a0d;
-            --bg-card-hover: #0f0f14;
-            --bg-glass: rgba(10, 10, 13, 0.75);
-            --text-primary: #fafafa;
-            --text-secondary: #8888a0;
-            --text-muted: #555570;
-            --border: #18181f;
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --border-gold: rgba(255, 215, 0, 0.2);
-            --success: #00ff88;
-            --info: #0088ff;
-            --warning: #ffaa00;
-            --danger: #ff4444;
-            --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #B8860B 100%);
-            --gradient-gold-subtle: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,165,0,0.05) 100%);
-            --gradient-dark: linear-gradient(180deg, #050507 0%, #0a0a0d 100%);
-            --shadow-gold: 0 0 100px rgba(255, 215, 0, 0.1);
-            --shadow-gold-strong: 0 0 60px rgba(255, 215, 0, 0.2);
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-strong: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --gold: #D4AF37;
+            --gold-light: #F4CF67;
+            --gold-dark: #B4941F;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-surface: #0a0a0a;
+            --bg-elevated: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-muted: rgba(255, 255, 255, 0.35);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-gold: rgba(212, 175, 55, 0.3);
         }
 
         * {
@@ -52,255 +32,572 @@
         }
 
         html {
+            font-size: 16px;
             scroll-behavior: smooth;
         }
 
         body {
-            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-dark);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-void);
             color: var(--text-primary);
-            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ======================
+           HORIZONTAL SCROLL CONTAINER
+           ====================== */
+        .horizontal-scroll {
+            display: inline-flex;
+            height: 100vh;
+            min-width: 100vw;
+        }
+
+        /* ======================
+           PANELS
+           ====================== */
+        .panel {
+            min-width: 100vw;
+            max-width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 6rem 3rem 3rem;
+            overflow-y: auto;
             overflow-x: hidden;
-            font-feature-settings: 'ss01' on, 'ss02' on, 'cv01' on;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            flex-shrink: 0;
         }
 
-        /* Animated Background */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
+        .panel::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .bg-grid {
+        .panel::-webkit-scrollbar-track {
+            background: var(--bg-surface);
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+        }
+
+        .panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 175, 55, 0.5);
+        }
+
+        .panel::before {
+            content: '';
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(255, 215, 0, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 215, 0, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse at 50% 0%, black 0%, transparent 70%);
-            -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 0%, transparent 70%);
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease;
         }
 
-        .bg-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 20s ease-in-out infinite;
+        .panel.active::before {
+            opacity: 1;
         }
 
-        .bg-orb-1 {
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, transparent 70%);
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation-delay: 0s;
-        }
-
-        .bg-orb-2 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255, 165, 0, 0.1) 0%, transparent 70%);
-            bottom: 20%;
-            right: -100px;
-            animation-delay: -7s;
-            animation-duration: 25s;
-        }
-
-        .bg-orb-3 {
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(184, 134, 11, 0.1) 0%, transparent 70%);
-            bottom: 10%;
-            left: -50px;
-            animation-delay: -14s;
-            animation-duration: 22s;
-        }
-
-        @keyframes float {
-            0%, 100% { 
-                transform: translateY(0) translateX(-50%) scale(1); 
-                opacity: 0.4;
-            }
-            25% { 
-                transform: translateY(-30px) translateX(-48%) scale(1.05); 
-                opacity: 0.5;
-            }
-            50% { 
-                transform: translateY(-10px) translateX(-52%) scale(1.02); 
-                opacity: 0.35;
-            }
-            75% { 
-                transform: translateY(-40px) translateX(-50%) scale(1.08); 
-                opacity: 0.45;
-            }
-        }
-
-        .bg-noise {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0.015;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--gold-dark);
-        }
-
-        /* Navigation */
-        nav {
+        /* ======================
+           NAVIGATION
+           ====================== */
+        .nav-fixed {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            background: rgba(5, 5, 7, 0.7);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid var(--border-glass);
-            padding: 0 2rem;
-            transition: all 0.3s ease;
-        }
-
-        nav.scrolled {
-            background: rgba(5, 5, 7, 0.95);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
+            padding: 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 64px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            pointer-events: none;
         }
 
-        .nav-logo {
+        .nav-fixed > * {
+            pointer-events: auto;
+        }
+
+        .logo {
             display: flex;
             align-items: center;
-            font-weight: 700;
-            font-size: 1.2rem;
             text-decoration: none;
-            letter-spacing: -0.02em;
         }
 
-        .nav-logo span {
-            background: var(--gradient-gold);
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-weight: 800;
         }
 
         .nav-links {
             display: flex;
-            gap: 2.5rem;
-            list-style: none;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 1001;
         }
 
-        .nav-links a {
+        .nav-link {
+            padding: 0.5rem 1rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            letter-spacing: -0.01em;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
             position: relative;
+            z-index: 1001;
+            user-select: none;
+            display: block;
+            letter-spacing: -0.01em;
         }
 
-        .nav-links a::after {
+        .nav-link::after {
             content: '';
             position: absolute;
             bottom: -4px;
-            left: 0;
+            left: 50%;
             width: 0;
-            height: 1px;
-            background: var(--gradient-gold);
-            transition: width 0.2s ease;
+            height: 2px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-dark));
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
         }
 
-        .nav-links a:hover {
+        .nav-link:hover, .nav-link.active {
             color: var(--text-primary);
+            background: rgba(212, 175, 55, 0.05);
         }
 
-        .nav-links a:hover::after {
-            width: 100%;
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 80%;
         }
 
-        .nav-cta {
+        /* ======================
+           SCROLL INDICATORS
+           ====================== */
+        .scroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
             display: flex;
-            gap: 0.75rem;
-        }
-
-        .btn {
-            padding: 0.55rem 1.1rem;
-            border-radius: 4px;
-            font-weight: 500;
-            font-size: 0.85rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            border: none;
-            letter-spacing: -0.01em;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-outline {
-            background: var(--glass);
-            border: 1px solid var(--border-glass);
-            color: var(--text-primary);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--border-gold);
-            background: var(--glass-strong);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
-        }
-
-        .btn-notion {
-            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 1rem;
         }
 
-        .btn-notion svg {
-            transition: transform 0.2s ease;
+        .scroll-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
         }
 
-        .btn-notion:hover svg {
+        .scroll-dot.active {
+            background: var(--gold);
+            box-shadow: 0 0 20px var(--gold-glow);
+            transform: scale(1.3);
+        }
+
+        .scroll-dot:hover {
+            background: var(--text-secondary);
             transform: scale(1.1);
         }
 
+        .scroll-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 50%;
+        }
+
+        .scroll-arrow:hover {
+            opacity: 1;
+            background: rgba(212, 175, 55, 0.1);
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+        }
+
+        .scroll-arrow svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--gold);
+            stroke-width: 2;
+            fill: none;
+            transition: transform 0.3s ease;
+        }
+
+        .scroll-arrow:hover svg {
+            transform: scale(1.2);
+        }
+
+        .scroll-arrow.left { left: 1rem; }
+        .scroll-arrow.right { right: 1rem; }
+        .scroll-arrow.hidden { opacity: 0; pointer-events: none; }
+
+        /* ======================
+           COMMON PANEL STYLES
+           ====================== */
+        .panel-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-gold);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .panel-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin-bottom: 2rem;
+        }
+
+        /* ======================
+           PANEL: FEATURES
+           ====================== */
+        .panel-features-deep {
+            background: radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
+        }
+
+        .panel-features-deep .panel-content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .features-masonry {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .feature-tile {
+            background: var(--bg-surface);
+            padding: 1.25rem 1.5rem;
+            transition: all 0.4s ease;
+            position: relative;
+            min-height: auto;
+        }
+
+        .feature-tile::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-tile:hover {
+            background: var(--bg-elevated);
+        }
+
+        .feature-tile:hover::after {
+            opacity: 1;
+        }
+
+        .feature-tile h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .feature-tile h4 svg {
+            width: 14px;
+            height: 14px;
+            min-width: 14px;
+            stroke: var(--gold);
+            stroke-width: 1.5;
+            fill: none;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .feature-tile p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        /* ======================
+           PANEL: ANALYSIS
+           ====================== */
+        .panel-analysis {
+            background: radial-gradient(ellipse at 30% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+        }
+
+        .analysis-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 3rem;
+            max-width: 1100px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .analysis-info h2 {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        .analysis-info p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .stat-box .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .code-window {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .code-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-dot.red { background: #ff5f56; }
+        .code-dot.yellow { background: #ffbd2e; }
+        .code-dot.green { background: #27c93f; }
+
+        .code-body {
+            padding: 1rem;
+            line-height: 1.6;
+        }
+
+        .code-line {
+            display: flex;
+        }
+
+        .code-line .num {
+            color: var(--text-muted);
+            min-width: 2rem;
+            user-select: none;
+        }
+
+        .code-line .keyword { color: #c792ea; }
+        .code-line .function { color: #82aaff; }
+        .code-line .string { color: #c3e88d; }
+        .code-line .comment { color: #546e7a; }
+        .code-line .gold { color: var(--gold); }
+
+        /* ======================
+           PANEL: HOME
+           ====================== */
+        .panel-home {
+            background: 
+                radial-gradient(ellipse at 50% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 70%, rgba(212, 175, 55, 0.04) 0%, transparent 40%);
+        }
+
+        .home-content {
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--border-gold);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-title .gold {
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 550px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-notion-btn {
+            display: inline-flex;
+            justify-content: center;
+            animation: fadeInUp 0.8s ease 0.5s both;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
         .btn-primary {
-            background: var(--gradient-gold);
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
             color: #000;
+            position: relative;
+            overflow: hidden;
             font-weight: 600;
         }
 
@@ -311,1633 +608,1035 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
             transition: left 0.5s ease;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.35);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
         }
 
         .btn-primary:hover::before {
             left: 100%;
         }
 
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8rem 2rem 4rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.06) 0%, transparent 50%);
-            animation: heroPulse 15s ease-in-out infinite;
-        }
-
-        @keyframes heroPulse {
-            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
-            50% { transform: scale(1.1) rotate(5deg); opacity: 0.8; }
-        }
-
-        .hero-content {
-            max-width: 900px;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--glass-strong);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--border-gold);
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--gold);
-            margin-bottom: 2rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
-        }
-
-        .hero-badge .badge-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--gold);
-            border-radius: 50%;
-            animation: pulse-dot 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .hero h1 {
-            font-size: clamp(2.75rem, 7vw, 4.5rem);
-            font-weight: 700;
-            line-height: 1.05;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #fff 0%, #FFD700 40%, #FFA500 60%, #fff 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 8s linear infinite;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
-
-        .hero-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            max-width: 640px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.7;
-            font-weight: 400;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 3rem;
-        }
-
-        .hero-buttons .btn {
-            padding: 0.8rem 1.75rem;
-            font-size: 0.9rem;
-        }
-
-        /* Badges */
-        .badges {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .badges img {
-            height: 24px;
-            border-radius: 4px;
-        }
-
-        /* Section Styles */
-        section {
-            padding: 6rem 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .section-header {
-            text-align: center;
-            max-width: 600px;
-            margin: 0 auto 4rem;
-        }
-
-        .section-label {
-            display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--gold);
-            margin-bottom: 1rem;
-            padding: 0.25rem 0.75rem;
-            background: rgba(255, 215, 0, 0.08);
-            border-radius: 100px;
-        }
-
-        .section-title {
-            font-size: 2.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
-        }
-
-        .section-desc {
-            color: var(--text-secondary);
-            font-size: 1rem;
-        }
-
-        /* Feature Groups */
-        .feature-group {
-            margin-bottom: 3rem;
-        }
-
-        .feature-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .feature-group-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .feature-group-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--gradient-gold-subtle);
-            border: 1px solid var(--border-gold);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .feature-group-icon svg {
-            width: 16px;
-            height: 16px;
-            stroke: var(--gold);
-            stroke-width: 1.5;
-            fill: none;
-        }
-
-        .feature-group-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--gold);
-        }
-
-        /* Features Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background: var(--border);
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            position: relative;
             overflow: hidden;
         }
 
-        .feature-card {
-            background: var(--bg-card);
-            padding: 1.75rem;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .feature-card::before {
+        .btn-secondary::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
+            inset: 0;
+            background: linear-gradient(135deg, rgba(212,175,55,0.2) 0%, transparent 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .feature-card:hover {
-            background: var(--bg-glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--border-gold);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
         }
 
-        .feature-card:hover::before {
+        .btn-secondary:hover::before {
             opacity: 1;
         }
 
-        .feature-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--glass-strong);
-            border: 1px solid var(--border-glass);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            color: var(--gold);
+        .btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
         }
 
-        .feature-icon svg {
+        .direction-hints {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+        }
+
+        .hint {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hint:hover {
+            color: var(--text-secondary);
+        }
+
+        .hint svg {
             width: 20px;
             height: 20px;
-            stroke: var(--gold);
+            stroke: currentColor;
             stroke-width: 1.5;
             fill: none;
         }
 
-        .feature-card:hover .feature-icon {
-            background: rgba(255, 215, 0, 0.1);
-            border-color: var(--border-gold);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+        .hint.left svg {
+            animation: bounceLeft 2s infinite;
         }
 
-        .feature-card:hover .feature-icon svg {
-            stroke: var(--gold-light);
+        .hint.right svg {
+            animation: bounceRight 2s infinite;
         }
 
-        .feature-card h3 {
-            font-size: 0.9375rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.01em;
+        @keyframes bounceLeft {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-5px); }
         }
 
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.8125rem;
-            line-height: 1.55;
+        @keyframes bounceRight {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
         }
 
-        /* Glass Card */
-        .glass-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            box-shadow: var(--shadow-card);
+        /* ======================
+           PANEL: SYSTEM
+           ====================== */
+        .panel-system {
+            background: radial-gradient(ellipse at 70% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
         }
 
-        /* Architecture Section */
-        .architecture {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            padding: 2.5rem;
-            margin-top: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .architecture::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            opacity: 0.3;
+        .system-showcase {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 3rem;
+            max-width: 1100px;
+            width: 100%;
+            align-items: center;
         }
 
         .arch-diagram {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 0.75rem;
         }
 
-        .arch-box {
-            background: var(--bg-dark);
+        .arch-node {
+            background: var(--bg-surface);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 1.5rem;
+            padding: 1rem;
             text-align: center;
             transition: all 0.3s ease;
         }
 
-        .arch-box:hover {
+        .arch-node:hover {
             border-color: var(--border-gold);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+            background: var(--bg-elevated);
         }
 
-        .arch-box h4 {
-            color: var(--gold);
-            font-size: 0.9rem;
+        .arch-node.highlight {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .arch-node svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--gold);
+            stroke-width: 1.5;
+            fill: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-node h5 {
+            font-size: 0.75rem;
             font-weight: 600;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.25rem;
         }
 
-        .arch-box ul {
-            list-style: none;
-            font-size: 0.85rem;
+        .arch-node p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .arch-node.full {
+            grid-column: span 3;
+        }
+
+        .system-info h2 {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        .system-info p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .system-features {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .sys-feature {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
             color: var(--text-secondary);
         }
 
-        .arch-box li {
-            padding: 0.25rem 0;
+        .sys-feature svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--gold);
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
         }
 
-        .arch-arrow {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--gold);
-            font-size: 1.5rem;
+        /* ======================
+           PANEL: DOCS
+           ====================== */
+        .panel-docs {
+            background: radial-gradient(ellipse at 80% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
         }
 
-        /* Code Block */
-        .code-section {
-            background: var(--bg-card);
+        .docs-content {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .doc-card {
+            background: var(--bg-surface);
             border: 1px solid var(--border);
-            border-radius: 0;
-            overflow: hidden;
-            margin: 2rem 0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
-        .code-header {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 1rem 1.5rem;
+        .doc-card:hover {
+            border-color: var(--border-gold);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .doc-card svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--gold);
+            stroke-width: 1.5;
+            fill: none;
+            margin-bottom: 1rem;
+        }
+
+        .doc-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-card p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .doc-card .doc-link {
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .doc-card .doc-link svg {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+        }
+
+        .quickstart-terminal {
+            margin-top: 2rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-elevated);
             border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .code-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .code-dot.red { background: #ff5f57; }
-        .code-dot.yellow { background: #febc2e; }
-        .code-dot.green { background: #28c840; }
-
-        .code-title {
-            margin-left: 1rem;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        pre {
-            padding: 1.5rem;
-            overflow-x: auto;
-            font-family: 'Geist Mono', monospace;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        code {
-            font-family: 'Geist Mono', monospace;
-        }
-
-        .code-comment { color: #6b7280; }
-        .code-keyword { color: #c084fc; }
-        .code-string { color: #34d399; }
-        .code-cmd { color: #60a5fa; }
-
-        /* Charts Gallery */
-        .charts-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .chart-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 0;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-
-        .chart-card:hover {
-            border-color: rgba(255, 215, 0, 0.3);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-card);
-        }
-
-        .chart-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .chart-info {
-            padding: 1.25rem;
-        }
-
-        .chart-info h4 {
-            font-size: 1rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .chart-info span {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin: 3rem 0;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 2rem;
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .stat-card:hover {
-            border-color: var(--border-gold);
-            box-shadow: 0 8px 40px rgba(255, 215, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .stat-card:hover::before {
-            opacity: 1;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: var(--gradient-gold);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Table Styles */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border-glass);
-            background: var(--bg-glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th {
-            background: rgba(255, 215, 0, 0.08);
-            color: var(--gold);
-            text-align: left;
-            padding: 1rem 1.25rem;
-            font-weight: 600;
+        .terminal-body {
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        td {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid var(--border-glass);
-            color: var(--text-secondary);
-        }
-
-        tr:hover td {
-            background: rgba(255, 215, 0, 0.03);
-        }
-
-        td code {
-            background: rgba(255, 215, 0, 0.1);
-            color: var(--gold);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        /* Quick Start Steps */
-        .steps {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .step {
+        .terminal-line {
             display: flex;
-            gap: 1.5rem;
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .step::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--gradient-gold);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .step:hover {
-            border-color: var(--border-gold);
-            box-shadow: 0 8px 40px rgba(255, 215, 0, 0.08);
-        }
-
-        .step:hover::before {
-            opacity: 1;
-        }
-
-        .step-number {
-            flex-shrink: 0;
-            width: 48px;
-            height: 48px;
-            background: var(--gradient-gold);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: #000;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
-        }
-
-        .step-content h4 {
-            font-size: 1.1rem;
+            align-items: flex-start;
             margin-bottom: 0.5rem;
         }
 
-        .step-content p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
+        .terminal-line:last-child {
+            margin-bottom: 0;
         }
 
-        /* Footer */
-        footer {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-top: 1px solid var(--border-glass);
-            padding: 4rem 2rem 2rem;
-            margin-top: 4rem;
-            position: relative;
+        .terminal-prompt {
+            color: var(--gold);
+            margin-right: 0.5rem;
+            user-select: none;
         }
 
-        footer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            opacity: 0.2;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 3rem;
-        }
-
-        .footer-brand h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            background: var(--gradient-gold);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-        }
-
-        .footer-brand p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.7;
-        }
-
-        .footer-links h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 1.25rem;
+        .terminal-cmd {
             color: var(--text-primary);
         }
 
-        .footer-links ul {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.75rem;
-        }
-
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .footer-links a:hover {
-            color: var(--gold);
-            padding-left: 4px;
-        }
-
-        .footer-bottom {
-            max-width: 1400px;
-            margin: 3rem auto 0;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-glass);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .terminal-comment {
             color: var(--text-muted);
-            font-size: 0.85rem;
+            margin-left: 0.5rem;
         }
 
-        /* Responsive */
-        @media (max-width: 1280px) {
-            .features-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        /* ======================
+           FLOATING ELEMENTS
+           ====================== */
+        .floating-grid {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.03;
+            background-image: 
+                linear-gradient(var(--text-muted) 1px, transparent 1px),
+                linear-gradient(90deg, var(--text-muted) 1px, transparent 1px);
+            background-size: 100px 100px;
         }
 
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+            transition: all 1s ease;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--gold);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--gold-dark);
+            bottom: -100px;
+            right: -100px;
+        }
+
+        /* ======================
+           RESPONSIVE
+           ====================== */
         @media (max-width: 1024px) {
-            .footer-content {
-                grid-template-columns: 1fr 1fr;
+            .features-masonry {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .arch-diagram {
+
+            .analysis-showcase,
+            .system-showcase {
                 grid-template-columns: 1fr;
+                gap: 2rem;
             }
-            .features-grid {
+
+            .docs-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            .feature-card {
-                padding: 1.5rem;
+
+            .arch-diagram {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .arch-node.full {
+                grid-column: span 2;
             }
         }
 
         @media (max-width: 768px) {
-            .nav-links, .nav-cta {
+            .nav-links {
                 display: none;
             }
-            .hero h1 {
-                font-size: 2.5rem;
+
+            .panel {
+                padding: 3rem 1.5rem 1.5rem;
             }
-            .section-title {
-                font-size: 2rem;
+
+            .hero-title {
+                font-size: clamp(2rem, 10vw, 3rem);
             }
-            .footer-content {
-                grid-template-columns: 1fr;
-                text-align: center;
+
+            .direction-hints {
+                gap: 2rem;
+                margin-top: 3rem;
             }
-            .footer-bottom {
-                flex-direction: column;
-                gap: 1rem;
+
+            .features-masonry {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
-            .bg-orb {
-                opacity: 0.2;
-            }
-            .logo-svg-large {
-                width: 60px;
-                height: 60px;
-            }
-            .features-grid {
+
+            .docs-grid {
                 grid-template-columns: 1fr;
             }
-            .feature-card {
-                padding: 1.25rem;
+
+            .analysis-stats {
+                grid-template-columns: repeat(3, 1fr);
             }
-            .feature-group-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
+
+            .scroll-arrow {
+                display: none;
             }
         }
 
         @media (max-width: 480px) {
-            .hero h1 {
-                font-size: 1.875rem;
+            .panel-title {
+                font-size: 1.75rem;
             }
-            .hero p {
-                font-size: 1rem;
+
+            .analysis-stats {
+                grid-template-columns: 1fr;
             }
-            .feature-icon {
-                width: 36px;
-                height: 36px;
+
+            .arch-diagram {
+                grid-template-columns: 1fr;
             }
-            .feature-icon svg {
-                width: 18px;
-                height: 18px;
-            }
-            .feature-card h3 {
-                font-size: 0.875rem;
-            }
-            .feature-card p {
-                font-size: 0.75rem;
+
+            .arch-node.full {
+                grid-column: span 1;
             }
         }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+        @media (hover: none) and (pointer: coarse) {
+            /* Touch device optimizations */
+            .panel {
+                padding: 5rem 2rem 2rem;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
+            
+            .scroll-arrow {
+                display: none;
             }
         }
-
-        .animate {
-            animation: fadeInUp 0.6s ease-out forwards;
-        }
-
-        .animate-fade {
-            animation: fadeIn 0.8s ease-out forwards;
-        }
-
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        .delay-5 { animation-delay: 0.5s; }
     </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="bg-animation">
-        <div class="bg-grid"></div>
-        <div class="bg-orb bg-orb-1"></div>
-        <div class="bg-orb bg-orb-2"></div>
-        <div class="bg-orb bg-orb-3"></div>
-        <div class="bg-noise"></div>
-    </div>
+    <!-- Background elements -->
+    <div class="floating-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-container">
-            <a href="#" class="nav-logo">
-                <span>GOLD STANDARD</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#quickstart">Quick Start</a></li>
-                <li><a href="#charts">Charts</a></li>
-                <li><a href="#samples">Samples</a></li>
-                <li><a href="#insights">Insights</a></li>
-                <li><a href="#architecture">Architecture</a></li>
-                <li><a href="#docs">Docs</a></li>
-            </ul>
-            <div class="nav-cta">
-                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank" class="btn btn-outline btn-notion">
-                    <svg width="16" height="16" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px;">
-                        <path d="M6.017 4.313l55.333 -4.087c6.797 -0.583 8.543 -0.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277 -1.553 6.807 -6.99 7.193L24.467 99.967c-4.08 0.193 -6.023 -0.39 -8.16 -3.113L3.3 79.94c-2.333 -3.113 -3.3 -5.443 -3.3 -8.167V11.113c0 -3.497 1.553 -6.413 6.017 -6.8z" fill="currentColor"/>
-                        <path d="M61.35 0.227l-55.333 4.087C1.553 4.7 0 7.617 0 11.113v60.66c0 2.723 0.967 5.053 3.3 8.167l13.007 16.913c2.137 2.723 4.08 3.307 8.16 3.113l64.257 -3.89c5.433 -0.387 6.99 -2.917 6.99 -7.193V20.64c0 -2.21 -0.873 -2.847 -3.443 -4.733L74.167 3.143c-4.273 -3.107 -6.02 -3.5 -12.817 -2.917zM25.92 19.523c-5.247 0.353 -6.437 0.433 -9.417 -1.99L8.927 11.507c-0.77 -0.78 -0.383 -1.753 1.557 -1.947l53.193 -3.887c4.467 -0.39 6.793 1.167 8.54 2.527l9.123 6.61c0.39 0.197 1.36 1.36 0.193 1.36l-54.933 3.307 -0.68 0.047zM19.803 88.3V30.367c0 -2.53 0.777 -3.697 3.103 -3.893L86 22.78c2.14 -0.193 3.107 1.167 3.107 3.693v57.547c0 2.53 -0.39 4.67 -3.883 4.863l-60.377 3.5c-3.493 0.193 -5.043 -0.97 -5.043 -4.083zm59.6 -54.827c0.387 1.75 0 3.5 -1.75 3.7l-2.91 0.577v42.773c-2.527 1.36 -4.853 2.137 -6.797 2.137 -3.107 0 -3.883 -0.973 -6.21 -3.887l-19.03 -29.94v28.967l6.02 1.363s0 3.5 -4.857 3.5l-13.39 0.777c-0.39 -0.78 0 -2.723 1.357 -3.11l3.497 -0.97v-38.3L30.48 40.667c-0.39 -1.75 0.58 -4.277 3.3 -4.473l14.367 -0.967 19.8 30.327v-26.83l-5.047 -0.58c-0.39 -2.143 1.163 -3.7 3.103 -3.89l13.4 -0.78z" fill="#050507"/>
-                    </svg>
-                    Notion
-                </a>
-                <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-outline">GitHub</a>
-                <a href="#quickstart" class="btn btn-primary">Get Started</a>
-            </div>
+    <!-- Fixed Navigation -->
+    <nav class="nav-fixed">
+        <a href="#" class="logo" onclick="return false;">
+            <span class="logo-text">GOLD STANDARD</span>
+        </a>
+        <div class="nav-links">
+            <span class="nav-link" data-panel="0">Features</span>
+            <span class="nav-link" data-panel="1">Analysis</span>
+            <span class="nav-link active" data-panel="2">Home</span>
+            <span class="nav-link" data-panel="3">System</span>
+            <span class="nav-link" data-panel="4">Docs</span>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-badge"><span class="badge-dot"></span> v3.1 — Rich Notion Publishing</div>
-            <h1>GOLD STANDARD</h1>
-            <p class="hero-subtitle">
-                A fully autonomous precious metals intelligence system. Extracts insights, 
-                executes tasks, and generates AI-powered analysis every minute—completely 
-                hands-free. Powered by Google Gemini and real-time market data.
-            </p>
-            <div class="hero-buttons">
-                <a href="#quickstart" class="btn btn-primary">Get Started →</a>
-                <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-outline">View on GitHub</a>
-                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank" class="btn btn-outline btn-notion">
-                    <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
+    <!-- Scroll Arrows -->
+    <div class="scroll-arrow left" id="scrollLeft">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+    <div class="scroll-arrow right" id="scrollRight">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <div class="scroll-dot" data-panel="0"></div>
+        <div class="scroll-dot" data-panel="1"></div>
+        <div class="scroll-dot active" data-panel="2"></div>
+        <div class="scroll-dot" data-panel="3"></div>
+        <div class="scroll-dot" data-panel="4"></div>
+    </div>
+
+    <!-- Horizontal Scroll Container -->
+    <div class="horizontal-scroll" id="horizontalScroll">
+        
+        <!-- PANEL 0: Features Deep (Left 2) -->
+        <section class="panel panel-features-deep" data-panel="0">
+            <div class="panel-content">
+                <span class="panel-label">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    Complete Feature Set
+                </span>
+                <h2 class="panel-title">Everything Built In</h2>
+                <p class="panel-subtitle">From data collection to AI analysis to beautiful reports—all autonomous.</p>
+
+                <div class="features-masonry">
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Autonomous Daemon</h4>
+                        <p>Runs continuously with configurable 1-minute to multi-hour intervals. Fully autonomous operation.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Task Execution</h4>
+                        <p>AI autonomously executes research, data fetching, calculations, and monitoring tasks each cycle.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Entity Insights</h4>
+                        <p>Auto-extracts key entities (Fed, ECB, CME, institutions) from reports with relevance scoring.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Action Insights</h4>
+                        <p>Identifies actionable tasks from analysis: research topics, data needs, price levels to monitor.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Multi-Asset Analysis</h4>
+                        <p>Track Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, and S&P 500 with correlations.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Technical Indicators</h4>
+                        <p>RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration for fast computation.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/><circle cx="12" cy="6" r="1" fill="currentColor"/></svg>AI-Powered Insights</h4>
+                        <p>Google Gemini integration generates natural-language analysis and strategic bias extraction.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Economic Calendar</h4>
+                        <p>Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Notion Integration</h4>
+                        <p>Automatic publishing to Notion database with type mapping and tag synchronization.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Rich Formatting</h4>
+                        <p>Enhanced Notion pages with callouts, colored sections, tables, and table of contents.</p>
+                    </div>
+                    <div class="feature-tile">
+                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Smart Charts</h4>
+                        <p>Auto-detects tickers in reports and embeds relevant charts directly in Notion pages.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 1: Analysis (Left 1) -->
+        <section class="panel panel-analysis" data-panel="1">
+            <div class="analysis-showcase">
+                <div class="analysis-info">
+                    <span class="panel-label">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Analysis Engine
+                    </span>
+                    <h2>AI-Powered Market Intelligence</h2>
+                    <p>Every analysis cycle combines technical indicators, cross-asset correlations, and AI reasoning to produce actionable insights with clear bias signals.</p>
+                    
+                    <div class="analysis-stats">
+                        <div class="stat-box">
+                            <div class="value">6</div>
+                            <div class="label">Assets</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value">12+</div>
+                            <div class="label">Indicators</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value">AI</div>
+                            <div class="label">Reasoning</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot red"></span>
+                            <span class="code-dot yellow"></span>
+                            <span class="code-dot green"></span>
+                        </div>
+                        <div class="code-body">
+                            <div class="code-line"><span class="num">1</span><span class="comment"># Generated by Gold Standard v3.1</span></div>
+                            <div class="code-line"><span class="num">2</span></div>
+                            <div class="code-line"><span class="num">3</span><span class="keyword">bias</span>: <span class="string">"bullish"</span></div>
+                            <div class="code-line"><span class="num">4</span><span class="keyword">confidence</span>: <span class="gold">0.78</span></div>
+                            <div class="code-line"><span class="num">5</span></div>
+                            <div class="code-line"><span class="num">6</span><span class="keyword">signals</span>:</div>
+                            <div class="code-line"><span class="num">7</span>  - RSI: <span class="gold">58.4</span> <span class="comment"># neutral-bullish</span></div>
+                            <div class="code-line"><span class="num">8</span>  - DXY: <span class="string">weakening</span></div>
+                            <div class="code-line"><span class="num">9</span>  - Yields: <span class="string">falling</span></div>
+                            <div class="code-line"><span class="num">10</span></div>
+                            <div class="code-line"><span class="num">11</span><span class="keyword">action</span>: <span class="string">"Watch $2,650 support"</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 2: Home (Center) -->
+        <section class="panel panel-home" data-panel="2">
+            <div class="home-content">
+                <div class="hero-badge">
+                    <span>v3.1 Released</span>
+                </div>
+                
+                <h1 class="hero-title">
+                    <span class="gold">GOLD</span><br>STANDARD
+                </h1>
+                
+                <p class="hero-subtitle">
+                    Autonomous market analysis system. Technical indicators, AI reasoning, and beautiful reports—all running on autopilot.
+                </p>
+                
+                <div class="hero-actions">
+                    <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                        View on GitHub
+                    </a>
+                    <a href="GUIDE.html" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        Read the Guide
+                    </a>
+                </div>
+
+                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" class="btn btn-secondary hero-notion-btn" target="_blank">
+                    <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6.017 4.313l55.333 -4.087c6.797 -0.583 8.543 -0.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277 -1.553 6.807 -6.99 7.193L24.467 99.967c-4.08 0.193 -6.023 -0.39 -8.16 -3.113L3.3 79.94c-2.333 -3.113 -3.3 -5.443 -3.3 -8.167V11.113c0 -3.497 1.553 -6.413 6.017 -6.8z" fill="currentColor"/>
-                        <path d="M61.35 0.227l-55.333 4.087C1.553 4.7 0 7.617 0 11.113v60.66c0 2.723 0.967 5.053 3.3 8.167l13.007 16.913c2.137 2.723 4.08 3.307 8.16 3.113l64.257 -3.89c5.433 -0.387 6.99 -2.917 6.99 -7.193V20.64c0 -2.21 -0.873 -2.847 -3.443 -4.733L74.167 3.143c-4.273 -3.107 -6.02 -3.5 -12.817 -2.917zM25.92 19.523c-5.247 0.353 -6.437 0.433 -9.417 -1.99L8.927 11.507c-0.77 -0.78 -0.383 -1.753 1.557 -1.947l53.193 -3.887c4.467 -0.39 6.793 1.167 8.54 2.527l9.123 6.61c0.39 0.197 1.36 1.36 0.193 1.36l-54.933 3.307 -0.68 0.047zM19.803 88.3V30.367c0 -2.53 0.777 -3.697 3.103 -3.893L86 22.78c2.14 -0.193 3.107 1.167 3.107 3.693v57.547c0 2.53 -0.39 4.67 -3.883 4.863l-60.377 3.5c-3.493 0.193 -5.043 -0.97 -5.043 -4.083zm59.6 -54.827c0.387 1.75 0 3.5 -1.75 3.7l-2.91 0.577v42.773c-2.527 1.36 -4.853 2.137 -6.797 2.137 -3.107 0 -3.883 -0.973 -6.21 -3.887l-19.03 -29.94v28.967l6.02 1.363s0 3.5 -4.857 3.5l-13.39 0.777c-0.39 -0.78 0 -2.723 1.357 -3.11l3.497 -0.97v-38.3L30.48 40.667c-0.39 -1.75 0.58 -4.277 3.3 -4.473l14.367 -0.967 19.8 30.327v-26.83l-5.047 -0.58c-0.39 -2.143 1.163 -3.7 3.103 -3.89l13.4 -0.78z" fill="#050507"/>
+                        <path d="M61.35 0.227l-55.333 4.087C1.553 4.7 0 7.617 0 11.113v60.66c0 2.723 0.967 5.053 3.3 8.167l13.007 16.913c2.137 2.723 4.08 3.307 8.16 3.113l64.257 -3.89c5.433 -0.387 6.99 -2.917 6.99 -7.193V20.64c0 -2.21 -0.873 -2.847 -3.443 -4.733L74.167 3.143c-4.273 -3.107 -6.02 -3.5 -12.817 -2.917zM25.92 19.523c-5.247 0.353 -6.437 0.433 -9.417 -1.99L8.927 11.507c-0.77 -0.78 -0.383 -1.753 1.557 -1.947l53.193 -3.887c4.467 -0.39 6.793 1.167 8.54 2.527l9.123 6.61c0.39 0.197 1.36 1.36 0.193 1.36l-54.933 3.307 -0.68 0.047zM19.803 88.3V30.367c0 -2.53 0.777 -3.697 3.103 -3.893L86 22.78c2.14 -0.193 3.107 1.167 3.107 3.693v57.547c0 2.53 -0.39 4.67 -3.883 4.863l-60.377 3.5c-3.493 0.193 -5.043 -0.97 -5.043 -4.083zm59.6 -54.827c0.387 1.75 0 3.5 -1.75 3.7l-2.91 0.577v42.773c-2.527 1.36 -4.853 2.137 -6.797 2.137 -3.107 0 -3.883 -0.973 -6.21 -3.887l-19.03 -29.94v28.967l6.02 1.363s0 3.5 -4.857 3.5l-13.39 0.777c-0.39 -0.78 0 -2.723 1.357 -3.11l3.497 -0.97v-38.3L30.48 40.667c-0.39 -1.75 0.58 -4.277 3.3 -4.473l14.367 -0.967 19.8 30.327v-26.83l-5.047 -0.58c-0.39 -2.143 1.163 -3.7 3.103 -3.89l13.4 -0.78z" fill="#000"/>
                     </svg>
                     Live Reports
                 </a>
-            </div>
-            <div class="badges">
-                <img src="https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=CI" alt="CI Status">
-                <img src="https://img.shields.io/badge/tests-33%20passing-success?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests">
-                <img src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-                <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
-            </div>
-        </div>
-    </section>
 
-    <!-- Stats -->
-    <section>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">6</div>
-                <div class="stat-label">Assets Tracked</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">33</div>
-                <div class="stat-label">Tests Passing</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">1m</div>
-                <div class="stat-label">Analysis Cycle</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">AI</div>
-                <div class="stat-label">Autonomous Tasks</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features">
-        <div class="section-header">
-            <span class="section-label">Features</span>
-            <h2 class="section-title">Everything You Need for Gold Analysis</h2>
-            <p class="section-desc">A complete toolkit for quantitative precious metals analysis with AI-powered insights.</p>
-        </div>
-
-        <!-- Analysis & Intelligence -->
-        <div class="feature-group">
-            <div class="feature-group-header">
-                <div class="feature-group-icon">
-                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                </div>
-                <span class="feature-group-title">Analysis & Intelligence</span>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
-                    <h3>Autonomous Daemon</h3>
-                    <p>Runs continuously with configurable 1-minute to multi-hour intervals. Fully autonomous operation.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                    <h3>Task Execution</h3>
-                    <p>AI autonomously executes research, data fetching, calculations, and monitoring tasks each cycle.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-                    <h3>Entity Insights</h3>
-                    <p>Auto-extracts key entities (Fed, ECB, CME, institutions) from reports with relevance scoring.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-                    <h3>Action Insights</h3>
-                    <p>Identifies actionable tasks from analysis: research topics, data needs, price levels to monitor.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-                    <h3>Multi-Asset Analysis</h3>
-                    <p>Track Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, and S&P 500 with correlations.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-                    <h3>Technical Indicators</h3>
-                    <p>RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration for fast computation.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/><circle cx="12" cy="6" r="1" fill="currentColor"/></svg></div>
-                    <h3>AI-Powered Insights</h3>
-                    <p>Google Gemini integration generates natural-language analysis and strategic bias extraction.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                    <h3>Economic Calendar</h3>
-                    <p>Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis.</p>
+                <div class="direction-hints">
+                    <div class="hint left" data-direction="left">
+                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                        <span>Features & Analysis</span>
+                    </div>
+                    <div class="hint right" data-direction="right">
+                        <span>System & Docs</span>
+                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Publishing & Integration -->
-        <div class="feature-group">
-            <div class="feature-group-header">
-                <div class="feature-group-icon">
-                    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <!-- PANEL 3: System (Right 1) -->
+        <section class="panel panel-system" data-panel="3">
+            <div class="system-showcase">
+                <div class="architecture-visual">
+                    <div class="arch-diagram">
+                        <div class="arch-node highlight">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
+                            <h5>Daemon</h5>
+                            <p>Core Loop</p>
+                        </div>
+                        <div class="arch-node">
+                            <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22"/></svg>
+                            <h5>Gemini</h5>
+                            <p>AI Engine</p>
+                        </div>
+                        <div class="arch-node">
+                            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                            <h5>Files</h5>
+                            <p>Auto-Org</p>
+                        </div>
+                        <div class="arch-node">
+                            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                            <h5>pandas_ta</h5>
+                            <p>Indicators</p>
+                        </div>
+                        <div class="arch-node">
+                            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            <h5>Notion</h5>
+                            <p>Publisher</p>
+                        </div>
+                        <div class="arch-node">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <h5>imgbb</h5>
+                            <p>Charts</p>
+                        </div>
+                        <div class="arch-node full">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            <h5>Modern GUI v3</h5>
+                            <p>Dual-pane dashboard with charts and AI workspace</p>
+                        </div>
+                    </div>
                 </div>
-                <span class="feature-group-title">Publishing & Integration</span>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
-                    <h3>YAML Frontmatter</h3>
-                    <p>Auto-generates metadata headers with type, tags, date, and bias for all reports.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
-                    <h3>Notion Integration</h3>
-                    <p>Automatic publishing to Notion database with type mapping and tag synchronization.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
-                    <h3>Rich Formatting</h3>
-                    <p>Enhanced Notion pages with callouts, colored sections, tables, and table of contents.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-                    <h3>Smart Charts</h3>
-                    <p>Auto-detects tickers in reports and embeds relevant charts directly in Notion pages.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- System & Tools -->
-        <div class="feature-group">
-            <div class="feature-group-header">
-                <div class="feature-group-icon">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </div>
-                <span class="feature-group-title">System & Tools</span>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
-                    <h3>Intelligent File Org</h3>
-                    <p>Auto-categorizes, dates, and archives reports older than 7 days with searchable index.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
-                    <h3>Persistent Memory</h3>
-                    <p>Cortex system tracks predictions, grades performance, and maintains win/loss streaks.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></div>
-                    <h3>Usage Management</h3>
-                    <p>Tracks API usage, caches uploads, manages free-tier limits with smart retention policies.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-                    <h3>Modern GUI v3</h3>
-                    <p>Dual-pane dashboard: charts grid + AI workspace with tasks, journals, and execution logs.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-                    <h3>Auto Venv Activation</h3>
-                    <p>Scripts automatically detect and activate the virtual environment—just run directly with Python.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Quick Start -->
-    <section id="quickstart">
-        <div class="section-header">
-            <span class="section-label">Quick Start</span>
-            <h2 class="section-title">Up and Running in Minutes</h2>
-            <p class="section-desc">Get started with automated setup scripts for Windows, macOS, and Linux.</p>
-        </div>
-
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h4>Clone the Repository</h4>
-                    <p>Clone Gold Standard from GitHub to your local machine.</p>
+                
+                <div class="system-info">
+                    <span class="panel-label">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+                        System Architecture
+                    </span>
+                    <h2>Built for Reliability</h2>
+                    <p>Modular components that work together seamlessly. Each piece handles one responsibility well.</p>
+                    
+                    <div class="system-features">
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Modern GUI v3: Dual-pane dashboard with charts and AI workspace</span>
+                        </div>
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Intelligent file organization & 7-day archiving</span>
+                        </div>
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Auto virtual environment detection and activation</span>
+                        </div>
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Persistent memory via Cortex prediction tracking</span>
+                        </div>
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>YAML frontmatter metadata on all reports</span>
+                        </div>
+                        <div class="sys-feature">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Usage tracking & API limit management</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h4>Run Setup Script</h4>
-                    <p>Execute the automated setup script for your platform. It handles Python, venv, and dependencies.</p>
+        </section>
+
+        <!-- PANEL 4: Docs (Right 2) -->
+        <section class="panel panel-docs" data-panel="4">
+            <div class="docs-content">
+                <span class="panel-label">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Documentation
+                </span>
+                <h2 class="panel-title">Get Started</h2>
+                <p class="panel-subtitle">Everything you need to run Gold Standard.</p>
+
+                <div class="docs-grid">
+                    <a href="GUIDE.html" class="doc-card">
+                        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        <h4>User Guide</h4>
+                        <p>Complete walkthrough from installation to daily operation.</p>
+                        <span class="doc-link">Read guide <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+                    </a>
+                    <a href="ARCHITECTURE.html" class="doc-card">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        <h4>Architecture</h4>
+                        <p>Deep dive into system design and component interactions.</p>
+                        <span class="doc-link">Explore <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+                    </a>
+                    <a href="../CONTRIBUTING.md" class="doc-card">
+                        <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77"/></svg>
+                        <h4>Contributing</h4>
+                        <p>How to contribute code, report bugs, and suggest features.</p>
+                        <span class="doc-link">Contribute <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+                    </a>
+                </div>
+
+                <div class="quickstart-terminal">
+                    <div class="terminal-header">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                        Quick Start
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-cmd">git clone https://github.com/amuzetnoM/gold_standard</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-cmd">cd gold_standard && ./scripts/setup.ps1</span>
+                            <span class="terminal-comment"># or setup.sh</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-cmd">python run.py --interval-min 5</span>
+                            <span class="terminal-comment"># launch daemon</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h4>Add API Key</h4>
-                    <p>Edit .env and add your GEMINI_API_KEY from Google AI Studio (free tier available).</p>
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                    <h4>Launch</h4>
-                    <p>Run the CLI or GUI and start receiving AI-powered gold analysis.</p>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <div class="code-section">
-            <div class="code-header">
-                <div class="code-dot red"></div>
-                <div class="code-dot yellow"></div>
-                <div class="code-dot green"></div>
-                <span class="code-title">Terminal</span>
-            </div>
-            <pre><code><span class="code-comment"># Clone repository</span>
-<span class="code-cmd">git clone</span> https://github.com/amuzetnoM/gold_standard.git
-<span class="code-cmd">cd</span> gold_standard
-
-<span class="code-comment"># Windows PowerShell</span>
-.\scripts\setup.ps1
-
-<span class="code-comment"># Unix/macOS/Linux</span>
-chmod +x scripts/setup.sh && ./scripts/setup.sh
-
-<span class="code-comment"># Quick test (no AI required)</span>
-<span class="code-cmd">python</span> run.py --mode daily --no-ai
-
-<span class="code-comment"># Full run with AI</span>
-<span class="code-cmd">python</span> run.py
-
-<span class="code-comment"># Or launch GUI</span>
-<span class="code-cmd">python</span> gui.py</code></pre>
-        </div>
-    </section>
-
-    <!-- Charts Gallery -->
-    <section id="charts">
-        <div class="section-header">
-            <span class="section-label">Output</span>
-            <h2 class="section-title">Professional Chart Generation</h2>
-            <p class="section-desc">Automated candlestick charts with technical overlays for all tracked assets.</p>
-        </div>
-
-        <div class="charts-gallery">
-            <div class="chart-card">
-                <img src="images/GOLD.png" alt="Gold Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/FFD700?text=GOLD'">
-                <div class="chart-info">
-                    <h4>Gold (GC=F)</h4>
-                    <span>Primary Asset • SMA 50/200</span>
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="images/SILVER.png" alt="Silver Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/C0C0C0?text=SILVER'">
-                <div class="chart-info">
-                    <h4>Silver (SI=F)</h4>
-                    <span>Precious Metal • GSR Ratio</span>
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="images/DXY.png" alt="DXY Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/3b82f6?text=DXY'">
-                <div class="chart-info">
-                    <h4>Dollar Index (DXY)</h4>
-                    <span>Inverse Correlation</span>
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="images/YIELD.png" alt="Yield Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/10b981?text=YIELD'">
-                <div class="chart-info">
-                    <h4>US 10Y Yield (^TNX)</h4>
-                    <span>Rate Sensitivity</span>
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="images/VIX.png" alt="VIX Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/ef4444?text=VIX'">
-                <div class="chart-info">
-                    <h4>VIX (^VIX)</h4>
-                    <span>Volatility Index</span>
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="images/SPX.png" alt="SPX Chart" onerror="this.src='https://via.placeholder.com/400x200/12121a/f59e0b?text=SPX'">
-                <div class="chart-info">
-                    <h4>S&P 500 (^GSPC)</h4>
-                    <span>Risk Sentiment</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Sample Outputs -->
-    <section id="samples">
-        <div class="section-header">
-            <span class="section-label">Sample Outputs</span>
-            <h2 class="section-title">AI-Generated Reports</h2>
-            <p class="section-desc">See what Gold Standard produces—comprehensive market analysis with actionable insights.</p>
-        </div>
-
-        <!-- Daily Journal Sample -->
-        <div class="code-section">
-            <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">Daily Journal — December 01, 2025</span>
-            </div>
-            <pre><code><span class="code-comment">## 1. Market Context</span>
-The macro environment is exhibiting classic "risk-on" characteristics with a 
-significant dovish tilt. The DXY's continued weakness (below 200SMA and in a 
-strong downtrend) and suppressed yields suggest the market is pricing in a 
-less restrictive Federal Reserve policy...
-
-<span class="code-comment">## 2. Asset-Specific Analysis</span>
-<span class="code-keyword">Gold</span> has experienced a significant impulsive move, gaining <span class="code-string">+3.98%</span> to reach <span class="code-string">$4254.9</span>.
-Price is firmly above its 200-day simple moving average, a long-term bullish signal.
-
-<span class="code-keyword">Trend Strength:</span> ADX reading of -1385.42, flagged as <span class="code-string">CHOPPY/RANGING</span>
-<span class="code-keyword">Momentum:</span> RSI at <span class="code-string">72.36</span>, entering overbought territory
-
-<span class="code-comment">## 4. Strategic Thesis</span>
-<span class="code-keyword">Bias:</span> <span class="code-string">NEUTRAL</span>
-The primary thesis is that Gold's recent parabolic advance has pushed it into 
-a short-term overbought condition...
-
-<span class="code-comment">## 6. Scenario Probability Matrix</span>
-| Scenario   | Price Target    | Probability | Key Drivers                              |
-|------------|-----------------|-------------|------------------------------------------|
-| Bull Case  | $4450+          | 30%         | DXY collapse continues                   |
-| Base Case  | $4180 - $4280   | 55%         | Price consolidates                       |
-| Bear Case  | &lt;$4120        | 15%         | Sharp reversal, profit-taking            |</code></pre>
-        </div>
-
-        <!-- Catalyst Watchlist Sample -->
-        <div class="code-section" style="margin-top: 2rem;">
-            <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">Live Catalyst Watchlist</span>
-            </div>
-            <pre><code><span class="code-comment"># Live Catalyst Watchlist</span>
-<span class="code-keyword">&gt; Generated:</span> 2025-12-01 | <span class="code-string">Gold: $4,254.90</span> | DXY: 103.00 | VIX: 17.00 | 10Y: 4.30%
-
-<span class="code-comment">## Market Condition Summary</span>
-
-| Indicator        | Current | Status   | Gold Impact |
-|------------------|---------|----------|-------------|
-| VIX (Volatility) | 17.00   | NORMAL   | Neutral     |
-| 10Y Yield        | 4.30%   | MODERATE | Neutral     |
-| DXY (Dollar)     | 103.00  | Moderate | Neutral     |
-
-<span class="code-comment">## Active Catalyst Matrix</span>
-
-| # | Event / Catalyst               | What to Monitor            | Impact                          |
-|---|--------------------------------|----------------------------|---------------------------------|
-| 1 | <span class="code-keyword">Fed Policy & Interest Rates</span>   | FOMC decisions, guidance   | <span class="code-string">Bullish: Rate cuts → Rally</span>      |
-| 2 | <span class="code-keyword">U.S. Inflation Data</span>           | CPI, PPI, PCE prints       | <span class="code-string">Bullish: High inflation → Hedge</span> |
-| 3 | <span class="code-keyword">Employment & Labor Market</span>     | NFP, unemployment, wages   | <span class="code-string">Bullish: Weak jobs → Rate cuts</span>  |</code></pre>
-        </div>
-
-        <!-- Institutional Matrix Sample -->
-        <div class="code-section" style="margin-top: 2rem;">
-            <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">Institutional Activity Matrix</span>
-            </div>
-            <pre><code><span class="code-comment"># Institutional Activity Matrix</span>
-<span class="code-keyword">&gt; Generated:</span> 2025-12-01
-
-<span class="code-comment">## Central Bank Activity</span>
-
-| Central Bank        | Recent Action | YTD Purchases | Gold Impact                |
-|---------------------|---------------|---------------|----------------------------|
-| 🇨🇳 PBOC (China)     | +10t          | +180t         | <span class="code-string">Bullish - Largest buyer</span>    |
-| 🇷🇺 Bank of Russia   | +5t           | +60t          | <span class="code-string">Bullish - Strategic reserves</span>|
-| 🇹🇷 TCMB (Turkey)    | +8t           | +120t         | <span class="code-string">Bullish - De-dollarization</span> |
-| 🇮🇳 RBI (India)      | +3t           | +45t          | <span class="code-string">Bullish - Diversification</span>  |
-
-<span class="code-comment">## ETF Flow Tracking</span>
-
-| ETF  | Weekly Flow | Monthly Flow | Signal                             |
-|------|-------------|--------------|-------------------------------------|
-| GLD  | +$250M      | +$1.2B       | <span class="code-string">Bullish - Institutional accumulation</span> |
-| IAU  | +$80M       | +$350M       | <span class="code-string">Bullish - Retail inflows</span>            |</code></pre>
-        </div>
-    </section>
-
-    <!-- Insights Engine Demo -->
-    <section id="insights">
-        <div class="section-header">
-            <span class="section-label">Autonomous Intelligence</span>
-            <h2 class="section-title">Insights Engine</h2>
-            <p class="section-desc">Automatically extracts entities and actionable tasks from every report.</p>
-        </div>
-
-        <div class="stats-grid" style="margin-bottom: 2rem;">
-            <div class="stat-card">
-                <div class="stat-value">33</div>
-                <div class="stat-label">Entities Extracted</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">13</div>
-                <div class="stat-label">Actions Identified</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">6</div>
-                <div class="stat-label">Task Handlers</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">11</div>
-                <div class="stat-label">File Categories</div>
-            </div>
-        </div>
-
-        <div class="code-section">
-            <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">Entity Extraction Example</span>
-            </div>
-            <pre><code><span class="code-comment"># Entities extracted from catalysts_2025-12-01.md</span>
-
-<span class="code-keyword">Institutions:</span>
-  • Federal Reserve (relevance: 0.55)
-  • FOMC (relevance: 0.55)
-  • ECB (relevance: 0.55)
-  • PBOC (relevance: 0.70)
-  • GLD ETF (relevance: 0.70)
-
-<span class="code-keyword">Indicators:</span>
-  • RSI (relevance: 0.55)
-  • SMA (relevance: 0.60)
-  • CPI (relevance: 0.65)
-
-<span class="code-keyword">Assets:</span>
-  • Gold (relevance: 0.65)
-  • Silver (relevance: 0.60)
-  • DXY (relevance: 0.55)</code></pre>
-        </div>
-
-        <div class="code-section" style="margin-top: 1.5rem;">
-            <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">Action Queue — Pending Tasks</span>
-            </div>
-            <pre><code><span class="code-comment"># Task queue ready for autonomous execution</span>
-
-<span class="code-keyword">[HIGH]</span> research: Impact of PBOC gold purchases on Q1 outlook
-       <span class="code-string">Deadline: 2025-12-03T14:00:00</span>
-
-<span class="code-keyword">[HIGH]</span> monitoring: Gold support level at $2,580 (50-day SMA)
-       <span class="code-string">Deadline: 2025-12-03T13:30:00</span>
-
-<span class="code-keyword">[MEDIUM]</span> data_fetch: COT positioning data
-       <span class="code-string">Deadline: 2025-12-03T15:00:00</span>
-
-<span class="code-keyword">[MEDIUM]</span> calculation: Position size for $2,700 breakout
-       <span class="code-string">Deadline: 2025-12-03T16:00:00</span></code></pre>
-        </div>
-    </section>
-
-    <!-- Architecture -->
-    <section id="architecture">
-        <div class="section-header">
-            <span class="section-label">Architecture</span>
-            <h2 class="section-title">Modular Design</h2>
-            <p class="section-desc">Clean separation of concerns for maintainability and extensibility.</p>
-        </div>
-
-        <div class="architecture">
-            <div class="arch-diagram">
-                <div class="arch-box">
-                    <h4>Cortex</h4>
-                    <ul>
-                        <li>Memory JSON</li>
-                        <li>Win/Loss Tracking</li>
-                        <li>Predictions</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>QuantEngine</h4>
-                    <ul>
-                        <li>yfinance Data</li>
-                        <li>RSI, SMA, ATR</li>
-                        <li>mplfinance Charts</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>Strategist</h4>
-                    <ul>
-                        <li>Prompt Builder</li>
-                        <li>Gemini API</li>
-                        <li>Bias Extraction</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="arch-diagram">
-                <div class="arch-box">
-                    <h4>InsightsEngine</h4>
-                    <ul>
-                        <li>Entity Extraction</li>
-                        <li>Action Insights</li>
-                        <li>Priority Queue</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>TaskExecutor</h4>
-                    <ul>
-                        <li>Research Tasks</li>
-                        <li>Data Fetching</li>
-                        <li>Monitoring</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>FileOrganizer</h4>
-                    <ul>
-                        <li>Categorization</li>
-                        <li>Auto-Dating</li>
-                        <li>Archival</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="arch-diagram">
-                <div class="arch-box">
-                    <h4>DBManager</h4>
-                    <ul>
-                        <li>SQLite Storage</li>
-                        <li>Insights Tables</li>
-                        <li>Task Logging</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>LiveAnalyzer</h4>
-                    <ul>
-                        <li>Catalyst Watch</li>
-                        <li>Institutional Matrix</li>
-                        <li>1Y/3M Analysis</li>
-                    </ul>
-                </div>
-                <div class="arch-box">
-                    <h4>EconomicCalendar</h4>
-                    <ul>
-                        <li>Fed/ECB/BOJ</li>
-                        <li>NFP/CPI/GDP</li>
-                        <li>Gold Impact</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Commands Reference -->
-    <section id="docs">
-        <div class="section-header">
-            <span class="section-label">Reference</span>
-            <h2 class="section-title">Command Reference</h2>
-            <p class="section-desc">All available CLI commands and options.</p>
-        </div>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>python run.py</code></td>
-                        <td>Autonomous daemon - runs every 1 minute (default)</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --interval-min 5</code></td>
-                        <td>Daemon with 5-minute interval</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --interval 4</code></td>
-                        <td>Daemon with 4-hour interval (legacy mode)</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --once</code></td>
-                        <td>Single analysis run and exit</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --run</code></td>
-                        <td>Run all analysis once with insights extraction</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --daily</code></td>
-                        <td>Quick daily journal only</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --interactive</code></td>
-                        <td>Interactive menu mode</td>
-                    </tr>
-                    <tr>
-                        <td><code>python run.py --no-ai</code></td>
-                        <td>Run without Gemini API</td>
-                    </tr>
-                    <tr>
-                        <td><code>python gui.py</code></td>
-                        <td>Launch modern GUI v3 dashboard</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-brand">
-                <h3>GOLD STANDARD</h3>
-                <p>Precious Metals Intelligence Complex — Quantitative Analysis System for gold and intermarket assets.</p>
-            </div>
-            <div class="footer-links">
-                <h4>Documentation</h4>
-                <ul>
-                    <li><a href="#quickstart">Quick Start</a></li>
-                    <li><a href="GUIDE.md">Technical Guide</a></li>
-                    <li><a href="#architecture">Architecture</a></li>
-                    <li><a href="#docs">API Reference</a></li>
-                </ul>
-            </div>
-            <div class="footer-links">
-                <h4>Community</h4>
-                <ul>
-                    <li><a href="https://github.com/amuzetnoM/gold_standard">GitHub</a></li>
-                    <li><a href="https://github.com/amuzetnoM/gold_standard/issues">Issues</a></li>
-                    <li><a href="https://github.com/amuzetnoM/gold_standard/blob/main/CONTRIBUTING.md">Contributing</a></li>
-                    <li><a href="https://github.com/amuzetnoM/gold_standard/blob/main/LICENSE">License</a></li>
-                </ul>
-            </div>
-            <div class="footer-links">
-                <h4>Tech Stack</h4>
-                <ul>
-                    <li><a href="https://www.python.org/">Python 3.10+</a></li>
-                    <li><a href="https://ai.google.dev/">Google Gemini</a></li>
-                    <li><a href="https://pandas.pydata.org/">pandas</a></li>
-                    <li><a href="https://github.com/twopirllc/pandas-ta">pandas_ta</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <span>© 2025 Gold Standard v3.1. MIT License.</span>
-            <span>Autonomous Intelligence for Precious Metals</span>
-        </div>
-    </footer>
+    </div>
 
     <script>
-        // Smooth scroll for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+        // Horizontal scroll navigation
+        const container = document.getElementById('horizontalScroll');
+        const panels = document.querySelectorAll('.panel');
+        const dots = document.querySelectorAll('.scroll-dot');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const leftArrow = document.getElementById('scrollLeft');
+        const rightArrow = document.getElementById('scrollRight');
+        const totalPanels = panels.length;
+        const centerPanel = 2;
+
+        let currentPanel = centerPanel;
+        let isScrolling = false;
+
+        function init() {
+            // Force immediate scroll to center panel on body
+            const centerPanelElement = panels[centerPanel];
+            if (centerPanelElement) {
+                const targetScroll = centerPanelElement.offsetLeft;
+                // Try both methods
+                document.body.scrollLeft = targetScroll;
+                document.documentElement.scrollLeft = targetScroll;
+                window.scrollX = targetScroll;
+            }
+            currentPanel = centerPanel;
+            updateIndicators();
+        }
+
+        function scrollToPanel(index, smooth = true) {
+            if (index < 0 || index >= totalPanels) return;
+            
+            currentPanel = index;
+            const panel = panels[index];
+            
+            document.body.scrollTo({
+                left: panel.offsetLeft,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+
+            updateIndicators();
+        }
+
+        function updateIndicators() {
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentPanel);
+            });
+
+            navLinks.forEach((link, i) => {
+                link.classList.toggle('active', i === currentPanel);
+            });
+
+            leftArrow.classList.toggle('hidden', currentPanel === 0);
+            rightArrow.classList.toggle('hidden', currentPanel === totalPanels - 1);
+
+            panels.forEach((panel, i) => {
+                panel.classList.toggle('active', i === currentPanel);
+            });
+        }
+
+        function detectCurrentPanel() {
+            // Get scroll position from multiple sources
+            const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
+            const panelWidth = window.innerWidth;
+            const newPanel = Math.round(scrollLeft / panelWidth);
+            
+            if (newPanel !== currentPanel && newPanel >= 0 && newPanel < totalPanels) {
+                currentPanel = newPanel;
+                updateIndicators();
+            }
+        }
+
+        // Event listeners
+        dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => scrollToPanel(i));
+        });
+
+        navLinks.forEach((link, i) => {
+            link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+                e.stopPropagation();
+                scrollToPanel(i);
             });
         });
 
-        // Navbar background on scroll
-        const nav = document.querySelector('nav');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
+        leftArrow?.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToPanel(currentPanel - 1);
+        });
+        rightArrow?.addEventListener('click', (e) => {
+            e.preventDefault();
+            scrollToPanel(currentPanel + 1);
         });
 
-        // Animate elements on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate');
-                }
+        document.querySelectorAll('.hint').forEach(hint => {
+            hint.addEventListener('click', () => {
+                const direction = hint.dataset.direction;
+                if (direction === 'left') scrollToPanel(currentPanel - 1);
+                if (direction === 'right') scrollToPanel(currentPanel + 1);
             });
-        }, observerOptions);
-
-        document.querySelectorAll('.feature-card, .step, .chart-card, .stat-card, .glass-card, .arch-box').forEach(el => {
-            observer.observe(el);
         });
 
-        // Parallax effect for background orbs
-        let ticking = false;
-        window.addEventListener('scroll', () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const scrolled = window.scrollY;
-                    const orbs = document.querySelectorAll('.bg-orb');
-                    orbs.forEach((orb, index) => {
-                        const speed = 0.05 + (index * 0.02);
-                        orb.style.transform = `translateY(${scrolled * speed}px)`;
-                    });
-                    ticking = false;
-                });
-                ticking = true;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') scrollToPanel(currentPanel - 1);
+            if (e.key === 'ArrowRight') scrollToPanel(currentPanel + 1);
+        });
+
+        // Mouse wheel horizontal scroll
+        let lastWheelTime = 0;
+        
+        document.addEventListener('wheel', (e) => {
+            if (isScrolling) return;
+            
+            const now = Date.now();
+            if (now - lastWheelTime < 800) return;
+            
+            if (Math.abs(e.deltaY) > 10) {
+                e.preventDefault();
+                isScrolling = true;
+                lastWheelTime = now;
+                
+                if (e.deltaY > 0) {
+                    scrollToPanel(currentPanel + 1);
+                } else {
+                    scrollToPanel(currentPanel - 1);
+                }
+                
+                setTimeout(() => { isScrolling = false; }, 900);
+            }
+        }, { passive: false });
+
+        // Drag to scroll
+        let isDragging = false;
+        let startX, scrollStart;
+
+        container.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.pageX;
+            scrollStart = document.body.scrollLeft;
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX;
+            const walk = (startX - x) * 1.5;
+            document.body.scrollLeft = scrollStart + walk;
+        });
+
+        container.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                const panelWidth = window.innerWidth;
+                const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
+                const nearestPanel = Math.round(scrollLeft / panelWidth);
+                scrollToPanel(nearestPanel);
             }
         });
+
+        container.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                isDragging = false;
+                const panelWidth = window.innerWidth;
+                const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
+                const nearestPanel = Math.round(scrollLeft / panelWidth);
+                scrollToPanel(nearestPanel);
+            }
+        });
+
+        // Touch support
+        let touchStartX;
+
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        container.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    scrollToPanel(currentPanel + 1);
+                } else {
+                    scrollToPanel(currentPanel - 1);
+                }
+            }
+        });
+
+        let scrollTimeout;
+        
+        // Multiple scroll listeners to catch all scroll events
+        function handleScroll() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(detectCurrentPanel, 50);
+        }
+        
+        document.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('scroll', handleScroll, true);
+        document.body.addEventListener('scroll', handleScroll);
+
+        window.addEventListener('resize', () => {
+            scrollToPanel(currentPanel, false);
+        });
+
+        // Initialize immediately and on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        window.addEventListener('load', () => {
+            // Ensure we're at center on full load
+            setTimeout(init, 50);
+        });
+
+        // Parallax effect on orbs - combined with scroll detection
+        function updateParallax() {
+            const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
+            const orb1 = document.querySelector('.orb-1');
+            const orb2 = document.querySelector('.orb-2');
+            
+            if (orb1) orb1.style.transform = `translate(${scrollLeft * 0.1}px, 0)`;
+            if (orb2) orb2.style.transform = `translate(${-scrollLeft * 0.05}px, 0)`;
+        }
+
+        // Combined scroll handler
+        function onScroll() {
+            handleScroll();
+            updateParallax();
+        }
+
+        // Override with combined handler
+        document.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('scroll', handleScroll, true);
+        document.body.removeEventListener('scroll', handleScroll);
+        
+        document.addEventListener('scroll', onScroll, true);
+        window.addEventListener('scroll', onScroll, true);
+        document.body.addEventListener('scroll', onScroll);
     </script>
 </body>
 </html>
