@@ -1,8 +1,8 @@
 # Gold Standard Technical Booklet
 
-> Educational Guide and Technical Reference — v3.0
+> Educational Guide and Technical Reference — v3.2
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.0 introduces autonomous intelligence with insights extraction, task execution, intelligent file organization, and Notion integration.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.2 introduces intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
 
 ---
 
@@ -17,14 +17,17 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 7. [Live Analysis Suite](#live-analysis-suite)
 8. [Economic Calendar Module](#economic-calendar-module)
 9. [Database Manager](#database-manager)
-10. [Insights Engine](#insights-engine)
-11. [Task Executor](#task-executor)
-12. [File Organizer](#file-organizer)
-13. [Frontmatter System](#frontmatter-system)
-14. [Notion Integration](#notion-integration)
-15. [Testing Guidelines](#testing-guidelines)
-16. [Deployment Notes](#deployment-notes)
-17. [Extension Patterns](#extension-patterns)
+10. [Intelligent Scheduling](#intelligent-scheduling)
+11. [Notion Sync & Deduplication](#notion-sync--deduplication)
+12. [Insights Engine](#insights-engine)
+13. [Task Executor](#task-executor)
+14. [File Organizer](#file-organizer)
+15. [Frontmatter System](#frontmatter-system)
+16. [Notion Integration](#notion-integration)
+17. [Comprehensive Tagging](#comprehensive-tagging)
+18. [Testing Guidelines](#testing-guidelines)
+19. [Deployment Notes](#deployment-notes)
+20. [Extension Patterns](#extension-patterns)
 
 ---
 
@@ -420,7 +423,7 @@ The calendar comes with December 2025 and January 2026 events pre-loaded:
 
 ## Database Manager
 
-The `db_manager.py` module provides SQLite persistence for all reports.
+The `db_manager.py` module provides SQLite persistence for all reports, scheduling, and sync tracking.
 
 ### DBManager Class
 
@@ -446,6 +449,21 @@ CREATE TABLE journals (
     bias TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- New in v3.2: Schedule tracking
+CREATE TABLE schedule_tracker (
+    task_name TEXT PRIMARY KEY,
+    last_run TIMESTAMP,
+    frequency TEXT
+);
+
+-- New in v3.2: Notion sync tracking
+CREATE TABLE notion_sync (
+    file_path TEXT PRIMARY KEY,
+    file_hash TEXT,
+    notion_page_id TEXT,
+    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ### Benefits
@@ -456,6 +474,114 @@ CREATE TABLE journals (
 - Data export capabilities
 - Entity and action insights storage
 - Task execution history
+- **Schedule tracking** for frequency-based task execution
+- **Notion sync tracking** for deduplication
+
+---
+
+## Intelligent Scheduling
+
+Version 3.2 introduces frequency-based task execution to prevent redundant operations.
+
+### Overview
+
+The scheduling system ensures tasks run at appropriate intervals:
+
+| Task | Frequency | Description |
+|------|-----------|-------------|
+| Journal | Daily | Once per day |
+| Notion Sync | Daily | Publish new/changed files |
+| Economic Calendar | Weekly | Update calendar events |
+| Institution Watchlist | Weekly | Refresh institutional analysis |
+| Task Execution | Weekly | Process action queue |
+| Monthly Reports | Monthly | Generate monthly summaries |
+| Yearly Reports | Yearly | Generate annual reviews |
+
+### Schedule Tracker Methods
+
+```python
+from db_manager import DBManager
+
+db = DBManager()
+
+# Check if task should run
+if db.should_run_task('notion_sync', frequency='daily'):
+    # Execute the task
+    sync_all_outputs()
+    # Mark as completed
+    db.mark_task_run('notion_sync')
+```
+
+### Frequency Options
+
+- `daily`: Run once per calendar day
+- `weekly`: Run once per week (7 days)
+- `monthly`: Run once per month
+- `yearly`: Run once per year
+
+### Integration with Daemon
+
+The daemon (`run.py`) uses scheduling to control post-analysis tasks:
+
+```python
+def _run_post_analysis_tasks():
+    # Only run task execution weekly
+    if db.should_run_task('task_execution', frequency='weekly'):
+        executor.process_queue()
+        db.mark_task_run('task_execution')
+    
+    # Only sync to Notion daily
+    if db.should_run_task('notion_sync', frequency='daily'):
+        sync_all_outputs()
+        db.mark_task_run('notion_sync')
+```
+
+---
+
+## Notion Sync & Deduplication
+
+Version 3.2 prevents duplicate Notion pages through content-based deduplication.
+
+### Overview
+
+The system tracks which files have been synced to Notion and their content hashes. Files are only re-uploaded when content changes.
+
+### Sync Tracking Methods
+
+```python
+from db_manager import DBManager
+
+db = DBManager()
+
+# Check if file needs sync
+file_path = "output/reports/Journal_2025-12-04.md"
+current_hash = db.get_file_hash(file_path)
+
+if not db.is_file_synced(file_path, current_hash):
+    # File is new or changed - publish to Notion
+    result = publisher.sync_file(file_path)
+    
+    # Record the sync
+    db.record_notion_sync(file_path, current_hash, result['page_id'])
+```
+
+### Content Hashing
+
+Files are hashed using SHA-256 for deterministic comparison:
+
+```python
+def get_file_hash(self, file_path: str) -> str:
+    """Generate SHA-256 hash of file contents."""
+    with open(file_path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()
+```
+
+### Benefits
+
+- **No duplicates**: Same content never uploaded twice
+- **Change detection**: Only modified files are synced
+- **Audit trail**: Track which Notion page corresponds to each file
+- **Efficiency**: Reduces API calls and bandwidth
 
 ---
 
@@ -512,11 +638,11 @@ actions = extractor.extract_actions(report_content, "Journal_2025-12-01.md")
 
 ## Task Executor
 
-The `scripts/task_executor.py` module autonomously executes extracted action insights.
+The `scripts/task_executor.py` module autonomously executes extracted action insights with persistent retry logic.
 
 ### Overview
 
-The Task Executor moves the system from "showing" to "doing" by automatically executing actionable tasks identified by the Insights Engine.
+The Task Executor moves the system from "showing" to "doing" by automatically executing actionable tasks identified by the Insights Engine. Version 3.2 adds robust retry logic for handling API quota limits.
 
 ### TaskExecutor Class
 
@@ -528,7 +654,7 @@ executor = TaskExecutor(config, logger, db_manager, model)
 # Execute a single action
 result = executor.execute_action(action_insight)
 
-# Process the entire queue
+# Process the entire queue (no limits)
 executor.process_queue()
 ```
 
@@ -543,13 +669,57 @@ executor.process_queue()
 | `_handle_monitoring` | monitoring | Set up price level monitoring |
 | `_handle_code_task` | code_task | Generate or modify code |
 
+### Retry Logic (v3.2)
+
+The executor uses exponential backoff for handling API quota errors:
+
+```python
+MAX_RETRIES = 10
+INITIAL_BACKOFF_SECONDS = 30
+MAX_BACKOFF_SECONDS = 600  # 10 minutes
+
+def _execute_with_retry(self, action):
+    backoff = INITIAL_BACKOFF_SECONDS
+    for attempt in range(MAX_RETRIES):
+        try:
+            return self._execute_action(action)
+        except Exception as e:
+            if self._is_quota_error(e):
+                time.sleep(backoff)
+                backoff = min(backoff * 2, MAX_BACKOFF_SECONDS)
+            else:
+                raise
+```
+
+### Quota Error Detection
+
+The system detects various quota error patterns:
+
+- `429` - Rate limit exceeded
+- `RESOURCE_EXHAUSTED` - API quota depleted
+- `quota` - Generic quota messages
+- `rate limit` - Rate limiting errors
+
+### Auto-Publishing to Notion
+
+Completed task artifacts are automatically published to Notion:
+
+```python
+def _publish_to_notion(self, artifact_path: str):
+    """Publish task artifact to Notion database."""
+    publisher = NotionPublisher()
+    result = publisher.sync_file(artifact_path)
+    return result
+```
+
 ### Execution Flow
 
 1. Insights Engine extracts actions from reports
 2. Actions are queued with priorities
-3. Task Executor processes queue (critical → high → medium → low)
-4. Results are logged and stored in database
-5. Failed tasks can be retried with fallback handlers
+3. Task Executor processes ALL pending tasks (no limit)
+4. Failed tasks retry with exponential backoff
+5. Results are logged and stored in database
+6. Artifacts are auto-published to Notion
 
 ---
 
@@ -778,8 +948,106 @@ Analysis Cycle:
 3. Split reports (weekly/monthly)
 4. Organize files
 5. Apply frontmatter
-6. Publish to Notion  ← Automatic
+6. Publish to Notion  ← Automatic (respects daily schedule)
 ```
+
+---
+
+## Comprehensive Tagging
+
+Version 3.2 introduces comprehensive file tagging to ensure all outputs are properly categorized and published to Notion.
+
+### Type Patterns
+
+Files are classified by filename patterns:
+
+| Pattern | Type | Emoji |
+|---------|------|-------|
+| `Journal_*`, `journal_*`, `daily_*` | journal | 📓 |
+| `premarket_*`, `pre_market_*` | premarket | 🌅 |
+| `weekly_*`, `rundown_*` | reports | 📰 |
+| `monthly_*` | reports | 📊 |
+| `yearly_*`, `annual_*` | reports | 📈 |
+| `analysis_*`, `horizon_*`, `1y_*`, `3m_*` | analysis | 🔍 |
+| `catalyst*`, `watchlist*` | research | ⚡ |
+| `research_*`, `calc_*`, `code_*` | research | 🔬 |
+| `economic_*`, `calendar_*`, `events_*` | economic | 📅 |
+| `inst_matrix*`, `institutional*`, `scenario*` | institutional | 🏦 |
+| `entity_insights*`, `action_insights*` | insights | 💡 |
+
+### Ticker Patterns
+
+Automatically extracted from content:
+
+```python
+TICKER_PATTERNS = [
+    r'\bGOLD\b', r'\bSILVER\b', r'\bDXY\b',
+    r'\bVIX\b', r'\bSPY\b', r'\bSPX\b',
+    r'\bTLT\b', r'\bGDX\b', r'\bGLD\b',
+    r'\bSLV\b', r'\bYIELD\b', r'\bTNX\b',
+]
+```
+
+### Keyword Patterns
+
+Economic and institutional keywords for tagging:
+
+```python
+KEYWORD_PATTERNS = {
+    'Fed': [r'\bFed\b', r'\bFederal Reserve\b', r'\bFOMC\b'],
+    'ECB': [r'\bECB\b', r'\bEuropean Central Bank\b'],
+    'CPI': [r'\bCPI\b', r'\bConsumer Price Index\b'],
+    'NFP': [r'\bNFP\b', r'\bNonfarm Payrolls\b'],
+    'GDP': [r'\bGDP\b', r'\bGross Domestic Product\b'],
+    'PCE': [r'\bPCE\b', r'\bPersonal Consumption\b'],
+    'ISM': [r'\bISM\b', r'\bPMI\b'],
+    'JOLTS': [r'\bJOLTS\b', r'\bJob Openings\b'],
+}
+```
+
+### Notion Formatting
+
+Each document type gets a styled header callout:
+
+```python
+emoji_map = {
+    "journal": "📓",
+    "premarket": "🌅",
+    "reports": "📑",
+    "analysis": "🔍",
+    "research": "🔬",
+    "economic": "📅",
+    "institutional": "🏦",
+    "insights": "💡",
+}
+
+color_map = {
+    "journal": "yellow_background",
+    "premarket": "orange_background",
+    "reports": "blue_background",
+    "analysis": "purple_background",
+    "economic": "green_background",
+    "institutional": "blue_background",
+}
+```
+
+### File Organizer Categories
+
+All categories from `file_organizer.py` are fully covered:
+
+| Category | Directory | Notion Type |
+|----------|-----------|-------------|
+| journals | `reports/journals/` | journal |
+| premarket | `reports/premarket/` | premarket |
+| weekly | `reports/weekly/` | reports |
+| monthly | `reports/monthly/` | reports |
+| yearly | `reports/yearly/` | reports |
+| catalysts | `reports/catalysts/` | research |
+| institutional | `reports/institutional/` | institutional |
+| analysis | `reports/analysis/` | analysis |
+| economic | `reports/economic/` | economic |
+| research | `research/` | research |
+| charts | `charts/` | charts |
 
 ---
 
