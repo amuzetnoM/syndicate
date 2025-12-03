@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gost"
+version = "3.1.0"
+description = "Gold Standard - Autonomous precious metals intelligence system with AI-powered analysis"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "amuzetnoM", email = "amuzetnom@users.noreply.github.com"}
+]
+maintainers = [
+    {name = "amuzetnoM", email = "amuzetnom@users.noreply.github.com"}
+]
+keywords = [
+    "gold",
+    "trading",
+    "analysis",
+    "ai",
+    "gemini",
+    "precious-metals",
+    "finance",
+    "technical-analysis",
+    "market-analysis",
+    "autonomous"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "yfinance>=0.2.66",
+    "pandas>=2.0.0",
+    "pandas_ta>=0.4.71b0",
+    "mplfinance>=0.12.10b0",
+    "google-generativeai>=0.8.0",
+    "schedule>=1.2.0",
+    "colorama>=0.4.6",
+    "filelock>=3.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0",
+]
+gui = [
+    "tkinter",
+]
+
+[project.urls]
+Homepage = "https://github.com/amuzetnoM/gold_standard"
+Documentation = "https://github.com/amuzetnoM/gold_standard#readme"
+Repository = "https://github.com/amuzetnoM/gold_standard.git"
+Issues = "https://github.com/amuzetnoM/gold_standard/issues"
+Changelog = "https://github.com/amuzetnoM/gold_standard/releases"
+
+[project.scripts]
+gost = "gost.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gost = [
+    "*.json",
+    "*.template.json",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
