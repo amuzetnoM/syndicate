@@ -12,8 +12,7 @@
 ```
 
 # Gold Standard 
-*version 3.1.0*
-
+*version 3.2.0* [[CHANGELOG]](docs/CHANGELOG.md)
 
 > **Precious Metals Intelligence Complex** — Quantitative Analysis System
 
@@ -62,6 +61,8 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | Feature | Description |
 |---------|-------------|
 | **Autonomous Daemon** | Runs continuously, executing analysis every minute (configurable) |
+| **Intelligent Scheduling** | Frequency-based task execution: daily/weekly/monthly/yearly cycles |
+| **Notion Deduplication** | Content hashing prevents duplicate uploads; tracks sync state |
 | **Auto Venv Activation** | Scripts automatically detect and activate virtual environment |
 | **Multi-Asset Analysis** | Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, S&P 500 |
 | **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration |
@@ -69,10 +70,10 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **AI-Powered Insights** | Google Gemini integration for natural-language analysis |
 | **Entity Insights** | Auto-extracts key entities (Fed, ECB, institutions) from reports |
 | **Action Insights** | Identifies actionable tasks (research, monitoring, calculations) |
-| **Task Executor** | Autonomously executes action insights before next cycle |
+| **Task Executor** | Autonomously executes action insights with retry logic and quota handling |
 | **Economic Calendar** | Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis |
 | **Live Analysis Suite** | Catalyst watchlist, institutional matrix, 1Y/3M analysis reports |
-| **Database Storage** | SQLite persistence for all reports, insights, and tasks |
+| **Database Storage** | SQLite persistence for all reports, insights, tasks, and sync tracking |
 | **Persistent Memory** | Cortex system tracks predictions, grades performance, maintains win/loss streaks |
 | **Automated Charts** | Candlestick charts with SMA overlays via mplfinance |
 | **Multiple Report Types** | Daily journals, pre-market plans, weekly rundowns, monthly/yearly reports |
@@ -80,6 +81,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **YAML Frontmatter** | Auto-generates metadata headers for categorization and tagging |
 | **Notion Integration** | Automatic publishing to Notion database with type/tag mapping |
 | **Rich Notion Formatting** | Enhanced pages with callouts, colors, tables, TOC, and section emojis |
+| **Comprehensive Tagging** | Auto-extracts tickers, keywords (Fed, CPI, FOMC) for complete coverage |
 | **Smart Chart Integration** | Auto-detects tickers and embeds relevant charts in Notion pages |
 | **Usage Management** | Tracks API usage, caches uploads, manages free-tier limits |
 | **Dual Interface** | Command-line CLI and graphical GUI dashboard |
