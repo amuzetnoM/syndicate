@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard 
-*version 3.2.0* [[CHANGELOG]](docs/CHANGELOG.md)
+*version 3.2.1* [[CHANGELOG]](docs/CHANGELOG.md)
 
 > **Precious Metals Intelligence Complex** — Quantitative Analysis System
 
