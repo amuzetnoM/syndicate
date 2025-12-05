@@ -753,6 +753,142 @@ def interactive_mode(no_ai: bool = False):
             input("  Press Enter to continue...")
 
 
+def handle_lifecycle_command(action: str, target_file: str = None, filter_status: str = None):
+    """Handle document lifecycle management commands."""
+    from pathlib import Path
+
+    from db_manager import get_db
+    from scripts.frontmatter import (
+        VALID_STATUSES,
+        get_document_status,
+        is_published,
+        promote_status,
+        set_document_status,
+    )
+
+    project_root = Path(PROJECT_ROOT)
+    output_dir = project_root / "output"
+
+    if action == "list":
+        # List documents by status
+        status_filter = filter_status or "all"
+        print(f"\n[DOC] Documents by status: {status_filter}\n")
+
+        md_files = list(output_dir.glob("**/*.md"))
+        md_files = [f for f in md_files if "archive" not in str(f).lower()]
+
+        by_status = {}
+        for filepath in md_files:
+            content = filepath.read_text(encoding="utf-8")
+            status = get_document_status(content)
+            if status_filter == "all" or status == status_filter:
+                if status not in by_status:
+                    by_status[status] = []
+                by_status[status].append(filepath.relative_to(PROJECT_ROOT))
+
+        for status in VALID_STATUSES:
+            if status in by_status:
+                print(f"\n  [{status.upper()}] ({len(by_status[status])} files)")
+                for f in by_status[status][:10]:  # Show max 10 per status
+                    print(f"    - {f}")
+                if len(by_status[status]) > 10:
+                    print(f"    ... and {len(by_status[status]) - 10} more")
+        return
+
+    if action == "status" and target_file:
+        # Show status of specific file
+        filepath = Path(target_file)
+        if not filepath.is_absolute():
+            filepath = project_root / target_file
+        if not filepath.exists():
+            print(f"[ERROR] File not found: {filepath}")
+            return
+
+        content = filepath.read_text(encoding="utf-8")
+        status = get_document_status(content)
+        published = is_published(content)
+        print(f"\n[DOC] {filepath.name}")
+        print(f"   Status: {status}")
+        print(f"   Notion sync: {'[OK] Eligible' if published else '[X] Not eligible (requires published status)'}")
+        return
+
+    if action == "promote" and target_file:
+        # Promote document to next status
+        filepath = Path(target_file)
+        if not filepath.is_absolute():
+            filepath = project_root / target_file
+        if not filepath.exists():
+            print(f"[ERROR] File not found: {filepath}")
+            return
+
+        content = filepath.read_text(encoding="utf-8")
+        old_status = get_document_status(content)
+        new_content = promote_status(content, filepath.name)
+        new_status = get_document_status(new_content)
+
+        if old_status != new_status:
+            filepath.write_text(new_content, encoding="utf-8")
+            print(f"[OK] {filepath.name}: {old_status} -> {new_status}")
+
+            # Update database
+            db = get_db()
+            db.update_document_status(str(filepath), new_status)
+        else:
+            print(f"  {filepath.name} is already at final status: {old_status}")
+        return
+
+    if action == "publish" and target_file:
+        # Directly set to published
+        filepath = Path(target_file)
+        if not filepath.is_absolute():
+            filepath = project_root / target_file
+        if not filepath.exists():
+            print(f"[ERROR] File not found: {filepath}")
+            return
+
+        content = filepath.read_text(encoding="utf-8")
+        new_content = set_document_status(content, "published", filepath.name)
+        filepath.write_text(new_content, encoding="utf-8")
+        print(f"[OK] {filepath.name}: published")
+
+        # Update database
+        db = get_db()
+        db.update_document_status(str(filepath), "published")
+        return
+
+    if action == "draft" and target_file:
+        # Reset to draft
+        filepath = Path(target_file)
+        if not filepath.is_absolute():
+            filepath = project_root / target_file
+        if not filepath.exists():
+            print(f"[ERROR] File not found: {filepath}")
+            return
+
+        content = filepath.read_text(encoding="utf-8")
+        new_content = set_document_status(content, "draft", filepath.name)
+        filepath.write_text(new_content, encoding="utf-8")
+        print(f"[OK] {filepath.name}: reset to draft")
+
+        # Update database
+        db = get_db()
+        db.update_document_status(str(filepath), "draft")
+        return
+
+    # No file specified
+    print("\n[LIFECYCLE] Document Lifecycle Management")
+    print("=" * 40)
+    print("  Statuses: draft -> in_progress -> review -> published -> archived")
+    print("\n  Usage:")
+    print("    --lifecycle list                        List all documents by status")
+    print("    --lifecycle list --show-status draft    List only draft documents")
+    print("    --lifecycle status --file <path>        Show status of specific file")
+    print("    --lifecycle promote --file <path>       Promote to next status")
+    print("    --lifecycle publish --file <path>       Mark as published (Notion-ready)")
+    print("    --lifecycle draft --file <path>         Reset to draft status")
+    print("\n  Only 'published' documents are synced to Notion.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Gold Standard CLI - Autonomous precious metals analysis system. Runs continuously by default.",
@@ -782,6 +918,15 @@ Examples:
     )
     parser.add_argument("--interval-min", type=int, default=1, help="Minutes between daemon runs (default: 1)")
 
+    # Document lifecycle management
+    parser.add_argument(
+        "--lifecycle",
+        choices=["status", "promote", "publish", "draft", "list"],
+        help="Document lifecycle management",
+    )
+    parser.add_argument("--file", type=str, help="Target file for lifecycle command")
+    parser.add_argument("--show-status", type=str, help="Show documents by status (draft/in_progress/published)")
+
     # Legacy support for --mode
     parser.add_argument(
         "--mode",
@@ -799,6 +944,12 @@ Examples:
     if args.status:
         print_banner()
         print_status()
+        return
+
+    # Document lifecycle management
+    if args.lifecycle:
+        print_banner()
+        handle_lifecycle_command(args.lifecycle, args.file, args.show_status)
         return
 
     # Legacy mode support

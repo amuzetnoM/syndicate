@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # ══════════════════════════════════════════════════════════════════════════════
-#  _________._____________.___ ____ ___  _________      .__         .__            
-# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____   
-# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \  
+#  _________._____________.___ ____ ___  _________      .__         .__
+# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____
+# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \
 # /        \|   ||    |   \   |    |  / /        \/ __ \|  |_|  |_> >   Y  \/ __ \_
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
-#         \/             \/                     \/     \/     |__|        \/     \/ 
+#         \/             \/                     \/     \/     |__|        \/     \/
 #
 # Gold Standard - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
@@ -16,13 +16,13 @@ Gold Standard Database Manager
 SQLite-based storage for reports, journals, analysis data, and insights.
 Provides intelligent redundancy control, date-wise organization, and task management.
 """
-import sqlite3
-from datetime import datetime, date, timedelta
-from pathlib import Path
-from typing import Optional, List, Dict, Any
-from contextlib import contextmanager
-from dataclasses import dataclass, asdict
 
+import sqlite3
+from contextlib import contextmanager
+from dataclasses import asdict, dataclass
+from datetime import date, datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Database path
 DB_DIR = Path(__file__).resolve().parent / "data"
@@ -32,6 +32,7 @@ DB_PATH = DB_DIR / "gold_standard.db"
 @dataclass
 class JournalEntry:
     """Represents a daily journal entry."""
+
     date: str  # YYYY-MM-DD
     content: str
     bias: Optional[str] = None
@@ -41,21 +42,22 @@ class JournalEntry:
     ai_enabled: bool = True
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         return asdict(self)
 
 
-@dataclass 
+@dataclass
 class Report:
     """Represents a periodic report (weekly, monthly, yearly)."""
+
     report_type: str  # 'weekly', 'monthly', 'yearly'
     period: str  # 'YYYY-WW', 'YYYY-MM', 'YYYY'
     content: str
     summary: Optional[str] = None
     ai_enabled: bool = True
     created_at: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         return asdict(self)
 
@@ -63,6 +65,7 @@ class Report:
 @dataclass
 class AnalysisSnapshot:
     """Stores technical analysis data for historical tracking."""
+
     date: str
     asset: str
     price: float
@@ -80,12 +83,12 @@ class DatabaseManager:
     Manages SQLite database for Gold Standard system.
     Handles journals, reports, and analysis data with intelligent redundancy control.
     """
-    
+
     def __init__(self, db_path: Optional[Path] = None):
         self.db_path = db_path or DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
-    
+
     @contextmanager
     def _get_connection(self):
         """Context manager for database connections."""
@@ -99,12 +102,12 @@ class DatabaseManager:
             raise
         finally:
             conn.close()
-    
+
     def _init_database(self):
         """Initialize database schema."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Journals table - one per day
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS journals (
@@ -120,7 +123,7 @@ class DatabaseManager:
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Reports table - weekly, monthly, yearly
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS reports (
@@ -134,7 +137,7 @@ class DatabaseManager:
                     UNIQUE(report_type, period)
                 )
             """)
-            
+
             # Analysis snapshots - historical technical data
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS analysis_snapshots (
@@ -153,7 +156,7 @@ class DatabaseManager:
                     UNIQUE(date, asset)
                 )
             """)
-            
+
             # Pre-market plans table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS premarket_plans (
@@ -166,7 +169,7 @@ class DatabaseManager:
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Trade simulations table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS trades (
@@ -188,7 +191,7 @@ class DatabaseManager:
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Entity insights table - extracted entities from reports
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS entity_insights (
@@ -203,7 +206,7 @@ class DatabaseManager:
                     UNIQUE(entity_name, source_report)
                 )
             """)
-            
+
             # Action insights table - actionable tasks extracted from reports
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS action_insights (
@@ -226,20 +229,20 @@ class DatabaseManager:
                     metadata TEXT
                 )
             """)
-            
+
             # Add scheduled_for column if it doesn't exist (migration)
             try:
                 cursor.execute("ALTER TABLE action_insights ADD COLUMN scheduled_for TEXT")
-            except:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
-            
+
             # Add retry tracking columns if they don't exist (migration)
             try:
                 cursor.execute("ALTER TABLE action_insights ADD COLUMN retry_count INTEGER DEFAULT 0")
                 cursor.execute("ALTER TABLE action_insights ADD COLUMN last_error TEXT")
-            except:
+            except sqlite3.OperationalError:
                 pass  # Columns already exist
-            
+
             # System configuration table - stores runtime settings
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS system_config (
@@ -250,7 +253,7 @@ class DatabaseManager:
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Task execution log - tracks task executor results
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS task_execution_log (
@@ -264,7 +267,7 @@ class DatabaseManager:
                     executed_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Notion sync tracking - prevents duplicate publishing
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS notion_sync (
@@ -278,7 +281,7 @@ class DatabaseManager:
                     UNIQUE(file_path)
                 )
             """)
-            
+
             # Schedule tracking - controls frequency of different operations
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS schedule_tracker (
@@ -291,7 +294,24 @@ class DatabaseManager:
                     metadata TEXT
                 )
             """)
-            
+
+            # Document lifecycle - tracks draft/in_progress/published status
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS document_lifecycle (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    file_path TEXT UNIQUE NOT NULL,
+                    doc_type TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    published_at TEXT,
+                    notion_page_id TEXT,
+                    content_hash TEXT,
+                    version INTEGER DEFAULT 1,
+                    metadata TEXT
+                )
+            """)
+
             # Create indexes for faster queries
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_type_period ON reports(report_type, period)")
@@ -303,41 +323,43 @@ class DatabaseManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_task_log_action ON task_execution_log(action_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_notion_sync_path ON notion_sync(file_path)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_schedule_task ON schedule_tracker(task_name)")
-            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_path ON document_lifecycle(file_path)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_status ON document_lifecycle(status)")
+
             # Initialize default schedules if not present
             self._init_default_schedules(cursor)
-    
+
     def _init_default_schedules(self, cursor):
         """Initialize default task schedules."""
         default_schedules = [
             # Daily tasks
-            ('journal_publish', 'daily', 'Publish daily journal to Notion'),
-            ('notion_sync', 'daily', 'Sync all outputs to Notion (skips unchanged files)'),
-            ('insights_extraction', 'daily', 'Extract insights from reports'),
-            
+            ("journal_publish", "daily", "Publish daily journal to Notion"),
+            ("notion_sync", "daily", "Sync all outputs to Notion (skips unchanged files)"),
+            ("insights_extraction", "daily", "Extract insights from reports"),
             # Weekly tasks
-            ('economic_calendar', 'weekly', 'Generate economic calendar'),
-            ('institution_watchlist', 'weekly', 'Update institution watchlist'),
-            ('task_execution', 'weekly', 'Execute pending research/data tasks'),
-            ('weekly_report_publish', 'weekly', 'Publish weekly report to Notion'),
-            
+            ("economic_calendar", "weekly", "Generate economic calendar"),
+            ("institution_watchlist", "weekly", "Update institution watchlist"),
+            ("task_execution", "weekly", "Execute pending research/data tasks"),
+            ("weekly_report_publish", "weekly", "Publish weekly report to Notion"),
             # Monthly tasks
-            ('monthly_report_publish', 'monthly', 'Publish monthly report to Notion'),
-            
+            ("monthly_report_publish", "monthly", "Publish monthly report to Notion"),
             # Yearly tasks
-            ('yearly_report_publish', 'yearly', 'Publish yearly report to Notion'),
+            ("yearly_report_publish", "yearly", "Publish yearly report to Notion"),
         ]
-        
+
         for task_name, frequency, description in default_schedules:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO schedule_tracker (task_name, frequency, metadata)
                 VALUES (?, ?, ?)
-            """, (task_name, frequency, description))
-    
+            """,
+                (task_name, frequency, description),
+            )
+
     # ==========================================
     # SCHEDULE TRACKING METHODS
     # ==========================================
-    
+
     def should_run_task(self, task_name: str) -> bool:
         """
         Check if a scheduled task should run based on its frequency.
@@ -345,61 +367,70 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT last_run, frequency, enabled 
-                FROM schedule_tracker 
+            cursor.execute(
+                """
+                SELECT last_run, frequency, enabled
+                FROM schedule_tracker
                 WHERE task_name = ?
-            """, (task_name,))
+            """,
+                (task_name,),
+            )
             row = cursor.fetchone()
-            
+
             if not row:
                 return True  # Unknown task, allow it
-            
-            if not row['enabled']:
+
+            if not row["enabled"]:
                 return False
-            
-            if not row['last_run']:
+
+            if not row["last_run"]:
                 return True  # Never run before
-            
-            last_run = datetime.fromisoformat(row['last_run'])
+
+            last_run = datetime.fromisoformat(row["last_run"])
             now = datetime.now()
-            frequency = row['frequency']
-            
-            if frequency == 'daily':
+            frequency = row["frequency"]
+
+            if frequency == "daily":
                 return last_run.date() < now.date()
-            elif frequency == 'weekly':
+            elif frequency == "weekly":
                 days_since = (now - last_run).days
                 return days_since >= 7
-            elif frequency == 'monthly':
+            elif frequency == "monthly":
                 return (last_run.year, last_run.month) < (now.year, now.month)
-            elif frequency == 'yearly':
+            elif frequency == "yearly":
                 return last_run.year < now.year
-            elif frequency == 'hourly':
+            elif frequency == "hourly":
                 return (now - last_run).total_seconds() >= 3600
             else:
                 return True  # Unknown frequency, allow
-    
+
     def mark_task_run(self, task_name: str) -> bool:
         """Mark a scheduled task as having just run."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                UPDATE schedule_tracker 
+
+            cursor.execute(
+                """
+                UPDATE schedule_tracker
                 SET last_run = ?
                 WHERE task_name = ?
-            """, (now, task_name))
-            
+            """,
+                (now, task_name),
+            )
+
             if cursor.rowcount == 0:
                 # Task doesn't exist, create it
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO schedule_tracker (task_name, last_run, frequency)
                     VALUES (?, ?, 'daily')
-                """, (task_name, now))
-            
+                """,
+                    (task_name, now),
+                )
+
             return True
-    
+
     def get_schedule_status(self) -> List[Dict]:
         """Get status of all scheduled tasks."""
         with self._get_connection() as conn:
@@ -409,59 +440,195 @@ class DatabaseManager:
                 FROM schedule_tracker
                 ORDER BY task_name
             """)
-            
+
             results = []
             now = datetime.now()
             for row in cursor.fetchall():
                 task = dict(row)
-                task['should_run'] = self.should_run_task(row['task_name'])
-                if row['last_run']:
-                    last = datetime.fromisoformat(row['last_run'])
-                    task['time_since_last'] = str(now - last)
+                task["should_run"] = self.should_run_task(row["task_name"])
+                if row["last_run"]:
+                    last = datetime.fromisoformat(row["last_run"])
+                    task["time_since_last"] = str(now - last)
                 else:
-                    task['time_since_last'] = 'Never'
+                    task["time_since_last"] = "Never"
                 results.append(task)
-            
+
             return results
-    
+
+    # ==========================================
+    # DOCUMENT LIFECYCLE METHODS
+    # ==========================================
+
+    def get_document_status(self, file_path: str) -> Optional[Dict]:
+        """Get the lifecycle status of a document."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT file_path, doc_type, status, created_at, updated_at,
+                       published_at, notion_page_id, content_hash, version
+                FROM document_lifecycle
+                WHERE file_path = ?
+            """,
+                (file_path,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+
+    def register_document(self, file_path: str, doc_type: str, status: str = "draft", content_hash: str = None) -> bool:
+        """Register a new document in the lifecycle system."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO document_lifecycle
+                    (file_path, doc_type, status, content_hash, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                    (file_path, doc_type, status, content_hash, now, now),
+                )
+                return True
+            except Exception:
+                return False
+
+    def update_document_status(self, file_path: str, status: str, notion_page_id: str = None) -> bool:
+        """
+        Update document lifecycle status.
+        Status: 'draft' -> 'in_progress' -> 'published'
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+
+            # If transitioning to published, set published_at
+            published_at = now if status == "published" else None
+
+            cursor.execute(
+                """
+                UPDATE document_lifecycle
+                SET status = ?,
+                    updated_at = ?,
+                    published_at = COALESCE(?, published_at),
+                    notion_page_id = COALESCE(?, notion_page_id),
+                    version = version + 1
+                WHERE file_path = ?
+            """,
+                (status, now, published_at, notion_page_id, file_path),
+            )
+            return cursor.rowcount > 0
+
+    def get_documents_by_status(self, status: str) -> List[Dict]:
+        """Get all documents with a specific status."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT file_path, doc_type, status, created_at, updated_at,
+                       published_at, notion_page_id, version
+                FROM document_lifecycle
+                WHERE status = ?
+                ORDER BY updated_at DESC
+            """,
+                (status,),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_unpublished_documents(self) -> List[Dict]:
+        """Get all documents that haven't been published to Notion."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT file_path, doc_type, status, created_at, updated_at, version
+                FROM document_lifecycle
+                WHERE status != 'published' OR notion_page_id IS NULL
+                ORDER BY
+                    CASE status
+                        WHEN 'in_progress' THEN 1
+                        WHEN 'draft' THEN 2
+                        ELSE 3
+                    END,
+                    updated_at DESC
+            """)
+            return [dict(row) for row in cursor.fetchall()]
+
+    def is_document_safe_to_overwrite(self, file_path: str) -> bool:
+        """
+        Check if a document is safe to overwrite.
+        Safe to overwrite if:
+        - Not registered (new file)
+        - Status is 'draft'
+        - Never been published
+        """
+        doc = self.get_document_status(file_path)
+        if doc is None:
+            return True  # New file, safe to create
+        if doc["status"] == "draft" and doc["published_at"] is None:
+            return True  # Draft that was never published
+        return False  # In progress or published, not safe
+
+    def mark_document_for_update(self, file_path: str) -> bool:
+        """Mark a published document as needing an update (creates new version)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.now().isoformat()
+            cursor.execute(
+                """
+                UPDATE document_lifecycle
+                SET status = 'in_progress',
+                    updated_at = ?,
+                    version = version + 1
+                WHERE file_path = ?
+            """,
+                (now, file_path),
+            )
+            return cursor.rowcount > 0
+
     # ==========================================
     # NOTION SYNC TRACKING METHODS
     # ==========================================
-    
+
     def get_file_hash(self, file_path: str) -> str:
         """Calculate a simple hash of file contents for change detection."""
         import hashlib
+
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 return hashlib.md5(f.read()).hexdigest()
         except Exception:
-            return ''
-    
+            return ""
+
     def is_file_synced(self, file_path: str) -> bool:
         """Check if a file has been synced to Notion and hasn't changed."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT file_hash FROM notion_sync WHERE file_path = ?
-            """, (file_path,))
+            """,
+                (file_path,),
+            )
             row = cursor.fetchone()
-            
+
             if not row:
                 return False
-            
+
             # Check if file has changed
             current_hash = self.get_file_hash(file_path)
-            return row['file_hash'] == current_hash
-    
-    def record_notion_sync(self, file_path: str, page_id: str, 
-                          url: str, doc_type: str = None) -> bool:
+            return row["file_hash"] == current_hash
+
+    def record_notion_sync(self, file_path: str, page_id: str, url: str, doc_type: str = None) -> bool:
         """Record that a file has been synced to Notion."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             file_hash = self.get_file_hash(file_path)
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
+
+            cursor.execute(
+                """
                 INSERT INTO notion_sync (file_path, file_hash, notion_page_id, notion_url, doc_type, synced_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(file_path) DO UPDATE SET
@@ -470,37 +637,42 @@ class DatabaseManager:
                     notion_url = excluded.notion_url,
                     doc_type = excluded.doc_type,
                     synced_at = excluded.synced_at
-            """, (file_path, file_hash, page_id, url, doc_type, now))
-            
+            """,
+                (file_path, file_hash, page_id, url, doc_type, now),
+            )
+
             return True
-    
+
     def get_notion_page_for_file(self, file_path: str) -> Optional[Dict]:
         """Get Notion page info for a synced file."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM notion_sync WHERE file_path = ?
-            """, (file_path,))
+            """,
+                (file_path,),
+            )
             row = cursor.fetchone()
             return dict(row) if row else None
-    
+
     def get_all_synced_files(self) -> List[Dict]:
         """Get all files that have been synced to Notion."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT * FROM notion_sync 
+                SELECT * FROM notion_sync
                 ORDER BY synced_at DESC
             """)
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def clear_sync_for_file(self, file_path: str) -> bool:
         """Clear sync record for a file (forces re-sync)."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM notion_sync WHERE file_path = ?", (file_path,))
             return cursor.rowcount > 0
-    
+
     def clear_all_sync_records(self) -> int:
         """Clear all sync records (forces full re-sync)."""
         with self._get_connection() as conn:
@@ -511,14 +683,14 @@ class DatabaseManager:
     # ==========================================
     # JOURNAL METHODS
     # ==========================================
-    
+
     def has_journal_for_date(self, date_str: str) -> bool:
         """Check if a journal exists for given date."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT 1 FROM journals WHERE date = ?", (date_str,))
             return cursor.fetchone() is not None
-    
+
     def save_journal(self, entry: JournalEntry, overwrite: bool = True) -> bool:
         """
         Save a journal entry. If overwrite=True, updates existing entry.
@@ -526,13 +698,14 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             if self.has_journal_for_date(entry.date) and not overwrite:
                 return False
-            
+
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
+
+            cursor.execute(
+                """
                 INSERT INTO journals (date, content, bias, gold_price, silver_price, gsr, ai_enabled, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(date) DO UPDATE SET
@@ -543,11 +716,23 @@ class DatabaseManager:
                     gsr = excluded.gsr,
                     ai_enabled = excluded.ai_enabled,
                     updated_at = ?
-            """, (entry.date, entry.content, entry.bias, entry.gold_price, 
-                  entry.silver_price, entry.gsr, entry.ai_enabled, now, now, now))
-            
+            """,
+                (
+                    entry.date,
+                    entry.content,
+                    entry.bias,
+                    entry.gold_price,
+                    entry.silver_price,
+                    entry.gsr,
+                    entry.ai_enabled,
+                    now,
+                    now,
+                    now,
+                ),
+            )
+
             return True
-    
+
     def get_journal(self, date_str: str) -> Optional[JournalEntry]:
         """Get journal for specific date."""
         with self._get_connection() as conn:
@@ -556,111 +741,114 @@ class DatabaseManager:
             row = cursor.fetchone()
             if row:
                 return JournalEntry(
-                    date=row['date'],
-                    content=row['content'],
-                    bias=row['bias'],
-                    gold_price=row['gold_price'],
-                    silver_price=row['silver_price'],
-                    gsr=row['gsr'],
-                    ai_enabled=bool(row['ai_enabled']),
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    date=row["date"],
+                    content=row["content"],
+                    bias=row["bias"],
+                    gold_price=row["gold_price"],
+                    silver_price=row["silver_price"],
+                    gsr=row["gsr"],
+                    ai_enabled=bool(row["ai_enabled"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
             return None
-    
+
     def get_all_journals(self, limit: int = 100, offset: int = 0) -> List[JournalEntry]:
         """Get all journals ordered by date descending."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM journals 
-                ORDER BY date DESC 
+            cursor.execute(
+                """
+                SELECT * FROM journals
+                ORDER BY date DESC
                 LIMIT ? OFFSET ?
-            """, (limit, offset))
-            
+            """,
+                (limit, offset),
+            )
+
             return [
                 JournalEntry(
-                    date=row['date'],
-                    content=row['content'],
-                    bias=row['bias'],
-                    gold_price=row['gold_price'],
-                    silver_price=row['silver_price'],
-                    gsr=row['gsr'],
-                    ai_enabled=bool(row['ai_enabled']),
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    date=row["date"],
+                    content=row["content"],
+                    bias=row["bias"],
+                    gold_price=row["gold_price"],
+                    silver_price=row["silver_price"],
+                    gsr=row["gsr"],
+                    ai_enabled=bool(row["ai_enabled"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 for row in cursor.fetchall()
             ]
-    
+
     def get_journals_for_month(self, year: int, month: int) -> List[JournalEntry]:
         """Get all journals for a specific month."""
         month_prefix = f"{year:04d}-{month:02d}"
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM journals 
+            cursor.execute(
+                """
+                SELECT * FROM journals
                 WHERE date LIKE ?
                 ORDER BY date ASC
-            """, (f"{month_prefix}%",))
-            
+            """,
+                (f"{month_prefix}%",),
+            )
+
             return [
                 JournalEntry(
-                    date=row['date'],
-                    content=row['content'],
-                    bias=row['bias'],
-                    gold_price=row['gold_price'],
-                    silver_price=row['silver_price'],
-                    gsr=row['gsr'],
-                    ai_enabled=bool(row['ai_enabled']),
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    date=row["date"],
+                    content=row["content"],
+                    bias=row["bias"],
+                    gold_price=row["gold_price"],
+                    silver_price=row["silver_price"],
+                    gsr=row["gsr"],
+                    ai_enabled=bool(row["ai_enabled"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 for row in cursor.fetchall()
             ]
-    
+
     def delete_journal(self, date_str: str) -> bool:
         """Delete a journal entry."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM journals WHERE date = ?", (date_str,))
             return cursor.rowcount > 0
-    
+
     # ==========================================
     # REPORT METHODS (with redundancy control)
     # ==========================================
-    
+
     def has_report(self, report_type: str, period: str) -> bool:
         """
         Check if a report exists for given type and period.
-        
+
         Args:
             report_type: 'weekly', 'monthly', 'yearly'
             period: 'YYYY-WW' for weekly, 'YYYY-MM' for monthly, 'YYYY' for yearly
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT 1 FROM reports WHERE report_type = ? AND period = ?",
-                (report_type, period)
-            )
+            cursor.execute("SELECT 1 FROM reports WHERE report_type = ? AND period = ?", (report_type, period))
             return cursor.fetchone() is not None
-    
+
     def has_monthly_report(self, year: int, month: int) -> bool:
         """Check if monthly report exists for given month."""
         period = f"{year:04d}-{month:02d}"
-        return self.has_report('monthly', period)
-    
+        return self.has_report("monthly", period)
+
     def has_yearly_report(self, year: int) -> bool:
         """Check if yearly report exists for given year."""
         period = f"{year:04d}"
-        return self.has_report('yearly', period)
-    
+        return self.has_report("yearly", period)
+
     def has_weekly_report(self, year: int, week: int) -> bool:
         """Check if weekly report exists for given week."""
         period = f"{year:04d}-W{week:02d}"
-        return self.has_report('weekly', period)
-    
+        return self.has_report("weekly", period)
+
     def save_report(self, report: Report, overwrite: bool = False) -> bool:
         """
         Save a report. By default, won't overwrite existing reports.
@@ -668,77 +856,80 @@ class DatabaseManager:
         """
         if self.has_report(report.report_type, report.period) and not overwrite:
             return False
-        
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
+
+            cursor.execute(
+                """
                 INSERT INTO reports (report_type, period, content, summary, ai_enabled, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(report_type, period) DO UPDATE SET
                     content = excluded.content,
                     summary = excluded.summary,
                     ai_enabled = excluded.ai_enabled
-            """, (report.report_type, report.period, report.content, 
-                  report.summary, report.ai_enabled, now))
-            
+            """,
+                (report.report_type, report.period, report.content, report.summary, report.ai_enabled, now),
+            )
+
             return True
-    
+
     def get_report(self, report_type: str, period: str) -> Optional[Report]:
         """Get a specific report."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT * FROM reports WHERE report_type = ? AND period = ?",
-                (report_type, period)
-            )
+            cursor.execute("SELECT * FROM reports WHERE report_type = ? AND period = ?", (report_type, period))
             row = cursor.fetchone()
             if row:
                 return Report(
-                    report_type=row['report_type'],
-                    period=row['period'],
-                    content=row['content'],
-                    summary=row['summary'],
-                    ai_enabled=bool(row['ai_enabled']),
-                    created_at=row['created_at']
+                    report_type=row["report_type"],
+                    period=row["period"],
+                    content=row["content"],
+                    summary=row["summary"],
+                    ai_enabled=bool(row["ai_enabled"]),
+                    created_at=row["created_at"],
                 )
             return None
-    
+
     def get_reports_by_type(self, report_type: str, limit: int = 50) -> List[Report]:
         """Get all reports of a specific type."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM reports 
+            cursor.execute(
+                """
+                SELECT * FROM reports
                 WHERE report_type = ?
                 ORDER BY period DESC
                 LIMIT ?
-            """, (report_type, limit))
-            
+            """,
+                (report_type, limit),
+            )
+
             return [
                 Report(
-                    report_type=row['report_type'],
-                    period=row['period'],
-                    content=row['content'],
-                    summary=row['summary'],
-                    ai_enabled=bool(row['ai_enabled']),
-                    created_at=row['created_at']
+                    report_type=row["report_type"],
+                    period=row["period"],
+                    content=row["content"],
+                    summary=row["summary"],
+                    ai_enabled=bool(row["ai_enabled"]),
+                    created_at=row["created_at"],
                 )
                 for row in cursor.fetchall()
             ]
-    
+
     # ==========================================
     # ANALYSIS SNAPSHOT METHODS
     # ==========================================
-    
+
     def save_analysis_snapshot(self, snapshot: AnalysisSnapshot) -> bool:
         """Save an analysis snapshot for an asset."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO analysis_snapshots 
+
+            cursor.execute(
+                """
+                INSERT INTO analysis_snapshots
                 (date, asset, price, rsi, sma_50, sma_200, atr, adx, trend, raw_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(date, asset) DO UPDATE SET
@@ -750,59 +941,74 @@ class DatabaseManager:
                     adx = excluded.adx,
                     trend = excluded.trend,
                     raw_data = excluded.raw_data
-            """, (snapshot.date, snapshot.asset, snapshot.price, snapshot.rsi,
-                  snapshot.sma_50, snapshot.sma_200, snapshot.atr, snapshot.adx,
-                  snapshot.trend, snapshot.raw_data))
-            
+            """,
+                (
+                    snapshot.date,
+                    snapshot.asset,
+                    snapshot.price,
+                    snapshot.rsi,
+                    snapshot.sma_50,
+                    snapshot.sma_200,
+                    snapshot.atr,
+                    snapshot.adx,
+                    snapshot.trend,
+                    snapshot.raw_data,
+                ),
+            )
+
             return True
-    
+
     def get_analysis_history(self, asset: str, days: int = 30) -> List[AnalysisSnapshot]:
         """Get analysis history for an asset over last N days."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM analysis_snapshots 
+            cursor.execute(
+                """
+                SELECT * FROM analysis_snapshots
                 WHERE asset = ?
                 ORDER BY date DESC
                 LIMIT ?
-            """, (asset, days))
-            
+            """,
+                (asset, days),
+            )
+
             return [
                 AnalysisSnapshot(
-                    date=row['date'],
-                    asset=row['asset'],
-                    price=row['price'],
-                    rsi=row['rsi'],
-                    sma_50=row['sma_50'],
-                    sma_200=row['sma_200'],
-                    atr=row['atr'],
-                    adx=row['adx'],
-                    trend=row['trend'],
-                    raw_data=row['raw_data']
+                    date=row["date"],
+                    asset=row["asset"],
+                    price=row["price"],
+                    rsi=row["rsi"],
+                    sma_50=row["sma_50"],
+                    sma_200=row["sma_200"],
+                    atr=row["atr"],
+                    adx=row["adx"],
+                    trend=row["trend"],
+                    raw_data=row["raw_data"],
                 )
                 for row in cursor.fetchall()
             ]
-    
+
     # ==========================================
     # PRE-MARKET PLANS
     # ==========================================
-    
+
     def has_premarket_for_date(self, date_str: str) -> bool:
         """Check if pre-market plan exists for date."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT 1 FROM premarket_plans WHERE date = ?", (date_str,))
             return cursor.fetchone() is not None
-    
-    def save_premarket_plan(self, date_str: str, content: str, 
-                           bias: str = None, catalysts: str = None,
-                           ai_enabled: bool = True) -> bool:
+
+    def save_premarket_plan(
+        self, date_str: str, content: str, bias: str = None, catalysts: str = None, ai_enabled: bool = True
+    ) -> bool:
         """Save a pre-market plan."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
+
+            cursor.execute(
+                """
                 INSERT INTO premarket_plans (date, content, bias, catalysts, ai_enabled, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(date) DO UPDATE SET
@@ -810,10 +1016,12 @@ class DatabaseManager:
                     bias = excluded.bias,
                     catalysts = excluded.catalysts,
                     ai_enabled = excluded.ai_enabled
-            """, (date_str, content, bias, catalysts, ai_enabled, now))
-            
+            """,
+                (date_str, content, bias, catalysts, ai_enabled, now),
+            )
+
             return True
-    
+
     def get_premarket_plan(self, date_str: str) -> Optional[Dict]:
         """Get pre-market plan for date."""
         with self._get_connection() as conn:
@@ -823,11 +1031,11 @@ class DatabaseManager:
             if row:
                 return dict(row)
             return None
-    
+
     # ==========================================
     # UTILITY METHODS
     # ==========================================
-    
+
     def get_current_period_info(self) -> Dict[str, Any]:
         """
         Get info about current period and what reports exist.
@@ -835,23 +1043,23 @@ class DatabaseManager:
         """
         today = date.today()
         iso_cal = today.isocalendar()
-        
+
         return {
-            'today': today.isoformat(),
-            'year': today.year,
-            'month': today.month,
-            'week': iso_cal[1],
-            'day_of_week': iso_cal[2],
-            'month_period': f"{today.year:04d}-{today.month:02d}",
-            'year_period': f"{today.year:04d}",
-            'week_period': f"{today.year:04d}-W{iso_cal[1]:02d}",
-            'has_today_journal': self.has_journal_for_date(today.isoformat()),
-            'has_monthly_report': self.has_monthly_report(today.year, today.month),
-            'has_yearly_report': self.has_yearly_report(today.year),
-            'has_weekly_report': self.has_weekly_report(today.year, iso_cal[1]),
-            'has_premarket_today': self.has_premarket_for_date(today.isoformat()),
+            "today": today.isoformat(),
+            "year": today.year,
+            "month": today.month,
+            "week": iso_cal[1],
+            "day_of_week": iso_cal[2],
+            "month_period": f"{today.year:04d}-{today.month:02d}",
+            "year_period": f"{today.year:04d}",
+            "week_period": f"{today.year:04d}-W{iso_cal[1]:02d}",
+            "has_today_journal": self.has_journal_for_date(today.isoformat()),
+            "has_monthly_report": self.has_monthly_report(today.year, today.month),
+            "has_yearly_report": self.has_yearly_report(today.year),
+            "has_weekly_report": self.has_weekly_report(today.year, iso_cal[1]),
+            "has_premarket_today": self.has_premarket_for_date(today.isoformat()),
         }
-    
+
     def get_missing_reports(self) -> Dict[str, bool]:
         """
         Check which reports are missing for current period.
@@ -859,134 +1067,153 @@ class DatabaseManager:
         """
         info = self.get_current_period_info()
         return {
-            'daily_journal': not info['has_today_journal'],
-            'weekly_report': not info['has_weekly_report'],
-            'monthly_report': not info['has_monthly_report'],
-            'yearly_report': not info['has_yearly_report'],
-            'premarket_plan': not info['has_premarket_today'],
+            "daily_journal": not info["has_today_journal"],
+            "weekly_report": not info["has_weekly_report"],
+            "monthly_report": not info["has_monthly_report"],
+            "yearly_report": not info["has_yearly_report"],
+            "premarket_plan": not info["has_premarket_today"],
         }
-    
+
     def get_journal_dates(self, start_date: str = "2025-12-01") -> List[str]:
         """Get all dates that have journal entries, starting from a date."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT date FROM journals 
+            cursor.execute(
+                """
+                SELECT date FROM journals
                 WHERE date >= ?
                 ORDER BY date DESC
-            """, (start_date,))
-            return [row['date'] for row in cursor.fetchall()]
-    
+            """,
+                (start_date,),
+            )
+            return [row["date"] for row in cursor.fetchall()]
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get database statistics."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             cursor.execute("SELECT COUNT(*) as count FROM journals")
-            journal_count = cursor.fetchone()['count']
-            
+            journal_count = cursor.fetchone()["count"]
+
             cursor.execute("SELECT COUNT(*) as count FROM reports WHERE report_type = 'weekly'")
-            weekly_count = cursor.fetchone()['count']
-            
+            weekly_count = cursor.fetchone()["count"]
+
             cursor.execute("SELECT COUNT(*) as count FROM reports WHERE report_type = 'monthly'")
-            monthly_count = cursor.fetchone()['count']
-            
+            monthly_count = cursor.fetchone()["count"]
+
             cursor.execute("SELECT COUNT(*) as count FROM reports WHERE report_type = 'yearly'")
-            yearly_count = cursor.fetchone()['count']
-            
+            yearly_count = cursor.fetchone()["count"]
+
             cursor.execute("SELECT MIN(date) as first, MAX(date) as last FROM journals")
             date_range = cursor.fetchone()
-            
+
             return {
-                'total_journals': journal_count,
-                'weekly_reports': weekly_count,
-                'monthly_reports': monthly_count,
-                'yearly_reports': yearly_count,
-                'first_journal': date_range['first'],
-                'last_journal': date_range['last'],
+                "total_journals": journal_count,
+                "weekly_reports": weekly_count,
+                "monthly_reports": monthly_count,
+                "yearly_reports": yearly_count,
+                "first_journal": date_range["first"],
+                "last_journal": date_range["last"],
             }
-    
+
     # ==========================================
     # ENTITY INSIGHTS METHODS
     # ==========================================
-    
-    def save_entity_insight(self, entity_name: str, entity_type: str,
-                           context: str, relevance_score: float,
-                           source_report: str, metadata: str = None) -> bool:
+
+    def save_entity_insight(
+        self,
+        entity_name: str,
+        entity_type: str,
+        context: str,
+        relevance_score: float,
+        source_report: str,
+        metadata: str = None,
+    ) -> bool:
         """Save an entity insight."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                INSERT INTO entity_insights 
+
+            cursor.execute(
+                """
+                INSERT INTO entity_insights
                 (entity_name, entity_type, context, relevance_score, source_report, extracted_at, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(entity_name, source_report) DO UPDATE SET
                     context = excluded.context,
                     relevance_score = excluded.relevance_score,
                     metadata = excluded.metadata
-            """, (entity_name, entity_type, context, relevance_score, source_report, now, metadata))
-            
+            """,
+                (entity_name, entity_type, context, relevance_score, source_report, now, metadata),
+            )
+
             return True
-    
-    def get_entity_insights(self, entity_type: str = None, 
-                           min_relevance: float = 0.0,
-                           limit: int = 100) -> List[Dict]:
+
+    def get_entity_insights(self, entity_type: str = None, min_relevance: float = 0.0, limit: int = 100) -> List[Dict]:
         """Get entity insights with optional filtering."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             if entity_type:
-                cursor.execute("""
-                    SELECT * FROM entity_insights 
+                cursor.execute(
+                    """
+                    SELECT * FROM entity_insights
                     WHERE entity_type = ? AND relevance_score >= ?
                     ORDER BY relevance_score DESC, extracted_at DESC
                     LIMIT ?
-                """, (entity_type, min_relevance, limit))
+                """,
+                    (entity_type, min_relevance, limit),
+                )
             else:
-                cursor.execute("""
-                    SELECT * FROM entity_insights 
+                cursor.execute(
+                    """
+                    SELECT * FROM entity_insights
                     WHERE relevance_score >= ?
                     ORDER BY relevance_score DESC, extracted_at DESC
                     LIMIT ?
-                """, (min_relevance, limit))
-            
+                """,
+                    (min_relevance, limit),
+                )
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def get_top_entities(self, days: int = 7, limit: int = 20) -> List[Dict]:
         """Get most frequently mentioned entities in recent period."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cutoff = (date.today() - timedelta(days=days)).isoformat()
-            
-            cursor.execute("""
-                SELECT entity_name, entity_type, 
+
+            cursor.execute(
+                """
+                SELECT entity_name, entity_type,
                        COUNT(*) as mention_count,
                        AVG(relevance_score) as avg_relevance
-                FROM entity_insights 
+                FROM entity_insights
                 WHERE extracted_at >= ?
                 GROUP BY entity_name, entity_type
                 ORDER BY mention_count DESC, avg_relevance DESC
                 LIMIT ?
-            """, (cutoff, limit))
-            
+            """,
+                (cutoff, limit),
+            )
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def save_entity_insights(self, entities: list) -> int:
         """Save multiple entity insights (batch operation)."""
         saved = 0
         for entity in entities:
             try:
                 # Support both dataclass and dict
-                if hasattr(entity, 'entity_name'):
+                if hasattr(entity, "entity_name"):
                     self.save_entity_insight(
                         entity_name=entity.entity_name,
                         entity_type=entity.entity_type,
                         context=entity.context,
                         relevance_score=entity.relevance_score,
                         source_report=entity.source_report,
-                        metadata=str(entity.metadata) if entity.metadata else None
+                        metadata=str(entity.metadata) if entity.metadata else None,
                     )
                 else:
                     self.save_entity_insight(**entity)
@@ -998,14 +1225,14 @@ class DatabaseManager:
     # ==========================================
     # ACTION INSIGHTS METHODS
     # ==========================================
-    
+
     def save_action_insights(self, actions: list) -> int:
         """Save multiple action insights (batch operation)."""
         saved = 0
         for action in actions:
             try:
                 # Support both dataclass and dict
-                if hasattr(action, 'action_id'):
+                if hasattr(action, "action_id"):
                     self.save_action_insight(
                         action_id=action.action_id,
                         action_type=action.action_type,
@@ -1016,8 +1243,8 @@ class DatabaseManager:
                         source_report=action.source_report,
                         source_context=action.source_context,
                         deadline=action.deadline,
-                        scheduled_for=getattr(action, 'scheduled_for', None),
-                        metadata=str(action.metadata) if action.metadata else None
+                        scheduled_for=getattr(action, "scheduled_for", None),
+                        metadata=str(action.metadata) if action.metadata else None,
                     )
                 else:
                     self.save_action_insight(**action)
@@ -1025,16 +1252,24 @@ class DatabaseManager:
             except Exception:
                 continue
         return saved
-    
-    def save_action_insight(self, action_id: str, action_type: str,
-                           title: str, description: str = None,
-                           priority: str = 'medium', status: str = 'pending',
-                           source_report: str = None, source_context: str = None,
-                           deadline: str = None, scheduled_for: str = None,
-                           metadata: str = None) -> bool:
+
+    def save_action_insight(
+        self,
+        action_id: str,
+        action_type: str,
+        title: str,
+        description: str = None,
+        priority: str = "medium",
+        status: str = "pending",
+        source_report: str = None,
+        source_context: str = None,
+        deadline: str = None,
+        scheduled_for: str = None,
+        metadata: str = None,
+    ) -> bool:
         """
         Save an action insight.
-        
+
         Args:
             scheduled_for: ISO timestamp when task should execute.
                           If None, task executes immediately.
@@ -1042,9 +1277,10 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                INSERT INTO action_insights 
+
+            cursor.execute(
+                """
+                INSERT INTO action_insights
                 (action_id, action_type, title, description, priority, status,
                  source_report, source_context, deadline, scheduled_for, created_at, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1052,37 +1288,51 @@ class DatabaseManager:
                     status = excluded.status,
                     description = excluded.description,
                     scheduled_for = excluded.scheduled_for
-            """, (action_id, action_type, title, description, priority, status,
-                  source_report, source_context, deadline, scheduled_for, now, metadata))
-            
+            """,
+                (
+                    action_id,
+                    action_type,
+                    title,
+                    description,
+                    priority,
+                    status,
+                    source_report,
+                    source_context,
+                    deadline,
+                    scheduled_for,
+                    now,
+                    metadata,
+                ),
+            )
+
             return True
-    
+
     def get_pending_actions(self, priority: str = None, limit: int = None) -> List[Dict]:
         """
         Get pending action insights.
-        
+
         Args:
             priority: Filter by priority level
             limit: Max number of actions to return (None = ALL pending actions)
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             base_query = """
-                SELECT * FROM action_insights 
+                SELECT * FROM action_insights
                 WHERE status = 'pending'
             """
             order_by = """
-                ORDER BY 
-                    CASE priority 
-                        WHEN 'critical' THEN 1 
-                        WHEN 'high' THEN 2 
-                        WHEN 'medium' THEN 3 
-                        ELSE 4 
+                ORDER BY
+                    CASE priority
+                        WHEN 'critical' THEN 1
+                        WHEN 'high' THEN 2
+                        WHEN 'medium' THEN 3
+                        ELSE 4
                     END,
                     created_at ASC
             """
-            
+
             if priority and limit:
                 cursor.execute(f"{base_query} AND priority = ? {order_by} LIMIT ?", (priority, limit))
             elif priority:
@@ -1091,46 +1341,46 @@ class DatabaseManager:
                 cursor.execute(f"{base_query} {order_by} LIMIT ?", (limit,))
             else:
                 cursor.execute(f"{base_query} {order_by}")
-            
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def get_ready_actions(self, limit: int = None) -> List[Dict]:
         """
         Get actions that are ready to execute NOW.
-        
+
         Returns actions where:
         - status = 'pending' AND
         - (scheduled_for IS NULL OR scheduled_for <= now)
-        
+
         Tasks without scheduled_for execute immediately.
         Tasks with scheduled_for execute when that time arrives.
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
+
             query = """
-                SELECT * FROM action_insights 
+                SELECT * FROM action_insights
                 WHERE status = 'pending'
                   AND (scheduled_for IS NULL OR scheduled_for <= ?)
-                ORDER BY 
-                    CASE priority 
-                        WHEN 'critical' THEN 1 
-                        WHEN 'high' THEN 2 
-                        WHEN 'medium' THEN 3 
-                        ELSE 4 
+                ORDER BY
+                    CASE priority
+                        WHEN 'critical' THEN 1
+                        WHEN 'high' THEN 2
+                        WHEN 'medium' THEN 3
+                        ELSE 4
                     END,
                     scheduled_for ASC NULLS FIRST,
                     created_at ASC
             """
-            
+
             if limit:
                 cursor.execute(query + " LIMIT ?", (now, limit))
             else:
                 cursor.execute(query, (now,))
-            
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def get_scheduled_actions(self) -> List[Dict]:
         """
         Get actions that are scheduled for the future.
@@ -1139,17 +1389,20 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                SELECT * FROM action_insights 
+
+            cursor.execute(
+                """
+                SELECT * FROM action_insights
                 WHERE status = 'pending'
                   AND scheduled_for IS NOT NULL
                   AND scheduled_for > ?
                 ORDER BY scheduled_for ASC
-            """, (now,))
-            
+            """,
+                (now,),
+            )
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     def increment_retry_count(self, action_id: str, error_message: str = None) -> int:
         """
         Increment retry count for a failed action and record the error.
@@ -1157,18 +1410,21 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
-            cursor.execute("""
-                UPDATE action_insights 
+
+            cursor.execute(
+                """
+                UPDATE action_insights
                 SET retry_count = COALESCE(retry_count, 0) + 1,
                     last_error = ?
                 WHERE action_id = ?
-            """, (error_message, action_id))
-            
+            """,
+                (error_message, action_id),
+            )
+
             cursor.execute("SELECT retry_count FROM action_insights WHERE action_id = ?", (action_id,))
             row = cursor.fetchone()
-            return row['retry_count'] if row else 0
-    
+            return row["retry_count"] if row else 0
+
     def reset_stuck_actions(self, max_age_hours: int = 24) -> int:
         """
         Reset actions that got stuck in 'in_progress' status.
@@ -1177,159 +1433,181 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cutoff = (datetime.now() - timedelta(hours=max_age_hours)).isoformat()
-            
-            cursor.execute("""
-                UPDATE action_insights 
+
+            cursor.execute(
+                """
+                UPDATE action_insights
                 SET status = 'pending'
                 WHERE status = 'in_progress'
                   AND created_at < ?
-            """, (cutoff,))
-            
+            """,
+                (cutoff,),
+            )
+
             return cursor.rowcount
-    
-    def update_action_status(self, action_id: str, status: str, 
-                            result: str = None) -> bool:
+
+    def update_action_status(self, action_id: str, status: str, result: str = None) -> bool:
         """Update action insight status."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                UPDATE action_insights 
+
+            cursor.execute(
+                """
+                UPDATE action_insights
                 SET status = ?, result = ?, completed_at = ?
                 WHERE action_id = ?
-            """, (status, result, now if status in ('completed', 'failed') else None, action_id))
-            
+            """,
+                (status, result, now if status in ("completed", "failed") else None, action_id),
+            )
+
             return cursor.rowcount > 0
-    
+
     def get_action_stats(self) -> Dict[str, Any]:
         """Get action insights statistics."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
+
             cursor.execute("""
-                SELECT status, COUNT(*) as count 
-                FROM action_insights 
+                SELECT status, COUNT(*) as count
+                FROM action_insights
                 GROUP BY status
             """)
-            
-            stats = {'pending': 0, 'in_progress': 0, 'completed': 0, 'failed': 0, 'skipped': 0}
+
+            stats = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0, "skipped": 0}
             for row in cursor.fetchall():
-                stats[row['status']] = row['count']
-            
-            stats['total'] = sum(stats.values())
-            stats['completion_rate'] = (stats['completed'] / stats['total'] * 100) if stats['total'] > 0 else 0
-            
+                stats[row["status"]] = row["count"]
+
+            stats["total"] = sum(stats.values())
+            stats["completion_rate"] = (stats["completed"] / stats["total"] * 100) if stats["total"] > 0 else 0
+
             return stats
-    
+
     # ==========================================
     # TASK EXECUTION LOG METHODS
     # ==========================================
-    
-    def log_task_execution(self, action_id: str, success: bool,
-                          result_data: str = None, execution_time_ms: float = 0,
-                          error_message: str = None, artifacts: str = None) -> bool:
+
+    def log_task_execution(
+        self,
+        action_id: str,
+        success: bool,
+        result_data: str = None,
+        execution_time_ms: float = 0,
+        error_message: str = None,
+        artifacts: str = None,
+    ) -> bool:
         """Log task execution result."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
-            cursor.execute("""
-                INSERT INTO task_execution_log 
+
+            cursor.execute(
+                """
+                INSERT INTO task_execution_log
                 (action_id, success, result_data, execution_time_ms, error_message, artifacts)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (action_id, 1 if success else 0, result_data, execution_time_ms, error_message, artifacts))
-            
+            """,
+                (action_id, 1 if success else 0, result_data, execution_time_ms, error_message, artifacts),
+            )
+
             return True
-    
-    def get_execution_history(self, action_id: str = None, 
-                             days: int = 7) -> List[Dict]:
+
+    def get_execution_history(self, action_id: str = None, days: int = 7) -> List[Dict]:
         """Get task execution history."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cutoff = (datetime.now() - timedelta(days=days)).isoformat()
-            
+
             if action_id:
-                cursor.execute("""
-                    SELECT * FROM task_execution_log 
+                cursor.execute(
+                    """
+                    SELECT * FROM task_execution_log
                     WHERE action_id = ? AND executed_at >= ?
                     ORDER BY executed_at DESC
-                """, (action_id, cutoff))
+                """,
+                    (action_id, cutoff),
+                )
             else:
-                cursor.execute("""
-                    SELECT * FROM task_execution_log 
+                cursor.execute(
+                    """
+                    SELECT * FROM task_execution_log
                     WHERE executed_at >= ?
                     ORDER BY executed_at DESC
                     LIMIT 100
-                """, (cutoff,))
-            
+                """,
+                    (cutoff,),
+                )
+
             return [dict(row) for row in cursor.fetchall()]
-    
+
     # ==========================================
     # SYSTEM CONFIG METHODS
     # ==========================================
-    
+
     def get_config(self, key: str, default: str = None) -> Optional[str]:
         """Get a system configuration value."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT value FROM system_config WHERE key = ?", (key,))
             row = cursor.fetchone()
-            return row['value'] if row else default
-    
+            return row["value"] if row else default
+
     def set_config(self, key: str, value: str, description: str = None) -> bool:
         """Set a system configuration value."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
+
+            cursor.execute(
+                """
                 INSERT INTO system_config (key, value, description, updated_at)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT(key) DO UPDATE SET
                     value = excluded.value,
                     description = COALESCE(excluded.description, system_config.description),
                     updated_at = excluded.updated_at
-            """, (key, value, description, now))
-            
+            """,
+                (key, value, description, now),
+            )
+
             return True
-    
+
     def get_all_config(self) -> Dict[str, str]:
         """Get all system configuration values."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT key, value FROM system_config")
-            return {row['key']: row['value'] for row in cursor.fetchall()}
-    
+            return {row["key"]: row["value"] for row in cursor.fetchall()}
+
     # ==========================================
     # EXECUTION STATE MACHINE
     # ==========================================
-    # 
+    #
     # Task State Transitions:
     #   pending -> in_progress (claim_action)
     #   in_progress -> completed (mark_complete)
     #   in_progress -> pending (release_action, retry)
     #   in_progress -> failed (max retries exceeded)
-    #   
+    #
     # Scheduling States:
     #   scheduled_for IS NULL -> execute immediately
     #   scheduled_for <= NOW -> execute immediately
     #   scheduled_for > NOW -> wait until scheduled time
     #
     # ==========================================
-    
+
     def claim_action(self, action_id: str, worker_id: str = None) -> bool:
         """
         Atomically claim an action for execution.
-        
+
         Uses optimistic locking pattern:
         - Only claims if action is still 'pending'
         - Records claim timestamp and worker ID
         - Prevents duplicate execution across processes
-        
+
         Args:
             action_id: The action to claim
             worker_id: Optional worker identifier for debugging
-            
+
         Returns:
             True if claim succeeded, False if action was already claimed
         """
@@ -1337,60 +1615,66 @@ class DatabaseManager:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
             worker = worker_id or f"worker_{now}"
-            
+
             # Atomic claim: only succeeds if status is still 'pending'
-            cursor.execute("""
-                UPDATE action_insights 
+            cursor.execute(
+                """
+                UPDATE action_insights
                 SET status = 'in_progress',
                     metadata = json_set(
                         COALESCE(metadata, '{}'),
                         '$.claimed_at', ?,
                         '$.claimed_by', ?
                     )
-                WHERE action_id = ? 
+                WHERE action_id = ?
                   AND status = 'pending'
-            """, (now, worker, action_id))
-            
+            """,
+                (now, worker, action_id),
+            )
+
             return cursor.rowcount > 0
-    
-    def release_action(self, action_id: str, reason: str = 'released') -> bool:
+
+    def release_action(self, action_id: str, reason: str = "released") -> bool:
         """
         Release a claimed action back to pending state.
-        
+
         Used when:
         - Worker crashes and needs to release claims
         - Task needs to be rescheduled for later
         - Voluntary release before completion
-        
+
         Args:
             action_id: The action to release
             reason: Why the action was released
-            
+
         Returns:
             True if release succeeded
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
-            cursor.execute("""
-                UPDATE action_insights 
+
+            cursor.execute(
+                """
+                UPDATE action_insights
                 SET status = 'pending',
                     metadata = json_set(
                         COALESCE(metadata, '{}'),
                         '$.released_at', ?,
                         '$.release_reason', ?
                     )
-                WHERE action_id = ? 
+                WHERE action_id = ?
                   AND status = 'in_progress'
-            """, (now, reason, action_id))
-            
+            """,
+                (now, reason, action_id),
+            )
+
             return cursor.rowcount > 0
-    
+
     def get_execution_context(self, action_id: str) -> Optional[Dict]:
         """
         Get full execution context for an action.
-        
+
         Returns comprehensive state info for debugging and monitoring:
         - Current status and timestamps
         - Retry history
@@ -1400,40 +1684,43 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now()
-            
-            cursor.execute("""
-                SELECT 
+
+            cursor.execute(
+                """
+                SELECT
                     a.*,
                     (SELECT COUNT(*) FROM task_execution_log WHERE action_id = a.action_id) as execution_attempts,
                     (SELECT MAX(executed_at) FROM task_execution_log WHERE action_id = a.action_id) as last_execution
                 FROM action_insights a
                 WHERE a.action_id = ?
-            """, (action_id,))
-            
+            """,
+                (action_id,),
+            )
+
             row = cursor.fetchone()
             if not row:
                 return None
-            
+
             context = dict(row)
-            
+
             # Add computed fields
-            scheduled_for = context.get('scheduled_for')
+            scheduled_for = context.get("scheduled_for")
             if scheduled_for:
                 scheduled_dt = datetime.fromisoformat(scheduled_for)
-                context['is_ready'] = scheduled_dt <= now
-                context['time_until_ready'] = max(0, (scheduled_dt - now).total_seconds())
+                context["is_ready"] = scheduled_dt <= now
+                context["time_until_ready"] = max(0, (scheduled_dt - now).total_seconds())
             else:
-                context['is_ready'] = True
-                context['time_until_ready'] = 0
-            
-            context['can_retry'] = (context.get('retry_count', 0) or 0) < 10
-            
+                context["is_ready"] = True
+                context["time_until_ready"] = 0
+
+            context["can_retry"] = (context.get("retry_count", 0) or 0) < 10
+
             return context
-    
+
     def get_system_health(self) -> Dict[str, Any]:
         """
         Get comprehensive system health metrics.
-        
+
         Returns real-time statistics for monitoring:
         - Task queue depth and distribution
         - Execution rates and failures
@@ -1443,92 +1730,105 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            
+
             health = {
-                'timestamp': now,
-                'tasks': {},
-                'schedules': {},
-                'execution': {},
+                "timestamp": now,
+                "tasks": {},
+                "schedules": {},
+                "execution": {},
             }
-            
+
             # Task queue metrics
-            cursor.execute("""
-                SELECT 
+            cursor.execute(
+                """
+                SELECT
                     status,
                     priority,
                     COUNT(*) as count,
                     SUM(CASE WHEN scheduled_for IS NULL OR scheduled_for <= ? THEN 1 ELSE 0 END) as ready_count
                 FROM action_insights
                 GROUP BY status, priority
-            """, (now,))
-            
+            """,
+                (now,),
+            )
+
             task_stats = {}
             for row in cursor.fetchall():
                 key = f"{row['status']}_{row['priority']}"
-                task_stats[key] = {
-                    'count': row['count'],
-                    'ready': row['ready_count']
-                }
-            health['tasks'] = task_stats
-            
+                task_stats[key] = {"count": row["count"], "ready": row["ready_count"]}
+            health["tasks"] = task_stats
+
             # Ready to execute
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*) as ready_now
                 FROM action_insights
                 WHERE status = 'pending'
                   AND (scheduled_for IS NULL OR scheduled_for <= ?)
-            """, (now,))
-            health['tasks']['ready_now'] = cursor.fetchone()['ready_now']
-            
+            """,
+                (now,),
+            )
+            health["tasks"]["ready_now"] = cursor.fetchone()["ready_now"]
+
             # Scheduled for future
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*) as scheduled_future
                 FROM action_insights
                 WHERE status = 'pending'
                   AND scheduled_for > ?
-            """, (now,))
-            health['tasks']['scheduled_future'] = cursor.fetchone()['scheduled_future']
-            
+            """,
+                (now,),
+            )
+            health["tasks"]["scheduled_future"] = cursor.fetchone()["scheduled_future"]
+
             # Stuck in progress (> 1 hour)
             one_hour_ago = (datetime.now() - timedelta(hours=1)).isoformat()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*) as stuck
                 FROM action_insights
                 WHERE status = 'in_progress'
                   AND created_at < ?
-            """, (one_hour_ago,))
-            health['tasks']['stuck_in_progress'] = cursor.fetchone()['stuck']
-            
+            """,
+                (one_hour_ago,),
+            )
+            health["tasks"]["stuck_in_progress"] = cursor.fetchone()["stuck"]
+
             # Recent execution stats (last 24h)
             yesterday = (datetime.now() - timedelta(days=1)).isoformat()
-            cursor.execute("""
-                SELECT 
+            cursor.execute(
+                """
+                SELECT
                     COUNT(*) as total,
                     SUM(success) as successful,
                     AVG(execution_time_ms) as avg_time_ms
                 FROM task_execution_log
                 WHERE executed_at >= ?
-            """, (yesterday,))
+            """,
+                (yesterday,),
+            )
             row = cursor.fetchone()
-            health['execution'] = {
-                'last_24h_total': row['total'] or 0,
-                'last_24h_success': row['successful'] or 0,
-                'last_24h_avg_time_ms': round(row['avg_time_ms'] or 0, 2)
+            health["execution"] = {
+                "last_24h_total": row["total"] or 0,
+                "last_24h_success": row["successful"] or 0,
+                "last_24h_avg_time_ms": round(row["avg_time_ms"] or 0, 2),
             }
-            
+
             # Schedule status
             cursor.execute("""
                 SELECT task_name, last_run, frequency, enabled
                 FROM schedule_tracker
                 ORDER BY task_name
             """)
-            health['schedules'] = [dict(row) for row in cursor.fetchall()]
-            
+            health["schedules"] = [dict(row) for row in cursor.fetchall()]
+
             return health
 
 
 # Singleton instance
 _db_manager: Optional[DatabaseManager] = None
+
 
 def get_db() -> DatabaseManager:
     """Get the singleton database manager instance."""
@@ -1538,7 +1838,7 @@ def get_db() -> DatabaseManager:
     return _db_manager
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the database manager
     db = get_db()
     print("Database initialized at:", db.db_path)
