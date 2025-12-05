@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.2.2* [[CHANGELOG]](docs/CHANGELOG.md)
+*version 3.3.0* [[CHANGELOG]](docs/CHANGELOG.md)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -67,6 +67,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **Autonomous Daemon** | Runs continuously, executing analysis every minute (configurable) |
 | **Intelligent Scheduling** | Frequency-based task execution: daily/weekly/monthly/yearly cycles |
 | **Notion Deduplication** | Content hashing prevents duplicate uploads; tracks sync state |
+| **Document Lifecycle** | Draft/in_progress/published status controls Notion visibility |
 | **Auto Venv Activation** | Scripts automatically detect and activate virtual environment |
 | **Multi-Asset Analysis** | Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, S&P 500 |
 | **Technical Indicators** | RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration |
@@ -256,6 +257,8 @@ Enter choice (0-4):
 | `python run.py --interactive` | Interactive menu mode |
 | `python run.py --status` | Show system status |
 | `python run.py --no-ai` | Run without Gemini API |
+| `python run.py --lifecycle list` | List documents by lifecycle status |
+| `python run.py --lifecycle publish --file <path>` | Mark document as published |
 | `python run.py --help` | Show all options |
 
 ### GUI Dashboard
@@ -583,6 +586,81 @@ python scripts/cleanup_manager.py --cleanup-all
 
 # Actually archive old content
 python scripts/cleanup_manager.py --cleanup-all --execute
+```
+
+---
+
+## Document Lifecycle Management
+
+Gold Standard v3.3 introduces a document lifecycle system to control which documents are synced to Notion and prevent accidental overwrites.
+
+### Lifecycle States
+
+Documents progress through the following states:
+
+```
+draft --> in_progress --> review --> published --> archived
+```
+
+| Status | Description | Notion Sync |
+|--------|-------------|-------------|
+| `draft` | Initial state for all new documents | No |
+| `in_progress` | Being actively edited/reviewed | No |
+| `review` | Ready for final review | No |
+| `published` | Approved for public visibility | **Yes** |
+| `archived` | Historical reference only | No |
+
+### How It Works
+
+1. **All new documents start as `draft`** - they are NOT synced to Notion
+2. **Only `published` documents sync to Notion** - keeps drafts private
+3. **Status is stored in YAML frontmatter** - visible in document headers
+4. **Database tracks lifecycle** - `document_lifecycle` table for queries
+
+### CLI Commands
+
+```powershell
+# List all documents by status
+python run.py --lifecycle list
+
+# List only draft documents
+python run.py --lifecycle list --show-status draft
+
+# Check status of specific file
+python run.py --lifecycle status --file output/reports/journals/Journal_2025-12-05.md
+
+# Promote to next status (draft -> in_progress -> review -> published)
+python run.py --lifecycle promote --file output/reports/journals/Journal_2025-12-05.md
+
+# Directly publish (mark as ready for Notion)
+python run.py --lifecycle publish --file output/reports/journals/Journal_2025-12-05.md
+
+# Reset to draft
+python run.py --lifecycle draft --file output/reports/journals/Journal_2025-12-05.md
+```
+
+### Example Frontmatter
+
+Documents include lifecycle status in their YAML frontmatter:
+
+```yaml
+---
+type: journal
+title: "Gold Analysis - December 5, 2025"
+date: 2025-12-05
+status: draft
+generated: 2025-12-05T10:30:00
+tags: [gold, xauusd, technical-analysis]
+---
+```
+
+### Integration with Notion Sync
+
+When running `--sync-all`, the publisher automatically skips non-published documents:
+
+```
+[DOC] Journal_2025-12-05.md - Skipped (status: draft)
+[DOC] Journal_2025-12-04.md - Published to Notion
 ```
 
 ---

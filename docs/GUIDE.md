@@ -1,8 +1,8 @@
 # Gold Standard Technical Booklet
 
-> Educational Guide and Technical Reference — v3.2
+> Educational Guide and Technical Reference — v3.3
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.2 introduces intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.3 introduces document lifecycle management for controlling Notion visibility, building on v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
 
 ---
 
@@ -19,15 +19,16 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 9. [Database Manager](#database-manager)
 10. [Intelligent Scheduling](#intelligent-scheduling)
 11. [Notion Sync & Deduplication](#notion-sync--deduplication)
-12. [Insights Engine](#insights-engine)
-13. [Task Executor](#task-executor)
-14. [File Organizer](#file-organizer)
-15. [Frontmatter System](#frontmatter-system)
-16. [Notion Integration](#notion-integration)
-17. [Comprehensive Tagging](#comprehensive-tagging)
-18. [Testing Guidelines](#testing-guidelines)
-19. [Deployment Notes](#deployment-notes)
-20. [Extension Patterns](#extension-patterns)
+12. [Document Lifecycle Management](#document-lifecycle-management)
+13. [Insights Engine](#insights-engine)
+14. [Task Executor](#task-executor)
+15. [File Organizer](#file-organizer)
+16. [Frontmatter System](#frontmatter-system)
+17. [Notion Integration](#notion-integration)
+18. [Comprehensive Tagging](#comprehensive-tagging)
+19. [Testing Guidelines](#testing-guidelines)
+20. [Deployment Notes](#deployment-notes)
+21. [Extension Patterns](#extension-patterns)
 
 ---
 
@@ -188,7 +189,7 @@ The Cortex module maintains persistent memory across runs:
 ```python
 def grade_performance(current_price, last_price, last_bias):
     delta = current_price - last_price
-    
+
     if last_bias == "BULLISH" and delta > 0:
         return "WIN"
     elif last_bias == "BEARISH" and delta < 0:
@@ -500,7 +501,7 @@ The system automatically parses temporal references from task descriptions:
 Input: "Track FOMC meeting for Dec 18"
 Output: scheduled_for = "2025-12-18T09:00:00"
 
-Input: "Monitor employment data for Jan 10"  
+Input: "Monitor employment data for Jan 10"
 Output: scheduled_for = "2026-01-10T09:00:00"
 
 Input: "Research gold correlation patterns"
@@ -575,10 +576,10 @@ The system distinguishes between:
 
 **Query for Ready Tasks:**
 ```sql
-SELECT * FROM action_insights 
+SELECT * FROM action_insights
 WHERE status = 'pending'
   AND (scheduled_for IS NULL OR scheduled_for <= datetime('now'))
-ORDER BY 
+ORDER BY
     CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 ELSE 3 END,
     scheduled_for ASC NULLS FIRST,
     created_at ASC;
@@ -603,7 +604,7 @@ backoff = min(INITIAL_BACKOFF * (2 ** retry_count), MAX_BACKOFF)
 
 ```python
 QUOTA_PATTERNS = [
-    'quota', 'rate limit', 'too many requests', 
+    'quota', 'rate limit', 'too many requests',
     '429', 'resource exhausted', 'capacity', 'overloaded'
 ]
 ```
@@ -686,7 +687,7 @@ def _run_post_analysis_tasks():
     if db.should_run_task('task_execution', frequency='weekly'):
         executor.process_queue()
         db.mark_task_run('task_execution')
-    
+
     # Only sync to Notion daily
     if db.should_run_task('notion_sync', frequency='daily'):
         sync_all_outputs()
@@ -717,7 +718,7 @@ current_hash = db.get_file_hash(file_path)
 if not db.is_file_synced(file_path, current_hash):
     # File is new or changed - publish to Notion
     result = publisher.sync_file(file_path)
-    
+
     # Record the sync
     db.record_notion_sync(file_path, current_hash, result['page_id'])
 ```
@@ -739,6 +740,205 @@ def get_file_hash(self, file_path: str) -> str:
 - **Change detection**: Only modified files are synced
 - **Audit trail**: Track which Notion page corresponds to each file
 - **Efficiency**: Reduces API calls and bandwidth
+
+---
+
+## Document Lifecycle Management
+
+Version 3.3 introduces a document lifecycle system to control which documents are synced to Notion and prevent accidental overwrites of published content.
+
+### Overview
+
+The lifecycle system ensures that:
+- Draft documents remain private (not synced to Notion)
+- Only explicitly published documents are visible externally
+- Document state is tracked in both frontmatter and database
+- Status progression follows a defined workflow
+
+### Lifecycle States
+
+Documents progress through these states:
+
+```
+┌─────────┐    ┌─────────────┐    ┌────────┐    ┌───────────┐    ┌──────────┐
+│  draft  │───▶│ in_progress │───▶│ review │───▶│ published │───▶│ archived │
+└─────────┘    └─────────────┘    └────────┘    └───────────┘    └──────────┘
+     │                                                │
+     └────────────────────────────────────────────────┘
+                    (can reset to draft)
+```
+
+| Status | Description | Notion Sync |
+|--------|-------------|-------------|
+| `draft` | Initial state, work in progress | **No** |
+| `in_progress` | Active editing/analysis | **No** |
+| `review` | Ready for final review | **No** |
+| `published` | Approved for external visibility | **Yes** |
+| `archived` | Historical reference | **No** |
+
+### Frontmatter Integration
+
+Status is stored in YAML frontmatter:
+
+```yaml
+---
+type: journal
+title: "Gold Analysis - December 5, 2025"
+date: 2025-12-05
+status: draft
+generated: 2025-12-05T10:30:00
+tags: [gold, xauusd, technical-analysis]
+---
+```
+
+### Frontmatter Functions
+
+```python
+from scripts.frontmatter import (
+    get_document_status,
+    set_document_status,
+    promote_status,
+    is_published,
+    is_draft,
+    VALID_STATUSES
+)
+
+# Read status from document
+content = open("Journal_2025-12-05.md").read()
+status = get_document_status(content)  # Returns 'draft'
+
+# Check status
+if is_draft(content):
+    print("Document is still in draft")
+
+if is_published(content):
+    print("Document is ready for Notion")
+
+# Update status
+new_content = set_document_status(content, "published", "Journal_2025-12-05.md")
+
+# Promote to next status (draft -> in_progress -> review -> published)
+new_content = promote_status(content, "Journal_2025-12-05.md")
+```
+
+### Database Schema
+
+```sql
+CREATE TABLE document_lifecycle (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_path TEXT UNIQUE NOT NULL,
+    doc_type TEXT,
+    status TEXT DEFAULT 'draft',
+    created_at TEXT,
+    updated_at TEXT,
+    published_at TEXT,
+    notion_page_id TEXT,
+    content_hash TEXT,
+    version INTEGER DEFAULT 1,
+    metadata TEXT
+);
+
+CREATE INDEX idx_doc_lifecycle_path ON document_lifecycle(file_path);
+CREATE INDEX idx_doc_lifecycle_status ON document_lifecycle(status);
+```
+
+### Database Methods
+
+```python
+from db_manager import get_db
+
+db = get_db()
+
+# Get document status
+doc = db.get_document_status("output/Journal_2025-12-05.md")
+# Returns: {'file_path': '...', 'status': 'draft', 'version': 1, ...}
+
+# Register new document
+db.register_document("output/new_report.md", doc_type="journal", status="draft")
+
+# Update status
+db.update_document_status("output/Journal_2025-12-05.md", "published")
+
+# Get all documents by status
+drafts = db.get_documents_by_status("draft")
+published = db.get_documents_by_status("published")
+
+# Get unpublished documents
+pending = db.get_unpublished_documents()
+```
+
+### CLI Commands
+
+```bash
+# List all documents by status
+python run.py --lifecycle list
+
+# List only draft documents
+python run.py --lifecycle list --show-status draft
+
+# Check status of specific file
+python run.py --lifecycle status --file output/Journal_2025-12-05.md
+
+# Promote to next status
+python run.py --lifecycle promote --file output/Journal_2025-12-05.md
+
+# Directly publish
+python run.py --lifecycle publish --file output/Journal_2025-12-05.md
+
+# Reset to draft
+python run.py --lifecycle draft --file output/Journal_2025-12-05.md
+```
+
+### Integration with Notion Publisher
+
+The `sync_file()` method checks lifecycle status before syncing:
+
+```python
+def sync_file(self, filepath: str, force: bool = False) -> Dict[str, str]:
+    content = Path(filepath).read_text(encoding='utf-8')
+
+    # Check lifecycle status (unless forced)
+    if not force:
+        status = get_document_status(content)
+        if not is_published(content):
+            return {
+                "skipped": True,
+                "reason": f"Document status is '{status}' (not published)"
+            }
+
+    # Continue with sync...
+```
+
+### Workflow Example
+
+```python
+# 1. New document is created with status: draft
+generate_journal()  # Creates Journal_2025-12-05.md with status: draft
+
+# 2. Review and edit the document
+# ...
+
+# 3. Promote when ready
+run.py --lifecycle promote --file output/Journal_2025-12-05.md
+# Status: draft -> in_progress
+
+# 4. Continue promoting
+run.py --lifecycle promote --file output/Journal_2025-12-05.md
+# Status: in_progress -> review
+
+run.py --lifecycle promote --file output/Journal_2025-12-05.md
+# Status: review -> published
+
+# 5. Now Notion sync will include this document
+run.py --sync-all  # Journal_2025-12-05.md is now synced
+```
+
+### Best Practices
+
+1. **Review before publishing** - Use the `review` status as a checkpoint
+2. **Batch publishing** - Review all drafts, then publish in batches
+3. **Archive old content** - Move outdated published docs to `archived`
+4. **Force sync for testing** - Use `--force` flag to bypass status checks
 
 ---
 
@@ -1249,13 +1449,13 @@ Tests in `TestGeminiLiveConnection` require a valid `GEMINI_API_KEY`:
 class TestGeminiLiveConnection:
     def test_live_api_configuration(self, api_key):
         """Test that Gemini API can be configured with real key."""
-        
+
     def test_live_model_initialization(self, api_key):
         """Test that GenerativeModel can be instantiated."""
-        
+
     def test_live_simple_generation(self, api_key):
         """Test a simple content generation to verify API connectivity."""
-        
+
     def test_live_strategist_analysis(self, api_key):
         """Test full Strategist analysis with live API."""
 ```
@@ -1287,10 +1487,10 @@ Test full pipeline with mocked data:
 def test_execute_no_ai(monkeypatch):
     # Mock yfinance to return deterministic data
     monkeypatch.setattr(yf, 'download', mock_download)
-    
+
     # Run pipeline
     execute(config, logger, no_ai=True)
-    
+
     # Verify outputs
     assert Path('output/Journal_2025-11-30.md').exists()
 ```

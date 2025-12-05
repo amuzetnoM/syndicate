@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gost"
-version = "3.1.0"
+version = "3.3.0"
 description = "Gold Standard - Autonomous precious metals intelligence system with AI-powered analysis"
 readme = "README.md"
 license = "MIT"

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.3.0] - 2025-12-05
+
+### Added
+- **Document Lifecycle Management System**
+  - New `document_lifecycle` SQLite table for tracking document states
+  - Lifecycle states: `draft` → `in_progress` → `review` → `published` → `archived`
+  - Only `published` documents are synced to Notion (drafts remain private)
+  - `status` field added to YAML frontmatter (default: `draft`)
+
+- **Lifecycle CLI Commands**
+  - `--lifecycle list` - List all documents by status
+  - `--lifecycle list --show-status <status>` - Filter by specific status
+  - `--lifecycle status --file <path>` - Show status of specific file
+  - `--lifecycle promote --file <path>` - Promote to next status
+  - `--lifecycle publish --file <path>` - Mark as published (Notion-ready)
+  - `--lifecycle draft --file <path>` - Reset to draft status
+
+- **Frontmatter Lifecycle Functions**
+  - `get_document_status()` - Read status from frontmatter
+  - `set_document_status()` - Update status in frontmatter
+  - `promote_status()` - Advance to next lifecycle stage
+  - `is_published()` / `is_draft()` - Status check helpers
+
+- **Database Lifecycle Methods**
+  - `get_document_status()` - Query document state
+  - `register_document()` - Add new document to lifecycle tracking
+  - `update_document_status()` - Change document state
+  - `get_documents_by_status()` - List documents by state
+  - `get_unpublished_documents()` - Find documents not yet published
+
+### Changed
+- Notion publisher now checks document lifecycle status before sync
+- Non-published documents are skipped with informative message
+- Frontmatter `generate_frontmatter()` includes `status` field by default
+
+### Fixed
+- Bare `except` clauses replaced with `except Exception` (E722)
+- Added E402 to ruff ignore list (module import order in notion_publisher)
+- Fixed frontmatter date parsing (dates no longer parsed as integers)
+
+---
+
 ## [3.2.2] - 2025-12-04
 
 ### Added
@@ -286,7 +328,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Autonomous Daemon Mode**
   - Periodic analysis execution with `--daemon` flag
   - 4-hour default intervals (now superseded by 1-minute in v3.0)
-  
+
 - **Database Manager**
   - SQLite persistence for all reports, journals, predictions
   - Cortex memory integration

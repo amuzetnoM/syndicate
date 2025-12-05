@@ -140,13 +140,20 @@ Primary tables:
   - id, action_id (unique), action_type, title, description
   - priority, status, source_report, source_context
   - deadline, result, created_at, completed_at, metadata
+  - scheduled_for, retry_count, last_error
 
-- **task_execution_log** (NEW): task execution audit trail
+- **task_execution_log**: task execution audit trail
   - id, action_id, success, result_data, execution_time_ms
   - error_message, artifacts, executed_at
 
-- **system_config** (NEW): runtime configuration storage
+- **system_config**: runtime configuration storage
   - id, key (unique), value, description, updated_at
+
+- **document_lifecycle** (NEW v3.3): document state management
+  - id, file_path (unique), doc_type, status
+  - created_at, updated_at, published_at
+  - notion_page_id, content_hash, version, metadata
+  - status values: draft, in_progress, review, published, archived
 
 Provide migrations via simple SQL files or a lightweight migration helper in `db_manager.py`. Example DDL:
 ```sql
@@ -182,6 +189,7 @@ Concurrency & integrity:
 - **insights_engine.py**: Extracts entity and action insights from generated reports. Powers autonomous task execution.
 - **task_executor.py**: Executes action insights (research, data fetch, monitoring, calculations) before next cycle.
 - **file_organizer.py**: Intelligently organizes, categorizes, dates, and archives reports and charts.
+- **frontmatter.py**: YAML frontmatter generation with document lifecycle status tracking.
 
 ## Insights & Task Execution System
 
@@ -192,7 +200,7 @@ Gold Standard features a fully autonomous intelligence pipeline that extracts in
 - Pattern-based extraction with relevance scoring
 - Stored in `entity_insights` table for historical analysis
 
-### Action Insights  
+### Action Insights
 - Identifies actionable tasks from report content:
   - **research**: Topics requiring further investigation
   - **data_fetch**: COT data, ETF flows, yields to retrieve
@@ -267,15 +275,15 @@ Tasks follow a deterministic state machine with atomic transitions:
 The `get_ready_actions()` method implements the core scheduling query:
 
 ```sql
-SELECT * FROM action_insights 
+SELECT * FROM action_insights
 WHERE status = 'pending'
   AND (scheduled_for IS NULL OR scheduled_for <= ?)  -- ? = NOW
-ORDER BY 
-    CASE priority 
-        WHEN 'critical' THEN 1 
-        WHEN 'high' THEN 2 
-        WHEN 'medium' THEN 3 
-        ELSE 4 
+ORDER BY
+    CASE priority
+        WHEN 'critical' THEN 1
+        WHEN 'high' THEN 2
+        WHEN 'medium' THEN 3
+        ELSE 4
     END,
     scheduled_for ASC NULLS FIRST,  -- Immediate tasks first
     created_at ASC                   -- FIFO within priority
@@ -292,7 +300,7 @@ backoff = min(INITIAL_BACKOFF * (2 ** retry_count), MAX_BACKOFF)
 
 **Quota Error Detection**:
 ```python
-QUOTA_PATTERNS = ['quota', 'rate limit', 'too many requests', 
+QUOTA_PATTERNS = ['quota', 'rate limit', 'too many requests',
                   '429', 'resource exhausted', 'capacity']
 ```
 
@@ -348,7 +356,7 @@ health = {
 ```
 1. Run analysis (reports, charts)
 2. Extract entity insights → save to DB
-3. Extract action insights → save to DB  
+3. Extract action insights → save to DB
 4. Execute pending tasks (up to 10 per cycle)
 5. Log execution results
 6. Organize files (categorize, archive)
