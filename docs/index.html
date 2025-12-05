@@ -3,1648 +3,1023 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Standard | Autonomous Gold Analysis System</title>
-    <meta name="description" content="Professional autonomous gold market analysis with AI-powered insights, technical indicators, and Notion integration.">
+    <title>Gold Standard | Precious Metals Intelligence Complex</title>
+    <meta name="description" content="Autonomous AI-powered market analysis system for gold and precious metals. Multi-provider LLM, real-time data, and Notion publishing.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FFD700'/%3E%3Cstop offset='50%25' stop-color='%23FFA500'/%3E%3Cstop offset='100%25' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='50,8 61,35 90,35 67,54 76,82 50,66 24,82 33,54 10,35 39,35' fill='url(%23gold)'/%3E%3C/svg%3E">
     <style>
         :root {
-            --gold: #D4AF37;
-            --gold-light: #F4CF67;
-            --gold-dark: #B4941F;
-            --gold-glow: rgba(212, 175, 55, 0.4);
-            --bg-void: #000000;
-            --bg-deep: #050505;
-            --bg-surface: #0a0a0a;
-            --bg-elevated: #111111;
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.6);
-            --text-muted: rgba(255, 255, 255, 0.35);
-            --border: rgba(255, 255, 255, 0.06);
-            --border-gold: rgba(212, 175, 55, 0.3);
+            --gold: #FFD700;
+            --gold-dark: #B8860B;
+            --gold-light: #FFF8DC;
+            --bg-dark: #050507;
+            --bg-card: #0a0a0d;
+            --bg-card-hover: #0f0f14;
+            --text-primary: #fafafa;
+            --text-secondary: #9898a8;
+            --text-muted: #555570;
+            --border: #18181f;
+            --border-gold: rgba(255, 215, 0, 0.2);
+            --success: #22c55e;
+            --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #B8860B 100%);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            font-size: 16px;
-            scroll-behavior: smooth;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-void);
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-dark);
             color: var(--text-primary);
-            margin: 0;
-            padding: 0;
-            overflow-x: scroll;
-            overflow-y: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        body::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* ======================
-           HORIZONTAL SCROLL CONTAINER
-           ====================== */
-        .horizontal-scroll {
-            display: inline-flex;
-            height: 100vh;
-            min-width: 100vw;
-        }
-
-        /* ======================
-           PANELS
-           ====================== */
-        .panel {
-            min-width: 100vw;
-            max-width: 100vw;
-            height: 100vh;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            padding: 6rem 3rem 3rem;
-            overflow-y: auto;
+            line-height: 1.6;
             overflow-x: hidden;
-            flex-shrink: 0;
         }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-        .panel::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .panel::-webkit-scrollbar-track {
-            background: var(--bg-surface);
-        }
-
-        .panel::-webkit-scrollbar-thumb {
-            background: rgba(212, 175, 55, 0.3);
-            border-radius: 4px;
-        }
-
-        .panel::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 175, 55, 0.5);
-        }
-
-        .panel::before {
-            content: '';
-            position: absolute;
+        /* Background */
+        .bg-grid {
+            position: fixed;
             inset: 0;
-            opacity: 0;
-            transition: opacity 0.8s ease;
+            background-image: linear-gradient(rgba(255,215,0,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,215,0,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,215,0,0.08), transparent 70%);
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: -1;
         }
 
-        .panel.active::before {
-            opacity: 1;
-        }
-
-        /* ======================
-           NAVIGATION
-           ====================== */
-        .nav-fixed {
+        /* Nav */
+        nav {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            padding: 1.5rem 2rem;
+            background: rgba(5,5,7,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 0 1.5rem;
+        }
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
-            pointer-events: none;
+            height: 64px;
         }
-
-        .nav-fixed > * {
-            pointer-events: auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-        }
-
-        .logo-text {
+        .nav-logo {
             font-weight: 800;
             font-size: 1.1rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            background: var(--gradient-gold);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            text-decoration: none;
         }
-
         .nav-links {
             display: flex;
-            gap: 0.5rem;
-            position: relative;
-            z-index: 1001;
+            gap: 2rem;
+            list-style: none;
         }
-
-        .nav-link {
-            padding: 0.5rem 1rem;
+        .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--gold); }
+        .nav-cta {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
             border-radius: 6px;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
             cursor: pointer;
-            position: relative;
-            z-index: 1001;
-            user-select: none;
-            display: block;
-            letter-spacing: -0.01em;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-dark));
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--text-primary);
-            background: rgba(212, 175, 55, 0.05);
-        }
-
-        .nav-link:hover::after, .nav-link.active::after {
-            width: 80%;
-        }
-
-        /* ======================
-           SCROLL INDICATORS
-           ====================== */
-        .scroll-indicator {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .scroll-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--text-muted);
-            transition: all 0.4s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .scroll-dot.active {
-            background: var(--gold);
-            box-shadow: 0 0 20px var(--gold-glow);
-            transform: scale(1.3);
-        }
-
-        .scroll-dot:hover {
-            background: var(--text-secondary);
-            transform: scale(1.1);
-        }
-
-        .scroll-arrow {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            opacity: 0.4;
-            transition: all 0.3s ease;
-            z-index: 1000;
-            background: rgba(212, 175, 55, 0.05);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 50%;
-        }
-
-        .scroll-arrow:hover {
-            opacity: 1;
-            background: rgba(212, 175, 55, 0.1);
-            border-color: rgba(212, 175, 55, 0.4);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
-        }
-
-        .scroll-arrow svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--gold);
-            stroke-width: 2;
-            fill: none;
-            transition: transform 0.3s ease;
-        }
-
-        .scroll-arrow:hover svg {
-            transform: scale(1.2);
-        }
-
-        .scroll-arrow.left { left: 1rem; }
-        .scroll-arrow.right { right: 1rem; }
-        .scroll-arrow.hidden { opacity: 0; pointer-events: none; }
-
-        /* ======================
-           COMMON PANEL STYLES
-           ====================== */
-        .panel-label {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid var(--border-gold);
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--gold);
-            margin-bottom: 1.5rem;
+            gap: 0.4rem;
         }
-
-        .panel-title {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            margin-bottom: 1rem;
+        .btn-outline {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary);
         }
-
-        .panel-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            max-width: 500px;
-            margin-bottom: 2rem;
+        .btn-outline:hover {
+            border-color: var(--border-gold);
+            background: rgba(255,215,0,0.05);
         }
-
-        /* ======================
-           PANEL: FEATURES
-           ====================== */
-        .panel-features-deep {
-            background: radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
+        .btn-primary {
+            background: var(--gradient-gold);
+            color: #000;
         }
-
-        .panel-features-deep .panel-content {
-            max-width: 1200px;
-            width: 100%;
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(255,215,0,0.3);
         }
+        .mobile-menu { display: none; background: none; border: none; color: var(--text-primary); cursor: pointer; }
 
-        .features-masonry {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1px;
-            background: var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-top: 2rem;
-            width: 100%;
-        }
-
-        .feature-tile {
-            background: var(--bg-surface);
-            padding: 1.25rem 1.5rem;
-            transition: all 0.4s ease;
-            position: relative;
-            min-height: auto;
-        }
-
-        .feature-tile::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .feature-tile:hover {
-            background: var(--bg-elevated);
-        }
-
-        .feature-tile:hover::after {
-            opacity: 1;
-        }
-
-        .feature-tile h4 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-            line-height: 1.2;
-        }
-
-        .feature-tile h4 svg {
-            width: 14px;
-            height: 14px;
-            min-width: 14px;
-            stroke: var(--gold);
-            stroke-width: 1.5;
-            fill: none;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .feature-tile p {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            line-height: 1.4;
-            margin: 0;
-        }
-
-        /* ======================
-           PANEL: ANALYSIS
-           ====================== */
-        .panel-analysis {
-            background: radial-gradient(ellipse at 30% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
-        }
-
-        .analysis-showcase {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 3rem;
-            max-width: 1100px;
-            width: 100%;
-            align-items: center;
-        }
-
-        .analysis-info h2 {
-            font-size: clamp(1.75rem, 4vw, 2.5rem);
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            margin-bottom: 1rem;
-        }
-
-        .analysis-info p {
-            color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: 1.5rem;
-        }
-
-        .analysis-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        .stat-box {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .stat-box .value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--gold);
-        }
-
-        .stat-box .label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .code-window {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-        }
-
-        .code-header {
-            padding: 0.75rem 1rem;
-            background: var(--bg-elevated);
-            border-bottom: 1px solid var(--border);
+        /* Hero */
+        .hero {
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .code-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .code-dot.red { background: #ff5f56; }
-        .code-dot.yellow { background: #ffbd2e; }
-        .code-dot.green { background: #27c93f; }
-
-        .code-body {
-            padding: 1rem;
-            line-height: 1.6;
-        }
-
-        .code-line {
-            display: flex;
-        }
-
-        .code-line .num {
-            color: var(--text-muted);
-            min-width: 2rem;
-            user-select: none;
-        }
-
-        .code-line .keyword { color: #c792ea; }
-        .code-line .function { color: #82aaff; }
-        .code-line .string { color: #c3e88d; }
-        .code-line .comment { color: #546e7a; }
-        .code-line .gold { color: var(--gold); }
-
-        /* ======================
-           PANEL: HOME
-           ====================== */
-        .panel-home {
-            background:
-                radial-gradient(ellipse at 50% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 70%, rgba(212, 175, 55, 0.04) 0%, transparent 40%);
-        }
-
-        .home-content {
+            padding: 7rem 1.5rem 4rem;
             text-align: center;
-            max-width: 800px;
         }
-
+        .hero-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
         .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(212, 175, 55, 0.1);
+            padding: 0.4rem 1rem;
+            background: rgba(255,215,0,0.08);
             border: 1px solid var(--border-gold);
-            border-radius: 100px;
+            border-radius: 50px;
             font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
             color: var(--gold);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
-
-        .hero-badge::before {
-            content: '';
+        .badge-dot {
             width: 6px;
             height: 6px;
             background: var(--gold);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
-
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
-
-        .hero-title {
-            font-size: clamp(3rem, 8vw, 5rem);
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            line-height: 0.95;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-title .gold {
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(135deg, #fff 0%, #FFD700 50%, #fff 100%);
+            background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            animation: shimmer 6s linear infinite;
         }
-
-        .hero-subtitle {
-            font-size: 1.25rem;
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        .hero-sub {
+            font-size: 1.1rem;
             color: var(--text-secondary);
-            max-width: 550px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.6;
+            max-width: 650px;
+            margin: 0 auto 2rem;
         }
-
-        .hero-actions {
+        .hero-buttons {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             justify-content: center;
             flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-            animation: fadeInUp 0.8s ease 0.3s both;
+            margin-bottom: 2.5rem;
         }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero-notion-btn {
-            display: inline-flex;
-            justify-content: center;
-            animation: fadeInUp 0.8s ease 0.5s both;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
+        .hero-buttons .btn { padding: 0.7rem 1.5rem; }
+        .badges {
+            display: flex;
             gap: 0.5rem;
-            padding: 0.875rem 1.75rem;
-            font-size: 0.9375rem;
-            font-weight: 500;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            position: relative;
-            z-index: 10;
-            pointer-events: auto;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            color: #000;
-            position: relative;
-            overflow: hidden;
-            font-weight: 600;
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
-        }
-
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-secondary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(212,175,55,0.2) 0%, transparent 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border-gold);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
-        }
-
-        .btn-secondary:hover::before {
-            opacity: 1;
-        }
-
-        .btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-
-        .direction-hints {
-            display: flex;
             justify-content: center;
-            gap: 4rem;
-            margin-top: 4rem;
+            flex-wrap: wrap;
         }
+        .badges img { height: 22px; border-radius: 4px; }
 
-        .hint {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .hint:hover {
-            color: var(--text-secondary);
-        }
-
-        .hint svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 1.5;
-            fill: none;
-        }
-
-        .hint.left svg {
-            animation: bounceLeft 2s infinite;
-        }
-
-        .hint.right svg {
-            animation: bounceRight 2s infinite;
-        }
-
-        @keyframes bounceLeft {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(-5px); }
-        }
-
-        @keyframes bounceRight {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(5px); }
-        }
-
-        /* ======================
-           PANEL: SYSTEM
-           ====================== */
-        .panel-system {
-            background: radial-gradient(ellipse at 70% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
-        }
-
-        .system-showcase {
+        /* Stats */
+        .stats {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 3rem;
-            max-width: 1100px;
-            width: 100%;
-            align-items: center;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            max-width: 800px;
+            margin: 3rem auto 0;
         }
-
-        .arch-diagram {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-        }
-
-        .arch-node {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+        .stat {
             text-align: center;
-            transition: all 0.3s ease;
+            padding: 1.25rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
         }
-
-        .arch-node:hover {
-            border-color: var(--border-gold);
-            background: var(--bg-elevated);
-        }
-
-        .arch-node.highlight {
-            border-color: var(--gold);
-            background: rgba(212, 175, 55, 0.05);
-        }
-
-        .arch-node svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--gold);
-            stroke-width: 1.5;
-            fill: none;
-            margin-bottom: 0.5rem;
-        }
-
-        .arch-node h5 {
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .arch-node p {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-        }
-
-        .arch-node.full {
-            grid-column: span 3;
-        }
-
-        .system-info h2 {
-            font-size: clamp(1.75rem, 4vw, 2.5rem);
+        .stat-value {
+            font-size: 1.75rem;
             font-weight: 700;
-            letter-spacing: -0.03em;
-            margin-bottom: 1rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .system-info p {
+        .stat-label {
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: 1.5rem;
         }
 
-        .system-features {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+        /* Section */
+        section {
+            padding: 5rem 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            max-width: 650px;
+            margin: 0 auto 3rem;
+        }
+        .section-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255,215,0,0.08);
+            border-radius: 50px;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .section-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
         }
 
-        .sys-feature {
+        /* Infographic */
+        .infographic {
+            text-align: center;
+            padding: 3rem 1.5rem;
+        }
+        .infographic img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Features Grid */
+        .feature-groups { display: flex; flex-direction: column; gap: 3rem; }
+        .feature-group-title {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
         }
-
-        .sys-feature svg {
+        .feature-group-title svg {
             width: 18px;
             height: 18px;
             stroke: var(--gold);
-            stroke-width: 2;
-            fill: none;
-            flex-shrink: 0;
         }
-
-        /* ======================
-           PANEL: DOCS
-           ====================== */
-        .panel-docs {
-            background: radial-gradient(ellipse at 80% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
-        }
-
-        .docs-content {
-            max-width: 1000px;
-            width: 100%;
-        }
-
-        .docs-grid {
+        .features-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .doc-card {
-            background: var(--bg-surface);
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1px;
+            background: var(--border);
             border: 1px solid var(--border);
             border-radius: 12px;
+            overflow: hidden;
+        }
+        .feature-card {
+            background: var(--bg-card);
             padding: 1.5rem;
-            text-decoration: none;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
+            transition: background 0.2s;
+        }
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+        }
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,215,0,0.08);
+            border: 1px solid var(--border-gold);
+            border-radius: 8px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
         }
-
-        .doc-card:hover {
-            border-color: var(--border-gold);
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-
-        .doc-card svg {
-            width: 32px;
-            height: 32px;
-            stroke: var(--gold);
-            stroke-width: 1.5;
-            fill: none;
-            margin-bottom: 1rem;
-        }
-
-        .doc-card h4 {
-            font-size: 1rem;
+        .feature-card h3 {
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
         }
-
-        .doc-card p {
+        .feature-card p {
             font-size: 0.8rem;
             color: var(--text-secondary);
             line-height: 1.5;
-            flex: 1;
         }
 
-        .doc-card .doc-link {
-            margin-top: 1rem;
-            font-size: 0.75rem;
-            color: var(--gold);
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
+        /* Charts Gallery */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
         }
-
-        .doc-card .doc-link svg {
-            width: 14px;
-            height: 14px;
-            margin: 0;
-        }
-
-        .quickstart-terminal {
-            margin-top: 2rem;
-            background: var(--bg-surface);
+        .chart-card {
+            background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
+            transition: all 0.2s;
+        }
+        .chart-card:hover {
+            border-color: var(--border-gold);
+            transform: translateY(-4px);
+        }
+        .chart-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+        }
+        .chart-info {
+            padding: 1rem;
+        }
+        .chart-info h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+        .chart-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
-        .terminal-header {
+        /* Architecture */
+        .arch-container {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            overflow-x: auto;
+        }
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            min-width: 700px;
+            margin-bottom: 1rem;
+        }
+        .arch-box {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .arch-box:hover {
+            border-color: var(--border-gold);
+        }
+        .arch-box h4 {
+            color: var(--gold);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .arch-box ul {
+            list-style: none;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .arch-box li { padding: 0.15rem 0; }
+
+        /* Code Block */
+        .code-block {
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        .code-header {
+            background: rgba(255,255,255,0.02);
             padding: 0.75rem 1rem;
-            background: var(--bg-elevated);
             border-bottom: 1px solid var(--border);
-            font-size: 0.75rem;
-            color: var(--text-muted);
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-
-        .terminal-body {
-            padding: 1rem;
+        .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .code-dot.red { background: #ff5f57; }
+        .code-dot.yellow { background: #febc2e; }
+        .code-dot.green { background: #28c840; }
+        .code-title {
+            margin-left: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        pre {
+            padding: 1.25rem;
+            overflow-x: auto;
             font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .code-comment { color: #6b7280; }
+        .code-keyword { color: #c084fc; }
+        .code-string { color: #34d399; }
+        .code-cmd { color: #60a5fa; }
+
+        /* Sample Outputs */
+        .samples-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        /* Quick Start Steps */
+        .steps { display: grid; gap: 1rem; }
+        .step {
+            display: flex;
+            gap: 1.25rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+        .step:hover {
+            border-color: var(--border-gold);
+        }
+        .step-num {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-gold);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+        }
+        .step-content h4 {
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        .step-content p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            background: rgba(255,215,0,0.05);
+            color: var(--gold);
+            text-align: left;
+            padding: 0.875rem 1rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 0.875rem 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        td code {
+            background: rgba(255,215,0,0.1);
+            color: var(--gold);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
             font-size: 0.8rem;
         }
 
-        .terminal-line {
+        /* Footer */
+        footer {
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 3rem 1.5rem 1.5rem;
+            margin-top: 4rem;
+        }
+        .footer-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 2rem;
+        }
+        .footer-brand h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .footer-brand p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .footer-links h4 {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 0.5rem; }
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--gold); }
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 2rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
-        }
-
-        .terminal-line:last-child {
-            margin-bottom: 0;
-        }
-
-        .terminal-prompt {
-            color: var(--gold);
-            margin-right: 0.5rem;
-            user-select: none;
-        }
-
-        .terminal-cmd {
-            color: var(--text-primary);
-        }
-
-        .terminal-comment {
+            justify-content: space-between;
             color: var(--text-muted);
-            margin-left: 0.5rem;
+            font-size: 0.8rem;
         }
 
-        /* ======================
-           FLOATING ELEMENTS
-           ====================== */
-        .floating-grid {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.03;
-            background-image:
-                linear-gradient(var(--text-muted) 1px, transparent 1px),
-                linear-gradient(90deg, var(--text-muted) 1px, transparent 1px);
-            background-size: 100px 100px;
-        }
-
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.15;
-            pointer-events: none;
-            transition: all 1s ease;
-        }
-
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--gold);
-            top: -100px;
-            left: -100px;
-        }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: var(--gold-dark);
-            bottom: -100px;
-            right: -100px;
-        }
-
-        /* ======================
-           RESPONSIVE
-           ====================== */
+        /* Mobile */
         @media (max-width: 1024px) {
-            .features-masonry {
-                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            }
-
-            .analysis-showcase,
-            .system-showcase {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-
-            .docs-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .arch-diagram {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .arch-node.full {
-                grid-column: span 2;
-            }
+            .arch-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
         }
-
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .panel {
-                padding: 3rem 1.5rem 1.5rem;
-            }
-
-            .hero-title {
-                font-size: clamp(2rem, 10vw, 3rem);
-            }
-
-            .direction-hints {
-                gap: 2rem;
-                margin-top: 3rem;
-            }
-
-            .features-masonry {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            }
-
-            .docs-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .analysis-stats {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .scroll-arrow {
-                display: none;
-            }
+            .nav-links, .nav-cta { display: none; }
+            .mobile-menu { display: block; }
+            .hero h1 { font-size: 2.25rem; }
+            .section-title { font-size: 1.75rem; }
+            .arch-grid { grid-template-columns: 1fr; min-width: auto; }
+            .footer-grid { grid-template-columns: 1fr; text-align: center; }
+            .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
         }
-
         @media (max-width: 480px) {
-            .panel-title {
-                font-size: 1.75rem;
-            }
-
-            .analysis-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .arch-diagram {
-                grid-template-columns: 1fr;
-            }
-
-            .arch-node.full {
-                grid-column: span 1;
-            }
+            .hero h1 { font-size: 1.875rem; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .features-grid { grid-template-columns: 1fr; }
         }
 
-        @media (hover: none) and (pointer: coarse) {
-            /* Touch device optimizations */
-            .panel {
-                padding: 5rem 2rem 2rem;
-            }
-
-            .scroll-arrow {
-                display: none;
-            }
+        /* Mobile Menu */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: rgba(5,5,7,0.98);
+            backdrop-filter: blur(20px);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            z-index: 999;
         }
+        .mobile-nav.active { display: block; }
+        .mobile-nav a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+        }
+        .mobile-nav a:hover { background: rgba(255,215,0,0.05); color: var(--gold); }
     </style>
 </head>
 <body>
-    <!-- Background elements -->
-    <div class="floating-grid"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
 
-    <!-- Fixed Navigation -->
-    <nav class="nav-fixed">
-        <a href="#" class="logo" onclick="return false;">
-            <span class="logo-text">GOLD STANDARD</span>
-        </a>
-        <div class="nav-links">
-            <span class="nav-link" data-panel="0">Features</span>
-            <span class="nav-link" data-panel="1">Analysis</span>
-            <span class="nav-link active" data-panel="2">Home</span>
-            <span class="nav-link" data-panel="3">System</span>
-            <span class="nav-link" data-panel="4">Docs</span>
-        </div>
-    </nav>
-
-    <!-- Scroll Arrows -->
-    <div class="scroll-arrow left" id="scrollLeft">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
-    <div class="scroll-arrow right" id="scrollRight">
-        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-
-    <!-- Scroll Indicator -->
-    <div class="scroll-indicator">
-        <div class="scroll-dot" data-panel="0"></div>
-        <div class="scroll-dot" data-panel="1"></div>
-        <div class="scroll-dot active" data-panel="2"></div>
-        <div class="scroll-dot" data-panel="3"></div>
-        <div class="scroll-dot" data-panel="4"></div>
-    </div>
-
-    <!-- Horizontal Scroll Container -->
-    <div class="horizontal-scroll" id="horizontalScroll">
-
-        <!-- PANEL 0: Features Deep (Left 2) -->
-        <section class="panel panel-features-deep" data-panel="0">
-            <div class="panel-content">
-                <span class="panel-label">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    Complete Feature Set
-                </span>
-                <h2 class="panel-title">Everything Built In</h2>
-                <p class="panel-subtitle">From data collection to AI analysis to beautiful reports—all autonomous.</p>
-
-                <div class="features-masonry">
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Autonomous Daemon</h4>
-                        <p>Runs continuously with configurable 1-minute to multi-hour intervals. Fully autonomous operation.</p>
-                    </div>
-                    <div class="feature-tile" style="background: linear-gradient(135deg, rgba(212,175,55,0.1) 0%, var(--bg-surface) 50%);">
-                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>Intelligent Scheduling</h4>
-                        <p>Natural language date extraction: "Dec 18 FOMC" → schedules for 2025-12-18. Immediate by default, context-aware.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Task Execution</h4>
-                        <p>AI autonomously executes research, data fetching, calculations, and monitoring tasks each cycle.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Self-Healing Recovery</h4>
-                        <p>Exponential backoff for quota errors. Crash recovery. Atomic task claiming prevents duplicates.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Entity Insights</h4>
-                        <p>Auto-extracts key entities (Fed, ECB, CME, institutions) from reports with relevance scoring.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Action Insights</h4>
-                        <p>Identifies actionable tasks from analysis: research topics, data needs, price levels to monitor.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Multi-Asset Analysis</h4>
-                        <p>Track Gold, Silver, Dollar Index (DXY), US 10Y Yield, VIX, and S&P 500 with correlations.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Technical Indicators</h4>
-                        <p>RSI, ADX, ATR, SMA (50/200) with pandas_ta + numba acceleration for fast computation.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/><circle cx="12" cy="6" r="1" fill="currentColor"/></svg>AI-Powered Insights</h4>
-                        <p>Google Gemini integration generates natural-language analysis and strategic bias extraction.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Economic Calendar</h4>
-                        <p>Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Notion Integration</h4>
-                        <p>Automatic publishing to Notion database with type mapping and tag synchronization.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Rich Formatting</h4>
-                        <p>Enhanced Notion pages with callouts, colored sections, tables, and table of contents.</p>
-                    </div>
-                    <div class="feature-tile">
-                        <h4><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Smart Charts</h4>
-                        <p>Auto-detects tickers in reports and embeds relevant charts directly in Notion pages.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PANEL 1: Analysis (Left 1) -->
-        <section class="panel panel-analysis" data-panel="1">
-            <div class="analysis-showcase">
-                <div class="analysis-info">
-                    <span class="panel-label">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Analysis Engine
-                    </span>
-                    <h2>AI-Powered Market Intelligence</h2>
-                    <p>Every analysis cycle combines technical indicators, cross-asset correlations, and AI reasoning to produce actionable insights with clear bias signals.</p>
-
-                    <div class="analysis-stats">
-                        <div class="stat-box">
-                            <div class="value">6</div>
-                            <div class="label">Assets</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="value">12+</div>
-                            <div class="label">Indicators</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="value">AI</div>
-                            <div class="label">Reasoning</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="analysis-visual">
-                    <div class="code-window">
-                        <div class="code-header">
-                            <span class="code-dot red"></span>
-                            <span class="code-dot yellow"></span>
-                            <span class="code-dot green"></span>
-                        </div>
-                        <div class="code-body">
-                            <div class="code-line"><span class="num">1</span><span class="comment"># Generated by Gold Standard v3.1</span></div>
-                            <div class="code-line"><span class="num">2</span></div>
-                            <div class="code-line"><span class="num">3</span><span class="keyword">bias</span>: <span class="string">"bullish"</span></div>
-                            <div class="code-line"><span class="num">4</span><span class="keyword">confidence</span>: <span class="gold">0.78</span></div>
-                            <div class="code-line"><span class="num">5</span></div>
-                            <div class="code-line"><span class="num">6</span><span class="keyword">signals</span>:</div>
-                            <div class="code-line"><span class="num">7</span>  - RSI: <span class="gold">58.4</span> <span class="comment"># neutral-bullish</span></div>
-                            <div class="code-line"><span class="num">8</span>  - DXY: <span class="string">weakening</span></div>
-                            <div class="code-line"><span class="num">9</span>  - Yields: <span class="string">falling</span></div>
-                            <div class="code-line"><span class="num">10</span></div>
-                            <div class="code-line"><span class="num">11</span><span class="keyword">action</span>: <span class="string">"Watch $2,650 support"</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PANEL 2: Home (Center) -->
-        <section class="panel panel-home" data-panel="2">
-            <div class="home-content">
-                <div class="hero-badge">
-                    <span>v3.1 Released</span>
-                </div>
-
-                <h1 class="hero-title">
-                    <span class="gold">GOLD</span><br>STANDARD
-                </h1>
-
-                <p class="hero-subtitle">
-                    Autonomous market analysis system. Technical indicators, AI reasoning, and beautiful reports—all running on autopilot.
-                </p>
-
-                <div class="hero-actions">
-                    <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">
-                        <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-                        View on GitHub
-                    </a>
-                    <a href="index_docs.html" class="btn btn-secondary">
-                        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                        Read the Guide
-                    </a>
-                </div>
-
-                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" class="btn btn-secondary hero-notion-btn" target="_blank">
-                    <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6.017 4.313l55.333 -4.087c6.797 -0.583 8.543 -0.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277 -1.553 6.807 -6.99 7.193L24.467 99.967c-4.08 0.193 -6.023 -0.39 -8.16 -3.113L3.3 79.94c-2.333 -3.113 -3.3 -5.443 -3.3 -8.167V11.113c0 -3.497 1.553 -6.413 6.017 -6.8z" fill="currentColor"/>
-                        <path d="M61.35 0.227l-55.333 4.087C1.553 4.7 0 7.617 0 11.113v60.66c0 2.723 0.967 5.053 3.3 8.167l13.007 16.913c2.137 2.723 4.08 3.307 8.16 3.113l64.257 -3.89c5.433 -0.387 6.99 -2.917 6.99 -7.193V20.64c0 -2.21 -0.873 -2.847 -3.443 -4.733L74.167 3.143c-4.273 -3.107 -6.02 -3.5 -12.817 -2.917zM25.92 19.523c-5.247 0.353 -6.437 0.433 -9.417 -1.99L8.927 11.507c-0.77 -0.78 -0.383 -1.753 1.557 -1.947l53.193 -3.887c4.467 -0.39 6.793 1.167 8.54 2.527l9.123 6.61c0.39 0.197 1.36 1.36 0.193 1.36l-54.933 3.307 -0.68 0.047zM19.803 88.3V30.367c0 -2.53 0.777 -3.697 3.103 -3.893L86 22.78c2.14 -0.193 3.107 1.167 3.107 3.693v57.547c0 2.53 -0.39 4.67 -3.883 4.863l-60.377 3.5c-3.493 0.193 -5.043 -0.97 -5.043 -4.083zm59.6 -54.827c0.387 1.75 0 3.5 -1.75 3.7l-2.91 0.577v42.773c-2.527 1.36 -4.853 2.137 -6.797 2.137 -3.107 0 -3.883 -0.973 -6.21 -3.887l-19.03 -29.94v28.967l6.02 1.363s0 3.5 -4.857 3.5l-13.39 0.777c-0.39 -0.78 0 -2.723 1.357 -3.11l3.497 -0.97v-38.3L30.48 40.667c-0.39 -1.75 0.58 -4.277 3.3 -4.473l14.367 -0.967 19.8 30.327v-26.83l-5.047 -0.58c-0.39 -2.143 1.163 -3.7 3.103 -3.89l13.4 -0.78z" fill="#000"/>
-                    </svg>
+    <!-- Nav -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="nav-logo">GOLD STANDARD</a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#charts">Charts</a></li>
+                <li><a href="#samples">Samples</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#quickstart">Quick Start</a></li>
+                <li><a href="index_docs.html">Docs</a></li>
+            </ul>
+            <div class="nav-cta">
+                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank" class="btn btn-outline">
+                    <svg width="14" height="14" viewBox="0 0 100 100" fill="currentColor"><path d="M6.017 4.313l55.333-4.087c6.797-.583 8.543-.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277-1.553 6.807-6.99 7.193L24.467 99.967c-4.08.193-6.023-.39-8.16-3.113L3.3 79.94c-2.333-3.113-3.3-5.443-3.3-8.167V11.113c0-3.497 1.553-6.413 6.017-6.8z"/></svg>
                     Live Reports
                 </a>
-
-                <div class="direction-hints">
-                    <div class="hint left" data-direction="left">
-                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-                        <span>Features & Analysis</span>
-                    </div>
-                    <div class="hint right" data-direction="right">
-                        <span>System & Docs</span>
-                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-                    </div>
-                </div>
+                <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-outline">GitHub</a>
+                <a href="index_docs.html" class="btn btn-outline">Docs</a>
+                <a href="#quickstart" class="btn btn-primary">Get Started</a>
             </div>
-        </section>
-
-        <!-- PANEL 3: System (Right 1) -->
-        <section class="panel panel-system" data-panel="3">
-            <div class="system-showcase">
-                <div class="architecture-visual">
-                    <div class="arch-diagram">
-                        <div class="arch-node highlight">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
-                            <h5>Daemon</h5>
-                            <p>Core Loop</p>
-                        </div>
-                        <div class="arch-node">
-                            <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22"/></svg>
-                            <h5>Gemini</h5>
-                            <p>AI Engine</p>
-                        </div>
-                        <div class="arch-node">
-                            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                            <h5>Files</h5>
-                            <p>Auto-Org</p>
-                        </div>
-                        <div class="arch-node">
-                            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                            <h5>pandas_ta</h5>
-                            <p>Indicators</p>
-                        </div>
-                        <div class="arch-node">
-                            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                            <h5>Notion</h5>
-                            <p>Publisher</p>
-                        </div>
-                        <div class="arch-node">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <h5>imgbb</h5>
-                            <p>Charts</p>
-                        </div>
-                        <div class="arch-node full">
-                            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                            <h5>Modern GUI v3</h5>
-                            <p>Dual-pane dashboard with charts and AI workspace</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="system-info">
-                    <span class="panel-label">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
-                        System Architecture
-                    </span>
-                    <h2>Built for Reliability</h2>
-                    <p>Modular components that work together seamlessly. Each piece handles one responsibility well.</p>
-
-                    <div class="system-features">
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Modern GUI v3: Dual-pane dashboard with charts and AI workspace</span>
-                        </div>
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Intelligent file organization & 7-day archiving</span>
-                        </div>
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Auto virtual environment detection and activation</span>
-                        </div>
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Persistent memory via Cortex prediction tracking</span>
-                        </div>
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>YAML frontmatter metadata on all reports</span>
-                        </div>
-                        <div class="sys-feature">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Usage tracking & API limit management</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PANEL 4: Docs (Right 2) -->
-        <section class="panel panel-docs" data-panel="4">
-            <div class="docs-content">
-                <span class="panel-label">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    Documentation
-                </span>
-                <h2 class="panel-title">Get Started</h2>
-                <p class="panel-subtitle">Everything you need to run Gold Standard.</p>
-
-                <div class="docs-grid">
-                    <a href="GUIDE.md" class="doc-card">
-                        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                        <h4>Read the Guide</h4>
-                        <p>Complete walkthrough from installation to daily operation.</p>
-                        <span class="doc-link">Read guide <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
-                    </a>
-                    <a href="../README.md" class="doc-card">
-                        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                        <h4>Documentation</h4>
-                        <p>Complete technical reference, CLI commands, and configuration.</p>
-                        <span class="doc-link">Read docs <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
-                    </a>
-                    <a href="CONTRIBUTING.md" class="doc-card">
-                        <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77"/></svg>
-                        <h4>Contribute</h4>
-                        <p>How to contribute code, report bugs, and suggest features.</p>
-                        <span class="doc-link">Contribute <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
-                    </a>
-                </div>
-
-                <div class="quickstart-terminal">
-                    <div class="terminal-header">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-                        Quick Start
-                    </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line">
-                            <span class="terminal-prompt">$</span>
-                            <span class="terminal-cmd">git clone https://github.com/amuzetnoM/gold_standard</span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="terminal-prompt">$</span>
-                            <span class="terminal-cmd">cd gold_standard && ./scripts/setup.ps1</span>
-                            <span class="terminal-comment"># or setup.sh</span>
-                        </div>
-                        <div class="terminal-line">
-                            <span class="terminal-prompt">$</span>
-                            <span class="terminal-cmd">python run.py --interval-min 5</span>
-                            <span class="terminal-comment"># launch daemon</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
+            <button class="mobile-menu" onclick="toggleNav()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="#features" onclick="toggleNav()">Features</a>
+        <a href="#charts" onclick="toggleNav()">Charts</a>
+        <a href="#samples" onclick="toggleNav()">Samples</a>
+        <a href="#architecture" onclick="toggleNav()">Architecture</a>
+        <a href="#quickstart" onclick="toggleNav()">Quick Start</a>
+        <a href="index_docs.html">Documentation</a>
+        <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank">Live Reports</a>
+        <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
     </div>
 
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                v3.3.0 — Multi-Provider LLM • Autonomous Intelligence
+            </div>
+            <h1>Precious Metals Intelligence Complex</h1>
+            <p class="hero-sub">
+                A fully autonomous market analysis system. Extracts insights, executes tasks,
+                and generates AI-powered gold analysis every minute—completely hands-free.
+                Choose Gemini, Ollama, or llama.cpp for flexible cloud and local operation.
+            </p>
+            <div class="hero-buttons">
+                <a href="#quickstart" class="btn btn-primary">Get Started →</a>
+                <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-outline">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub
+                </a>
+                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank" class="btn btn-outline">
+                    <svg width="14" height="14" viewBox="0 0 100 100" fill="currentColor"><path d="M6.017 4.313l55.333-4.087c6.797-.583 8.543-.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277-1.553 6.807-6.99 7.193L24.467 99.967c-4.08.193-6.023-.39-8.16-3.113L3.3 79.94c-2.333-3.113-3.3-5.443-3.3-8.167V11.113c0-3.497 1.553-6.413 6.017-6.8z"/></svg>
+                    Live Reports
+                </a>
+            </div>
+            <div class="badges">
+                <img src="https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=CI" alt="CI">
+                <img src="https://img.shields.io/badge/tests-33%20passing-success?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
+                <img src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+                <img src="https://img.shields.io/badge/LLM-Multi--Provider-FFD700?style=flat-square" alt="LLM">
+                <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
+            </div>
+            <div class="stats">
+                <div class="stat"><div class="stat-value">6</div><div class="stat-label">Assets Tracked</div></div>
+                <div class="stat"><div class="stat-value">3</div><div class="stat-label">LLM Providers</div></div>
+                <div class="stat"><div class="stat-value">1m</div><div class="stat-label">Analysis Cycle</div></div>
+                <div class="stat"><div class="stat-value">100%</div><div class="stat-label">Offline Capable</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Infographic -->
+    <section class="infographic">
+        <img src="images/gold_standard-infographic-2d.png" alt="Gold Standard System Infographic" onerror="this.style.display='none'">
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+        <div class="section-header">
+            <span class="section-label">Features</span>
+            <h2 class="section-title">Complete Market Intelligence Suite</h2>
+            <p class="section-desc">Everything you need for quantitative precious metals analysis with AI-powered insights.</p>
+        </div>
+        <div class="feature-groups">
+            <!-- Analysis -->
+            <div>
+                <div class="feature-group-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Analysis & Intelligence
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card"><div class="feature-icon">🤖</div><h3>Multi-Provider LLM</h3><p>Gemini → Ollama → llama.cpp fallback chain with automatic switching on failures.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🏠</div><h3>Local-First Mode</h3><p>Set PREFER_LOCAL_LLM=1 to prioritize offline inference with GPU acceleration.</p></div>
+                    <div class="feature-card"><div class="feature-icon">⚡</div><h3>Autonomous Daemon</h3><p>Runs continuously with configurable 1-minute to multi-hour analysis cycles.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🎯</div><h3>Task Execution</h3><p>AI autonomously executes research, data fetching, and monitoring tasks.</p></div>
+                    <div class="feature-card"><div class="feature-icon">📊</div><h3>Technical Indicators</h3><p>RSI, ADX, ATR, SMA (50/200) with pandas_ta and numba acceleration.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🔍</div><h3>Entity Insights</h3><p>Auto-extracts key entities (Fed, ECB, institutions) with relevance scoring.</p></div>
+                    <div class="feature-card"><div class="feature-icon">📅</div><h3>Economic Calendar</h3><p>Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact.</p></div>
+                    <div class="feature-card"><div class="feature-icon">📈</div><h3>Multi-Asset Analysis</h3><p>Track Gold, Silver, DXY, 10Y Yield, VIX, and S&P 500 with correlations.</p></div>
+                </div>
+            </div>
+            <!-- Publishing -->
+            <div>
+                <div class="feature-group-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Publishing & Integration
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card"><div class="feature-icon">📝</div><h3>Notion Integration</h3><p>Automatic publishing with rich formatting, callouts, tables, and TOC.</p></div>
+                    <div class="feature-card"><div class="feature-icon">📸</div><h3>Smart Chart Embeds</h3><p>Auto-detects tickers and embeds relevant charts directly in Notion pages.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🏷️</div><h3>YAML Frontmatter</h3><p>Auto-generates metadata headers with type, tags, date, and bias.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🔄</div><h3>Document Lifecycle</h3><p>Draft/in_progress/published status controls with deduplication.</p></div>
+                </div>
+            </div>
+            <!-- System -->
+            <div>
+                <div class="feature-group-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    System & Tools
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card"><div class="feature-icon">🧠</div><h3>Cortex Memory</h3><p>Persistent memory tracks predictions, grades performance, maintains streaks.</p></div>
+                    <div class="feature-card"><div class="feature-icon">📁</div><h3>File Organization</h3><p>Auto-categorizes, dates, and archives reports with searchable index.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🖥️</div><h3>GUI Dashboard</h3><p>Modern dual-pane interface with charts grid and AI workspace.</p></div>
+                    <div class="feature-card"><div class="feature-icon">🐳</div><h3>Docker Ready</h3><p>Full containerization with Prometheus metrics and Grafana dashboards.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Charts Gallery -->
+    <section id="charts">
+        <div class="section-header">
+            <span class="section-label">Output</span>
+            <h2 class="section-title">Professional Chart Generation</h2>
+            <p class="section-desc">Automated candlestick charts with SMA overlays for all tracked assets.</p>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <img src="images/GOLD.png" alt="Gold Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/FFD700?text=GOLD'">
+                <div class="chart-info"><h4>Gold (GC=F)</h4><span>Primary Asset • SMA 50/200</span></div>
+            </div>
+            <div class="chart-card">
+                <img src="images/SILVER.png" alt="Silver Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/C0C0C0?text=SILVER'">
+                <div class="chart-info"><h4>Silver (SI=F)</h4><span>Precious Metal • GSR Ratio</span></div>
+            </div>
+            <div class="chart-card">
+                <img src="images/DXY.png" alt="DXY Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/3b82f6?text=DXY'">
+                <div class="chart-info"><h4>Dollar Index (DXY)</h4><span>Inverse Correlation</span></div>
+            </div>
+            <div class="chart-card">
+                <img src="images/YIELD.png" alt="Yield Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/10b981?text=YIELD'">
+                <div class="chart-info"><h4>US 10Y Yield (^TNX)</h4><span>Rate Sensitivity</span></div>
+            </div>
+            <div class="chart-card">
+                <img src="images/VIX.png" alt="VIX Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/ef4444?text=VIX'">
+                <div class="chart-info"><h4>VIX (^VIX)</h4><span>Volatility Index</span></div>
+            </div>
+            <div class="chart-card">
+                <img src="images/SPX.png" alt="SPX Chart" onerror="this.src='https://via.placeholder.com/400x180/0a0a0d/f59e0b?text=SPX'">
+                <div class="chart-info"><h4>S&P 500 (^GSPC)</h4><span>Risk Sentiment</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sample Outputs -->
+    <section id="samples">
+        <div class="section-header">
+            <span class="section-label">Sample Outputs</span>
+            <h2 class="section-title">AI-Generated Reports</h2>
+            <p class="section-desc">See what Gold Standard produces—comprehensive analysis with actionable insights.</p>
+        </div>
+        <div class="samples-grid">
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                    <span class="code-title">Daily Journal — Market Analysis</span>
+                </div>
+                <pre><code><span class="code-comment">## 1. Market Context</span>
+The macro environment exhibits classic "risk-on" characteristics with a dovish tilt.
+DXY weakness (below 200SMA) and suppressed yields suggest markets pricing in less
+restrictive Federal Reserve policy...
+
+<span class="code-comment">## 2. Asset-Specific Analysis</span>
+<span class="code-keyword">Gold</span> gained <span class="code-string">+3.98%</span> to reach <span class="code-string">$4254.9</span>, firmly above 200-day SMA.
+<span class="code-keyword">Momentum:</span> RSI at <span class="code-string">72.36</span>, entering overbought territory
+<span class="code-keyword">Bias:</span> <span class="code-string">NEUTRAL</span> — Short-term consolidation expected
+
+<span class="code-comment">## Scenario Probability Matrix</span>
+| Scenario   | Price Target  | Probability | Key Drivers              |
+|------------|---------------|-------------|--------------------------|
+| Bull Case  | $4450+        | 30%         | DXY collapse continues   |
+| Base Case  | $4180-$4280   | 55%         | Price consolidates       |
+| Bear Case  | &lt;$4120       | 15%         | Sharp profit-taking      |</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                    <span class="code-title">Institutional Activity Matrix</span>
+                </div>
+                <pre><code><span class="code-comment">## Central Bank Activity</span>
+
+| Central Bank        | Recent Action | YTD Purchases | Gold Impact                |
+|---------------------|---------------|---------------|----------------------------|
+| 🇨🇳 PBOC (China)     | +10t          | +180t         | <span class="code-string">Bullish - Largest buyer</span>    |
+| 🇷🇺 Bank of Russia   | +5t           | +60t          | <span class="code-string">Bullish - Strategic reserves</span>|
+| 🇹🇷 TCMB (Turkey)    | +8t           | +120t         | <span class="code-string">Bullish - De-dollarization</span> |
+| 🇮🇳 RBI (India)      | +3t           | +45t          | <span class="code-string">Bullish - Diversification</span>  |
+
+<span class="code-comment">## ETF Flow Tracking</span>
+
+| ETF  | Weekly Flow | Monthly Flow | Signal                                  |
+|------|-------------|--------------|------------------------------------------|
+| GLD  | +$250M      | +$1.2B       | <span class="code-string">Bullish - Institutional accumulation</span>    |
+| IAU  | +$80M       | +$350M       | <span class="code-string">Bullish - Retail inflows</span>               |</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                    <span class="code-title">Entity & Action Extraction</span>
+                </div>
+                <pre><code><span class="code-comment"># Entities extracted from analysis</span>
+
+<span class="code-keyword">Institutions:</span>
+  • Federal Reserve (relevance: 0.55)
+  • PBOC (relevance: 0.70)
+  • GLD ETF (relevance: 0.70)
+
+<span class="code-comment"># Action queue — pending tasks</span>
+
+<span class="code-keyword">[HIGH]</span> research: Impact of PBOC gold purchases on Q1 outlook
+       <span class="code-string">Deadline: 2025-12-03T14:00:00</span>
+
+<span class="code-keyword">[HIGH]</span> monitoring: Gold support level at $2,580 (50-day SMA)
+
+<span class="code-keyword">[MEDIUM]</span> data_fetch: COT positioning data</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section id="architecture">
+        <div class="section-header">
+            <span class="section-label">Architecture</span>
+            <h2 class="section-title">Modular System Design</h2>
+            <p class="section-desc">Clean separation of concerns for maintainability and extensibility.</p>
+        </div>
+        <div class="arch-container">
+            <div class="arch-grid">
+                <div class="arch-box"><h4>Cortex</h4><ul><li>Memory JSON</li><li>Win/Loss Tracking</li><li>Predictions</li></ul></div>
+                <div class="arch-box"><h4>QuantEngine</h4><ul><li>yfinance Data</li><li>RSI, SMA, ATR</li><li>mplfinance Charts</li></ul></div>
+                <div class="arch-box"><h4>Strategist</h4><ul><li>Prompt Builder</li><li>Multi-Provider LLM</li><li>Bias Extraction</li></ul></div>
+            </div>
+            <div class="arch-grid">
+                <div class="arch-box"><h4>InsightsEngine</h4><ul><li>Entity Extraction</li><li>Action Insights</li><li>Priority Queue</li></ul></div>
+                <div class="arch-box"><h4>TaskExecutor</h4><ul><li>Research Tasks</li><li>Data Fetching</li><li>Monitoring</li></ul></div>
+                <div class="arch-box"><h4>FileOrganizer</h4><ul><li>Categorization</li><li>Auto-Dating</li><li>Archival</li></ul></div>
+            </div>
+            <div class="arch-grid">
+                <div class="arch-box"><h4>DBManager</h4><ul><li>SQLite Storage</li><li>Insights Tables</li><li>Task Logging</li></ul></div>
+                <div class="arch-box"><h4>LiveAnalyzer</h4><ul><li>Catalyst Watch</li><li>Inst. Matrix</li><li>1Y/3M Analysis</li></ul></div>
+                <div class="arch-box"><h4>NotionPublisher</h4><ul><li>Rich Formatting</li><li>Chart Embeds</li><li>Deduplication</li></ul></div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <img src="images/gold_standard-infographic-3d.png" alt="Gold Standard 3D Architecture" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border);" onerror="this.style.display='none'">
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section id="quickstart">
+        <div class="section-header">
+            <span class="section-label">Quick Start</span>
+            <h2 class="section-title">Up and Running in Minutes</h2>
+            <p class="section-desc">Get started with automated setup scripts for Windows, macOS, and Linux.</p>
+        </div>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Clone the Repository</h4><p>Clone Gold Standard from GitHub to your local machine.</p></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><h4>Run Setup Script</h4><p>Execute the automated setup script for your platform. Handles Python, venv, and all dependencies.</p></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><h4>Configure LLM Provider</h4><p>Add Gemini API key, or configure Ollama/llama.cpp for local operation. Set PREFER_LOCAL_LLM=1 for offline mode.</p></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><h4>Launch</h4><p>Run the CLI daemon or GUI and start receiving AI-powered gold analysis.</p></div></div>
+        </div>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                <span class="code-title">Terminal</span>
+            </div>
+            <pre><code><span class="code-comment"># Clone repository</span>
+<span class="code-cmd">git clone</span> https://github.com/amuzetnoM/gold_standard.git
+<span class="code-cmd">cd</span> gold_standard
+
+<span class="code-comment"># Windows PowerShell</span>
+.\scripts\setup.ps1
+
+<span class="code-comment"># Unix/macOS/Linux</span>
+chmod +x scripts/setup.sh && ./scripts/setup.sh
+
+<span class="code-comment"># Configure LLM (choose one)</span>
+<span class="code-keyword">GEMINI_API_KEY</span>=<span class="code-string">your-key</span>              <span class="code-comment"># Cloud provider</span>
+<span class="code-keyword">LLM_PROVIDER</span>=<span class="code-string">ollama</span>                   <span class="code-comment"># Local Ollama server</span>
+<span class="code-keyword">LLM_PROVIDER</span>=<span class="code-string">local</span>                    <span class="code-comment"># Direct llama.cpp</span>
+<span class="code-keyword">PREFER_LOCAL_LLM</span>=<span class="code-string">1</span>                    <span class="code-comment"># Local-first mode</span>
+
+<span class="code-comment"># Run</span>
+<span class="code-cmd">python</span> run.py                         <span class="code-comment"># Autonomous daemon</span>
+<span class="code-cmd">python</span> run.py --no-ai                 <span class="code-comment"># Test without AI</span>
+<span class="code-cmd">python</span> gui.py                         <span class="code-comment"># Launch GUI</span></code></pre>
+        </div>
+    </section>
+
+    <!-- Command Reference -->
+    <section>
+        <div class="section-header">
+            <span class="section-label">Reference</span>
+            <h2 class="section-title">Command Reference</h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Command</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>python run.py</code></td><td>Autonomous daemon - runs every 1 minute (default)</td></tr>
+                    <tr><td><code>python run.py --interval-min 5</code></td><td>Daemon with 5-minute interval</td></tr>
+                    <tr><td><code>python run.py --once</code></td><td>Single analysis run and exit</td></tr>
+                    <tr><td><code>python run.py --daily</code></td><td>Quick daily journal only</td></tr>
+                    <tr><td><code>python run.py --interactive</code></td><td>Interactive menu mode</td></tr>
+                    <tr><td><code>python run.py --no-ai</code></td><td>Run without LLM API</td></tr>
+                    <tr><td><code>python gui.py</code></td><td>Launch GUI dashboard</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>GOLD STANDARD</h3>
+                <p>Precious Metals Intelligence Complex — Quantitative Analysis System for gold and intermarket assets with multi-provider LLM support.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Documentation</h4>
+                <ul>
+                    <li><a href="index_docs.html">All Docs</a></li>
+                    <li><a href="GUIDE.md">User Guide</a></li>
+                    <li><a href="LLM_PROVIDERS.md">LLM Providers</a></li>
+                    <li><a href="ARCHITECTURE.md">Architecture</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Community</h4>
+                <ul>
+                    <li><a href="https://github.com/amuzetnoM/gold_standard">GitHub</a></li>
+                    <li><a href="https://github.com/amuzetnoM/gold_standard/issues">Issues</a></li>
+                    <li><a href="CONTRIBUTING.md">Contributing</a></li>
+                    <li><a href="LICENSE">License</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank">Live Reports</a></li>
+                    <li><a href="CHANGELOG.md">Changelog</a></li>
+                    <li><a href="android_blueprint/">Android Guide</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2025 Gold Standard v3.3.0. MIT License.</span>
+            <span>Autonomous Intelligence for Precious Metals</span>
+        </div>
+    </footer>
+
     <script>
-        // Horizontal scroll navigation
-        const container = document.getElementById('horizontalScroll');
-        const panels = document.querySelectorAll('.panel');
-        const dots = document.querySelectorAll('.scroll-dot');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const leftArrow = document.getElementById('scrollLeft');
-        const rightArrow = document.getElementById('scrollRight');
-        const totalPanels = panels.length;
-        const centerPanel = 2;
-
-        let currentPanel = centerPanel;
-        let isScrolling = false;
-
-        function init() {
-            // Force immediate scroll to center panel on body
-            const centerPanelElement = panels[centerPanel];
-            if (centerPanelElement) {
-                const targetScroll = centerPanelElement.offsetLeft;
-                // Try both methods
-                document.body.scrollLeft = targetScroll;
-                document.documentElement.scrollLeft = targetScroll;
-                window.scrollX = targetScroll;
-            }
-            currentPanel = centerPanel;
-            updateIndicators();
+        function toggleNav() {
+            document.getElementById('mobileNav').classList.toggle('active');
         }
-
-        function scrollToPanel(index, smooth = true) {
-            if (index < 0 || index >= totalPanels) return;
-
-            currentPanel = index;
-            const panel = panels[index];
-
-            document.body.scrollTo({
-                left: panel.offsetLeft,
-                behavior: smooth ? 'smooth' : 'auto'
-            });
-
-            updateIndicators();
-        }
-
-        function updateIndicators() {
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === currentPanel);
-            });
-
-            navLinks.forEach((link, i) => {
-                link.classList.toggle('active', i === currentPanel);
-            });
-
-            leftArrow.classList.toggle('hidden', currentPanel === 0);
-            rightArrow.classList.toggle('hidden', currentPanel === totalPanels - 1);
-
-            panels.forEach((panel, i) => {
-                panel.classList.toggle('active', i === currentPanel);
-            });
-        }
-
-        function detectCurrentPanel() {
-            // Get scroll position from multiple sources
-            const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
-            const panelWidth = window.innerWidth;
-            const newPanel = Math.round(scrollLeft / panelWidth);
-
-            if (newPanel !== currentPanel && newPanel >= 0 && newPanel < totalPanels) {
-                currentPanel = newPanel;
-                updateIndicators();
-            }
-        }
-
-        // Event listeners
-        dots.forEach((dot, i) => {
-            dot.addEventListener('click', () => scrollToPanel(i));
-        });
-
-        navLinks.forEach((link, i) => {
-            link.addEventListener('click', (e) => {
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
                 e.preventDefault();
-                e.stopPropagation();
-                scrollToPanel(i);
+                const t = document.querySelector(a.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
-
-        leftArrow?.addEventListener('click', (e) => {
-            e.preventDefault();
-            scrollToPanel(currentPanel - 1);
+        window.addEventListener('scroll', () => {
+            document.querySelector('nav').style.background = window.scrollY > 50 ? 'rgba(5,5,7,0.95)' : 'rgba(5,5,7,0.85)';
         });
-        rightArrow?.addEventListener('click', (e) => {
-            e.preventDefault();
-            scrollToPanel(currentPanel + 1);
-        });
-
-        document.querySelectorAll('.hint').forEach(hint => {
-            hint.addEventListener('click', () => {
-                const direction = hint.dataset.direction;
-                if (direction === 'left') scrollToPanel(currentPanel - 1);
-                if (direction === 'right') scrollToPanel(currentPanel + 1);
-            });
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') scrollToPanel(currentPanel - 1);
-            if (e.key === 'ArrowRight') scrollToPanel(currentPanel + 1);
-        });
-
-        // Mouse wheel horizontal scroll
-        let lastWheelTime = 0;
-
-        document.addEventListener('wheel', (e) => {
-            if (isScrolling) return;
-
-            const now = Date.now();
-            if (now - lastWheelTime < 800) return;
-
-            if (Math.abs(e.deltaY) > 10) {
-                e.preventDefault();
-                isScrolling = true;
-                lastWheelTime = now;
-
-                if (e.deltaY > 0) {
-                    scrollToPanel(currentPanel + 1);
-                } else {
-                    scrollToPanel(currentPanel - 1);
-                }
-
-                setTimeout(() => { isScrolling = false; }, 900);
-            }
-        }, { passive: false });
-
-        // Drag to scroll
-        let isDragging = false;
-        let startX, scrollStart;
-
-        container.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.pageX;
-            scrollStart = document.body.scrollLeft;
-        });
-
-        container.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const x = e.pageX;
-            const walk = (startX - x) * 1.5;
-            document.body.scrollLeft = scrollStart + walk;
-        });
-
-        container.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                const panelWidth = window.innerWidth;
-                const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
-                const nearestPanel = Math.round(scrollLeft / panelWidth);
-                scrollToPanel(nearestPanel);
-            }
-        });
-
-        container.addEventListener('mouseleave', () => {
-            if (isDragging) {
-                isDragging = false;
-                const panelWidth = window.innerWidth;
-                const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
-                const nearestPanel = Math.round(scrollLeft / panelWidth);
-                scrollToPanel(nearestPanel);
-            }
-        });
-
-        // Touch support
-        let touchStartX;
-
-        container.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-        });
-
-        container.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const diff = touchStartX - touchEndX;
-
-            if (Math.abs(diff) > 50) {
-                if (diff > 0) {
-                    scrollToPanel(currentPanel + 1);
-                } else {
-                    scrollToPanel(currentPanel - 1);
-                }
-            }
-        });
-
-        let scrollTimeout;
-
-        // Multiple scroll listeners to catch all scroll events
-        function handleScroll() {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(detectCurrentPanel, 50);
-        }
-
-        document.addEventListener('scroll', handleScroll, true);
-        window.addEventListener('scroll', handleScroll, true);
-        document.body.addEventListener('scroll', handleScroll);
-
-        window.addEventListener('resize', () => {
-            scrollToPanel(currentPanel, false);
-        });
-
-        // Initialize immediately and on load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-
-        window.addEventListener('load', () => {
-            // Ensure we're at center on full load
-            setTimeout(init, 50);
-        });
-
-        // Parallax effect on orbs - combined with scroll detection
-        function updateParallax() {
-            const scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft || window.scrollX || 0;
-            const orb1 = document.querySelector('.orb-1');
-            const orb2 = document.querySelector('.orb-2');
-
-            if (orb1) orb1.style.transform = `translate(${scrollLeft * 0.1}px, 0)`;
-            if (orb2) orb2.style.transform = `translate(${-scrollLeft * 0.05}px, 0)`;
-        }
-
-        // Combined scroll handler
-        function onScroll() {
-            handleScroll();
-            updateParallax();
-        }
-
-        // Override with combined handler
-        document.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('scroll', handleScroll, true);
-        document.body.removeEventListener('scroll', handleScroll);
-
-        document.addEventListener('scroll', onScroll, true);
-        window.addEventListener('scroll', onScroll, true);
-        document.body.addEventListener('scroll', onScroll);
     </script>
 </body>
 </html>
