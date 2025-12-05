@@ -519,14 +519,14 @@ def is_ready_for_sync(content: str) -> bool:
     Check if document is ready for Notion sync.
 
     A document is ready for sync if:
-    - status is 'published', OR
+    - status is 'published' or 'complete', OR
     - status is 'in_progress' AND ai_processed is True
     """
     frontmatter, _ = parse_frontmatter(content)
     status = frontmatter.get("status", "draft")
     ai_processed = frontmatter.get("ai_processed", False)
 
-    if status == "published":
+    if status in ("published", "complete"):
         return True
     if status == "in_progress" and ai_processed:
         return True

@@ -26,9 +26,13 @@ from typing import Any, Dict, List
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import google.generativeai as genai
+# Load environment variables from .env file
+from dotenv import load_dotenv
 
-from main import Config, Cortex, QuantEngine, setup_logging
+load_dotenv()
+
+
+from main import Config, Cortex, QuantEngine, create_llm_provider, setup_logging
 
 
 def get_week_info() -> Dict[str, Any]:
@@ -310,15 +314,17 @@ def main():
     logger = setup_logging(config)
     logger.setLevel(getattr(logger, args.log_level.upper(), "INFO"))
 
-    # Configure AI
+    # Configure AI (uses local LLM if available, falls back to Gemini)
     model_obj = None
     if not args.no_ai:
         try:
-            genai.configure(api_key=config.GEMINI_API_KEY)
-            model_obj = genai.GenerativeModel(config.GEMINI_MODEL)
-            logger.info(f"Configured Gemini model: {config.GEMINI_MODEL}")
+            model_obj = create_llm_provider(config, logger)
+            if model_obj:
+                logger.info(f"Using LLM provider: {model_obj.name}")
+            else:
+                logger.warning("No LLM provider available")
         except Exception as e:
-            logger.error(f"Failed to configure Gemini: {e}")
+            logger.error(f"Failed to configure LLM: {e}")
             model_obj = None
 
     generate_premarket(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai)
