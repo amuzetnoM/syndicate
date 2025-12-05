@@ -725,7 +725,15 @@ def _run_post_analysis_tasks():
                 filename = filepath.name.lower()
 
                 # EXCLUDED from Notion sync - internal task outputs
-                excluded_patterns = ["monitor_", "data_fetch_", "calc_", "code_"]
+                excluded_patterns = [
+                    "monitor_",
+                    "data_fetch_",
+                    "calc_",
+                    "code_",
+                    "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
+                    "act-",  # Action task files
+                    "file_index",  # Index files
+                ]
                 if any(p in filename for p in excluded_patterns):
                     return False
 
