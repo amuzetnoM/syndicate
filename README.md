@@ -8,15 +8,16 @@
   ||_______|||__|||__|||__|||__|||__|||__|||__|||__||
   |/_______\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|
 
-            
+
 ```
 
-# Gold Standard 
+# Gold Standard
 *version 3.2.2* [[CHANGELOG]](docs/CHANGELOG.md)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
-> **Precious Metals Intelligence Complex** — Quantitative Analysis System
+> **Precious Metals Intelligence Complex**
+> A System for Quantitative Analysis
 
 A comprehensive end-to-end system combining real-time market data, technical indicators, economic calendar intelligence, and Google Gemini AI to generate structured trading reports for gold and intermarket assets.
 
@@ -305,9 +306,9 @@ The AI-generated daily journal includes comprehensive market analysis:
 ## Date: December 01, 2025
 
 ## 1. Market Context
-The macro environment is exhibiting classic "risk-on" characteristics with a 
-significant dovish tilt. The DXY's continued weakness (below 200SMA and in a 
-strong downtrend) and suppressed yields suggest the market is pricing in a 
+The macro environment is exhibiting classic "risk-on" characteristics with a
+significant dovish tilt. The DXY's continued weakness (below 200SMA and in a
+strong downtrend) and suppressed yields suggest the market is pricing in a
 less restrictive Federal Reserve policy...
 
 ## 2. Asset-Specific Analysis
@@ -319,7 +320,7 @@ Price is firmly above its 200-day simple moving average, a long-term bullish sig
 
 ## 4. Strategic Thesis
 **Bias:** **NEUTRAL**
-The primary thesis is that Gold's recent parabolic advance has pushed it into 
+The primary thesis is that Gold's recent parabolic advance has pushed it into
 a short-term overbought condition...
 
 ## 6. Scenario Probability Matrix
@@ -796,4 +797,3 @@ For detailed technical documentation, indicator explanations, and extension guid
 <br/>
 <em>Quantitative Analysis • AI Insights • Economic Calendar • Live Reports</em>
 </p>
-
