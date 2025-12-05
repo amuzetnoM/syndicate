@@ -48,6 +48,35 @@ ASCII data flow:
 | NotionPublisher | `scripts/notion_publisher.py` | Notion API integration; markdown conversion; database sync |
 | FileOrganizer | `scripts/file_organizer.py` | Directory organization; archiving; index maintenance |
 | EconomicCalendar | `scripts/economic_calendar.py` | Event tracking; gold impact analysis; self-maintenance |
+| LocalLLM | `scripts/local_llm.py` | Local LLM provider abstraction (pyvdb/llama-cpp-python) |
+| InsightsEngine | `scripts/insights_engine.py` | Entity/action extraction; insight parsing |
+| TaskExecutor | `scripts/task_executor.py` | Autonomous task execution with retry logic |
+
+## LLM Provider Architecture
+
+Gold Standard uses a **FallbackLLMProvider** pattern for resilient AI-powered analysis:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FallbackLLMProvider                      │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────┐    ┌───────────┐    ┌──────────────────────┐  │
+│  │ Gemini  │ -> │ Local LLM │ -> │ Graceful Degradation │  │
+│  │ (Cloud) │    │ (pyvdb/   │    │ (Error Handling)     │  │
+│  │         │    │ llama-cpp)│    │                      │  │
+│  └─────────┘    └───────────┘    └──────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Fallback Chain:**
+1. **Gemini (Primary)**: Cloud-based, high-quality analysis via Google AI
+2. **Local LLM (Secondary)**: On-device inference via pyvdb (native C++) or llama-cpp-python
+3. **Graceful Degradation**: Returns structured error when all providers fail
+
+**Provider Selection:**
+- `scripts/local_llm.py` detects available backends at import time
+- `HAS_PYVDB`, `HAS_LLAMA_CPP_PYTHON` flags indicate availability
+- `BACKEND` variable shows active backend: `"pyvdb"`, `"llama-cpp-python"`, or `None`
 
 Key design notes:
 - Each module exposes a small public API surface, documented in docstrings and validated by unit tests.

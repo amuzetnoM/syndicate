@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.3.0* [[CHANGELOG]](docs/CHANGELOG.md)
+*version 3.3.0* [[CHANGELOG]](changelog/CHANGELOG.md)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -66,6 +66,8 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 |---------|-------------|
 | **Autonomous Daemon** | Runs continuously, executing analysis every minute (configurable) |
 | **Intelligent Scheduling** | Frequency-based task execution: daily/weekly/monthly/yearly cycles |
+| **FallbackLLMProvider** | Resilient AI with Gemini → Local LLM → Graceful degradation chain |
+| **Local LLM Support** | On-device inference via pyvdb (C++) or llama-cpp-python backends |
 | **Notion Deduplication** | Content hashing prevents duplicate uploads; tracks sync state |
 | **Document Lifecycle** | Draft/in_progress/published status controls Notion visibility |
 | **Auto Venv Activation** | Scripts automatically detect and activate virtual environment |

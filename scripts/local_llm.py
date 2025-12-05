@@ -2,8 +2,10 @@
 """
 Gold Standard Local LLM Provider
 
-Provides a high-level Python interface to the llama.cpp-powered LLM engine
-in the Vector Studio database. This replaces Gemini with local inference.
+Provides a high-level Python interface for local LLM inference.
+Supports multiple backends:
+1. pyvdb (native C++ bindings from Vector Studio) - best performance
+2. llama-cpp-python (pip installable) - easy setup
 
 Usage:
     from scripts.local_llm import LocalLLM
@@ -19,6 +21,7 @@ Usage:
     ])
 """
 
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,14 +31,39 @@ from typing import Any, Callable, Dict, List, Optional
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Try to import the native pyvdb module
+# ============================================================================
+# Backend Detection - Try multiple LLM backends
+# ============================================================================
+
+# Backend 1: Native pyvdb (C++ bindings from Vector Studio)
 try:
     import pyvdb
 
-    HAS_NATIVE_LLM = pyvdb.has_llm_support()
+    HAS_PYVDB = pyvdb.has_llm_support()
 except ImportError:
     pyvdb = None
-    HAS_NATIVE_LLM = False
+    HAS_PYVDB = False
+
+# Backend 2: llama-cpp-python (pip install llama-cpp-python)
+try:
+    from llama_cpp import Llama
+
+    HAS_LLAMA_CPP_PYTHON = True
+except ImportError:
+    Llama = None
+    HAS_LLAMA_CPP_PYTHON = False
+
+# Determine best available backend
+if HAS_PYVDB:
+    BACKEND = "pyvdb"
+elif HAS_LLAMA_CPP_PYTHON:
+    BACKEND = "llama-cpp-python"
+else:
+    BACKEND = None
+
+HAS_LLM_SUPPORT = BACKEND is not None
+# Keep old name for backwards compatibility
+HAS_NATIVE_LLM = HAS_LLM_SUPPORT
 
 
 @dataclass
@@ -67,7 +95,11 @@ class GenerationConfig:
 
 class LocalLLM:
     """
-    Local LLM provider using llama.cpp via Vector Studio.
+    Local LLM provider with multiple backend support.
+
+    Backends (in priority order):
+    1. pyvdb - Native C++ bindings (best performance)
+    2. llama-cpp-python - Pure Python bindings (easy install)
 
     Drop-in replacement for Gemini API with similar interface.
     """
@@ -81,9 +113,11 @@ class LocalLLM:
             config: LLM configuration (optional)
         """
         self._engine = None
+        self._llama = None  # For llama-cpp-python backend
         self._config = config or LLMConfig()
         self._loaded = False
         self._model_name = ""
+        self._backend = BACKEND
 
         # Default model search paths
         self._model_dirs = [
@@ -91,25 +125,38 @@ class LocalLLM:
             Path.home() / ".cache" / "gold_standard" / "models",
             Path("C:/models"),
             Path("/models"),
+            Path(os.environ.get("LOCAL_LLM_MODEL", "")).parent if os.environ.get("LOCAL_LLM_MODEL") else None,
         ]
+        self._model_dirs = [d for d in self._model_dirs if d is not None]
 
         if model_path:
             self.load_model(model_path)
+        elif os.environ.get("LOCAL_LLM_MODEL"):
+            self.load_model(os.environ.get("LOCAL_LLM_MODEL"))
 
     @property
     def is_available(self) -> bool:
         """Check if LLM support is available."""
-        return HAS_NATIVE_LLM
+        return HAS_LLM_SUPPORT
 
     @property
     def is_loaded(self) -> bool:
         """Check if a model is loaded."""
-        return self._loaded and self._engine is not None
+        if self._backend == "pyvdb":
+            return self._loaded and self._engine is not None
+        elif self._backend == "llama-cpp-python":
+            return self._loaded and self._llama is not None
+        return False
 
     @property
     def model_name(self) -> str:
         """Get the loaded model name."""
         return self._model_name
+
+    @property
+    def backend(self) -> str:
+        """Get the active backend name."""
+        return self._backend or "none"
 
     def find_models(self) -> List[Dict[str, Any]]:
         """
@@ -124,7 +171,7 @@ class LocalLLM:
             if not model_dir.exists():
                 continue
 
-            if HAS_NATIVE_LLM:
+            if HAS_PYVDB:
                 paths = pyvdb.find_gguf_models(str(model_dir))
                 for path in paths:
                     meta = pyvdb.read_gguf_metadata(path)
@@ -163,8 +210,10 @@ class LocalLLM:
         Returns:
             True if loaded successfully
         """
-        if not HAS_NATIVE_LLM:
-            print("[LLM] Native LLM support not available. Build Vector Studio with VDB_USE_LLAMA_CPP=ON")
+        if not HAS_LLM_SUPPORT:
+            print("[LLM] No LLM backend available.")
+            print("[LLM] Install with: pip install llama-cpp-python")
+            print("[LLM] Or build Vector Studio with VDB_USE_LLAMA_CPP=ON")
             return False
 
         path = Path(model_path)
@@ -179,39 +228,69 @@ class LocalLLM:
                 print(f"[LLM] Model not found: {model_path}")
                 return False
 
-        # Create engine
-        self._engine = pyvdb.create_llm_engine()
-
-        # Configure
         cfg = config or self._config
-        native_config = pyvdb.LLMConfig()
-        native_config.model_path = str(path)
-        native_config.n_ctx = cfg.n_ctx
-        native_config.n_batch = cfg.n_batch
-        native_config.n_threads = cfg.n_threads
-        native_config.n_gpu_layers = cfg.n_gpu_layers
-        native_config.use_mmap = cfg.use_mmap
-        native_config.use_mlock = cfg.use_mlock
+        print(f"[LLM] Loading model: {path.name} (backend: {self._backend})")
 
-        print(f"[LLM] Loading model: {path.name}")
-        if self._engine.load(native_config):
-            self._loaded = True
-            self._model_name = self._engine.model_name()
-            print(f"[LLM] Model loaded: {self._model_name}")
-            print(f"[LLM] Context: {self._engine.context_size()} tokens")
-            return True
-        else:
-            print("[LLM] Failed to load model")
-            self._engine = None
-            return False
+        # Backend 1: pyvdb (native C++)
+        if self._backend == "pyvdb":
+            self._engine = pyvdb.create_llm_engine()
+
+            native_config = pyvdb.LLMConfig()
+            native_config.model_path = str(path)
+            native_config.n_ctx = cfg.n_ctx
+            native_config.n_batch = cfg.n_batch
+            native_config.n_threads = cfg.n_threads
+            native_config.n_gpu_layers = cfg.n_gpu_layers
+            native_config.use_mmap = cfg.use_mmap
+            native_config.use_mlock = cfg.use_mlock
+
+            if self._engine.load(native_config):
+                self._loaded = True
+                self._model_name = self._engine.model_name()
+                print(f"[LLM] Model loaded: {self._model_name}")
+                print(f"[LLM] Context: {self._engine.context_size()} tokens")
+                return True
+            else:
+                print("[LLM] Failed to load model")
+                self._engine = None
+                return False
+
+        # Backend 2: llama-cpp-python
+        elif self._backend == "llama-cpp-python":
+            try:
+                n_threads = cfg.n_threads if cfg.n_threads > 0 else None
+                self._llama = Llama(
+                    model_path=str(path),
+                    n_ctx=cfg.n_ctx,
+                    n_batch=cfg.n_batch,
+                    n_threads=n_threads,
+                    n_gpu_layers=cfg.n_gpu_layers,
+                    use_mmap=cfg.use_mmap,
+                    use_mlock=cfg.use_mlock,
+                    verbose=False,
+                )
+                self._loaded = True
+                self._model_name = path.stem
+                print(f"[LLM] Model loaded: {self._model_name}")
+                print(f"[LLM] Context: {cfg.n_ctx} tokens")
+                return True
+            except Exception as e:
+                print(f"[LLM] Failed to load model: {e}")
+                self._llama = None
+                return False
+
+        return False
 
     def unload(self):
         """Unload the current model."""
         if self._engine:
             self._engine.unload()
             self._engine = None
-            self._loaded = False
-            self._model_name = ""
+        if self._llama:
+            del self._llama
+            self._llama = None
+        self._loaded = False
+        self._model_name = ""
 
     def generate(
         self,
@@ -240,15 +319,31 @@ class LocalLLM:
         if not self.is_loaded:
             raise RuntimeError("No model loaded. Call load_model() first.")
 
-        params = pyvdb.GenerationParams()
-        params.max_tokens = max_tokens
-        params.temperature = temperature
-        params.top_p = top_p
-        params.top_k = top_k
-        if stop_sequences:
-            params.stop_sequences = stop_sequences
+        # Backend 1: pyvdb
+        if self._backend == "pyvdb" and self._engine:
+            params = pyvdb.GenerationParams()
+            params.max_tokens = max_tokens
+            params.temperature = temperature
+            params.top_p = top_p
+            params.top_k = top_k
+            if stop_sequences:
+                params.stop_sequences = stop_sequences
+            return self._engine.generate(prompt, params)
 
-        return self._engine.generate(prompt, params)
+        # Backend 2: llama-cpp-python
+        elif self._backend == "llama-cpp-python" and self._llama:
+            output = self._llama(
+                prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                stop=stop_sequences or [],
+                echo=False,
+            )
+            return output["choices"][0]["text"]
+
+        raise RuntimeError("No LLM backend available")
 
     def chat(
         self, messages: List[Dict[str, str]], max_tokens: int = 1024, temperature: float = 0.7, **kwargs
@@ -267,37 +362,65 @@ class LocalLLM:
         if not self.is_loaded:
             raise RuntimeError("No model loaded. Call load_model() first.")
 
-        # Convert to native message format
-        native_messages = []
-        for msg in messages:
-            role_str = msg.get("role", "user").lower()
-            if role_str == "system":
-                role = pyvdb.Role.System
-            elif role_str == "assistant":
-                role = pyvdb.Role.Assistant
-            else:
-                role = pyvdb.Role.User
+        # Backend 1: pyvdb
+        if self._backend == "pyvdb" and self._engine:
+            native_messages = []
+            for msg in messages:
+                role_str = msg.get("role", "user").lower()
+                if role_str == "system":
+                    role = pyvdb.Role.System
+                elif role_str == "assistant":
+                    role = pyvdb.Role.Assistant
+                else:
+                    role = pyvdb.Role.User
+                native_messages.append(pyvdb.Message(role, msg.get("content", "")))
 
-            native_messages.append(pyvdb.Message(role, msg.get("content", "")))
+            params = pyvdb.GenerationParams()
+            params.max_tokens = max_tokens
+            params.temperature = temperature
 
-        params = pyvdb.GenerationParams()
-        params.max_tokens = max_tokens
-        params.temperature = temperature
+            result = self._engine.chat(native_messages, params)
 
-        result = self._engine.chat(native_messages, params)
+            return {
+                "content": result.content,
+                "tokens_generated": result.tokens_generated,
+                "tokens_prompt": result.tokens_prompt,
+                "generation_time_ms": result.generation_time_ms,
+            }
 
-        return {
-            "content": result.content,
-            "tokens_generated": result.tokens_generated,
-            "tokens_prompt": result.tokens_prompt,
-            "generation_time_ms": result.generation_time_ms,
-        }
+        # Backend 2: llama-cpp-python
+        elif self._backend == "llama-cpp-python" and self._llama:
+            import time
+
+            start = time.time()
+            output = self._llama.create_chat_completion(
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            elapsed = (time.time() - start) * 1000
+
+            content = output["choices"][0]["message"]["content"]
+            return {
+                "content": content,
+                "tokens_generated": output.get("usage", {}).get("completion_tokens", 0),
+                "tokens_prompt": output.get("usage", {}).get("prompt_tokens", 0),
+                "generation_time_ms": elapsed,
+            }
+
+        raise RuntimeError("No LLM backend available")
 
     def count_tokens(self, text: str) -> int:
         """Count tokens in text."""
         if not self.is_loaded:
             return len(text.split())  # Rough estimate
-        return self._engine.count_tokens(text)
+
+        if self._backend == "pyvdb" and self._engine:
+            return self._engine.count_tokens(text)
+        elif self._backend == "llama-cpp-python" and self._llama:
+            return len(self._llama.tokenize(text.encode()))
+
+        return len(text.split())
 
 
 class GeminiCompatibleLLM:
