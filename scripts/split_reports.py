@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # ══════════════════════════════════════════════════════════════════════════════
-#  _________._____________.___ ____ ___  _________      .__         .__            
-# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____   
-# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \  
+#  _________._____________.___ ____ ___  _________      .__         .__
+# /   _____/|   \______   \   |    |   \/   _____/____  |  | ______ |  |__ _____
+# \_____  \ |   ||       _/   |    |   /\_____  \__  \ |  | \____ \|  |  \__  \
 # /        \|   ||    |   \   |    |  / /        \/ __ \|  |_|  |_> >   Y  \/ __ \_
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
-#         \/             \/                     \/     \/     |__|        \/     \/ 
+#         \/             \/                     \/     \/     |__|        \/     \/
 #
 # Gold Standard - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
@@ -15,17 +15,19 @@
 Split Reports Generator
 Generates weekly rundowns and monthly/yearly reports using the existing QuantEngine and Strategist.
 """
-import os
-import sys
+
 import argparse
 import datetime
-from typing import Dict, Any
+import os
+import sys
 from pathlib import Path
+from typing import Dict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from main import Config, setup_logging, Cortex, QuantEngine, Strategist
 import pandas as pd
+
+from main import Config, Cortex, QuantEngine, Strategist, setup_logging
 
 
 def ensure_dirs(config: Config):
@@ -37,7 +39,7 @@ def ensure_dirs(config: Config):
     return reports, charts
 
 
-def write_report(report_path: str, markdown: str, doc_type: str = 'reports'):
+def write_report(report_path: str, markdown: str, doc_type: str = "reports"):
     """Write report to file. Frontmatter is applied in final pass by run.py."""
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(markdown)
@@ -51,10 +53,6 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
     # Use QuantEngine to fetch full year+ data for each asset
     q = QuantEngine(config, logger)
 
-    # We'll fetch 2 years to cover last year + this year
-    period = "2y"
-    interval = "1d"
-
     # No intermediate results structure needed; we'll collect monthly and yearly tables
 
     # We'll iterate ASSETS directly to fetch dataframes
@@ -64,7 +62,7 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
     asset_yearly: Dict[str, pd.DataFrame] = {}
     for key, conf in ASSETS.items():
         try:
-            df = q._fetch(conf['p'], conf['b'])
+            df = q._fetch(conf["p"], conf["b"])
             if df is None or df.empty:
                 logger.warning(f"No data for {key}")
                 continue
@@ -74,12 +72,12 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
             df.index = pd.to_datetime(df.index)
 
             # Monthly aggregation (ME = Month End)
-            monthly = df.resample('ME').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
-            monthly['Return'] = monthly['Close'].pct_change() * 100
+            monthly = df.resample("ME").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last"})
+            monthly["Return"] = monthly["Close"].pct_change() * 100
 
             # Yearly aggregation (YE = Year End)
-            yearly = df.resample('YE').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'})
-            yearly['Return'] = yearly['Close'].pct_change() * 100
+            yearly = df.resample("YE").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last"})
+            yearly["Return"] = yearly["Close"].pct_change() * 100
 
             asset_monthly[key] = monthly
             asset_yearly[key] = yearly
@@ -92,9 +90,10 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
             try:
                 if os.path.exists(src):
                     import shutil
+
                     shutil.copy2(src, dst)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to copy chart {key}: {e}")
 
         except Exception as e:
             logger.error(f"Error processing {key}: {e}")
@@ -115,7 +114,9 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
         for k, v in snapshot.items():
             if not isinstance(v, dict):
                 continue
-            md.append(f"- **{k}**: Price: ${v.get('price')} | Change: {v.get('change')}% | RSI: {v.get('rsi')} | ADX: {v.get('adx')}\n")
+            md.append(
+                f"- **{k}**: Price: ${v.get('price')} | Change: {v.get('change')}% | RSI: {v.get('rsi')} | ADX: {v.get('adx')}\n"
+            )
 
     # Monthly tables
     md.append("\n## Monthly Breakdowns\n")
@@ -124,7 +125,9 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
         md.append("| Month | Open | High | Low | Close | Return (%) |\n")
         md.append("|---|---:|---:|---:|---:|---:|\n")
         for idx, row in table.iterrows():
-            md.append(f"| {idx.strftime('%Y-%m')} | {row['Open']:.2f} | {row['High']:.2f} | {row['Low']:.2f} | {row['Close']:.2f} | {row['Return']:.2f} |\n")
+            md.append(
+                f"| {idx.strftime('%Y-%m')} | {row['Open']:.2f} | {row['High']:.2f} | {row['Low']:.2f} | {row['Close']:.2f} | {row['Return']:.2f} |\n"
+            )
         md.append("\n")
 
     # Yearly tables
@@ -134,13 +137,21 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
         md.append("| Year | Open | High | Low | Close | Return (%) |\n")
         md.append("|---|---:|---:|---:|---:|---:|\n")
         for idx, row in table.iterrows():
-            md.append(f"| {idx.year} | {row['Open']:.2f} | {row['High']:.2f} | {row['Low']:.2f} | {row['Close']:.2f} | {row['Return']:.2f} |\n")
+            md.append(
+                f"| {idx.year} | {row['Open']:.2f} | {row['High']:.2f} | {row['Low']:.2f} | {row['Close']:.2f} | {row['Return']:.2f} |\n"
+            )
         md.append("\n")
 
     # AI forecast: next year
     if not no_ai and model is not None:
-        strategist = Strategist(config, logger, snapshot or {}, q.news, Cortex(config, logger).get_formatted_history(), model=model)
-        prompt = strategist._build_prompt(gsr=snapshot.get('RATIOS', {}).get('GSR', 'N/A'), vix_price=snapshot.get('VIX', {}).get('price', 'N/A'), data_dump=strategist._format_data_summary())
+        strategist = Strategist(
+            config, logger, snapshot or {}, q.news, Cortex(config, logger).get_formatted_history(), model=model
+        )
+        prompt = strategist._build_prompt(
+            gsr=snapshot.get("RATIOS", {}).get("GSR", "N/A"),
+            vix_price=snapshot.get("VIX", {}).get("price", "N/A"),
+            data_dump=strategist._format_data_summary(),
+        )
         try:
             response = model.generate_content(prompt)
             response_text = response.text
@@ -174,12 +185,20 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
     for k, v in snapshot.items():
         if not isinstance(v, dict):
             continue
-        md.append(f"- **{k}**: Price: ${v.get('price')} | Change: {v.get('change')}% | RSI: {v.get('rsi')} | ADX: {v.get('adx')}\n")
+        md.append(
+            f"- **{k}**: Price: ${v.get('price')} | Change: {v.get('change')}% | RSI: {v.get('rsi')} | ADX: {v.get('adx')}\n"
+        )
 
     if not no_ai and model is not None:
-        strategist = Strategist(config, logger, snapshot, q.news, Cortex(config, logger).get_formatted_history(), model=model)
+        strategist = Strategist(
+            config, logger, snapshot, q.news, Cortex(config, logger).get_formatted_history(), model=model
+        )
         # Build a short weekly-focused prompt
-        prompt = strategist._build_prompt(gsr=snapshot.get('RATIOS', {}).get('GSR', 'N/A'), vix_price=snapshot.get('VIX', {}).get('price', 'N/A'), data_dump=strategist._format_data_summary())
+        prompt = strategist._build_prompt(
+            gsr=snapshot.get("RATIOS", {}).get("GSR", "N/A"),
+            vix_price=snapshot.get("VIX", {}).get("price", "N/A"),
+            data_dump=strategist._format_data_summary(),
+        )
         try:
             response = model.generate_content(prompt)
             md.append("## AI Tactical Thesis\n")
@@ -193,13 +212,14 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
     # Create short timeframe charts (1 week) for assets
     # For weekly charts, we use the full recent data for chart generation (which includes SMAs)
     # but then just copy the main chart rather than trying to generate a separate short-period chart
-    for key, conf in __import__('main').ASSETS.items():
+    for key, conf in __import__("main").ASSETS.items():
         try:
             # Use existing chart from QuantEngine (already generated during get_data)
             src = os.path.join(config.CHARTS_DIR, f"{key}.png")
             dst = os.path.join(charts_dir, f"{key}_week.png")
             if os.path.exists(src):
                 import shutil
+
                 shutil.copy2(src, dst)
                 md.append(f"![{key} Weekly](charts/{key}_week.png)\n")
         except Exception:
@@ -212,12 +232,12 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
 
 def main():
     parser = argparse.ArgumentParser(description="Split Reports: generate weekly, monthly, and yearly reports")
-    parser.add_argument('--mode', choices=['weekly', 'monthly', 'yearly', 'all'], default='weekly')
-    parser.add_argument('--once', action='store_true', help='Run once and exit')
-    parser.add_argument('--dry-run', action='store_true', help='Do not write files')
-    parser.add_argument('--no-ai', action='store_true', help='Do not use AI')
-    parser.add_argument('--gemini-key', default=None, help='Override API key')
-    parser.add_argument('--log-level', default='INFO')
+    parser.add_argument("--mode", choices=["weekly", "monthly", "yearly", "all"], default="weekly")
+    parser.add_argument("--once", action="store_true", help="Run once and exit")
+    parser.add_argument("--dry-run", action="store_true", help="Do not write files")
+    parser.add_argument("--no-ai", action="store_true", help="Do not use AI")
+    parser.add_argument("--gemini-key", default=None, help="Override API key")
+    parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args()
 
     config = Config()
@@ -225,13 +245,14 @@ def main():
         config.GEMINI_API_KEY = args.gemini_key
 
     logger = setup_logging(config)
-    logger.setLevel(getattr(logger, args.log_level.upper(), 'INFO'))
+    logger.setLevel(getattr(logger, args.log_level.upper(), "INFO"))
 
     # Configure AI
     model_obj = None
     if not args.no_ai:
         try:
             import google.generativeai as genai
+
             genai.configure(api_key=config.GEMINI_API_KEY)
             model_obj = genai.GenerativeModel(config.GEMINI_MODEL)
             logger.info(f"Configured Gemini model: {config.GEMINI_MODEL}")
@@ -239,10 +260,11 @@ def main():
             logger.error(f"Failed to configure Gemini: {e}")
             model_obj = None
 
-    if args.mode in ('monthly', 'all', 'yearly'):
+    if args.mode in ("monthly", "all", "yearly"):
         monthly_yearly_report(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai)
-    if args.mode in ('weekly', 'all'):
+    if args.mode in ("weekly", "all"):
         weekly_rundown(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

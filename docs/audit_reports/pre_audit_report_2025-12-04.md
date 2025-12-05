@@ -2,8 +2,8 @@
 
 *Gold Standard v3.1*
 
-> **Audit Date:** 2025-12-04  
-> **Version:** Snapshot of public repository and documentation at audit time  
+> **Audit Date:** 2025-12-04
+> **Version:** Snapshot of public repository and documentation at audit time
 > **Scope:** Public repository, documentation site, and observable code structure/architecture
 
 ---
@@ -163,47 +163,47 @@ Example CI steps (abstract):
 Note: mark each item Done/Owner/ETA and verify with the listed acceptance criteria.
 
 Immediate (0–3 days)
-- [ ] Run full dependency audit (pip-audit / safety / Snyk)  
+- [ ] Run full dependency audit (pip-audit / safety / Snyk)
   - Acceptance: SCA report generated; critical/high issues triaged and blockers documented.
-- [ ] Run repository secret scan (git-secrets, truffleHog, GitHub secret scanning)  
+- [ ] Run repository secret scan (git-secrets, truffleHog, GitHub secret scanning)
   - Acceptance: no plaintext secrets present; any findings removed and rotated.
-- [ ] Add minimal reproducible environment artifacts: requirements.txt or pyproject.toml + constraints.txt, and .env.example  
+- [ ] Add minimal reproducible environment artifacts: requirements.txt or pyproject.toml + constraints.txt, and .env.example
   - Acceptance: repo contains pinned deps and example env variables; build/install reproduces locally.
-- [ ] Add CI check to run SCA and secret-scan on commits/PRs (temporary GitHub Action or pipeline)  
+- [ ] Add CI check to run SCA and secret-scan on commits/PRs (temporary GitHub Action or pipeline)
   - Acceptance: PRs fail if secret-scan or SCA finds critical/severe issues.
-- [ ] Create an issues/PR template named "audit-remediation" listing these immediate tasks and owners  
+- [ ] Create an issues/PR template named "audit-remediation" listing these immediate tasks and owners
   - Acceptance: task tracking exists with owners and ETAs.
 
 Follow-up (1–14 days)
-- [ ] Implement input validation wrappers or schemas for all external input paths (start with highest-risk handlers)  
+- [ ] Implement input validation wrappers or schemas for all external input paths (start with highest-risk handlers)
   - Acceptance: handlers validate and fail-fast; unit tests added for malformed inputs.
-- [ ] Bootstrapp CI pipeline that runs linters and unit tests on every PR (even minimal)  
+- [ ] Bootstrapp CI pipeline that runs linters and unit tests on every PR (even minimal)
   - Acceptance: PRs run lint + test; failing PRs blocked until fixed.
-- [ ] Write unit tests for core processing flows and edge cases (empty data, malformed entries, timeouts) for critical modules  
+- [ ] Write unit tests for core processing flows and edge cases (empty data, malformed entries, timeouts) for critical modules
   - Acceptance: tests added, run in CI, and cover initial acceptance targets.
-- [ ] Pin CI to install from pinned artifact files and fail on dependency resolution issues  
+- [ ] Pin CI to install from pinned artifact files and fail on dependency resolution issues
   - Acceptance: CI uses pinned deps and reproduces local environment.
-- [ ] Add pre-commit hooks for linters and basic secret checks (ruff/flake8, pre-commit)  
+- [ ] Add pre-commit hooks for linters and basic secret checks (ruff/flake8, pre-commit)
   - Acceptance: developers run pre-commit locally; CI enforces same checks.
 
 Short term (2–30 days)
-- [ ] Create a Dockerfile or reproducible build script for the app/service  
+- [ ] Create a Dockerfile or reproducible build script for the app/service
   - Acceptance: image builds reproducibly; runs tests in container.
-- [ ] Add structured logging scaffolding and configuration (JSON formatting, context fields) in core modules  
+- [ ] Add structured logging scaffolding and configuration (JSON formatting, context fields) in core modules
   - Acceptance: logs emitted with structured fields; sample run produces searchable output.
-- [ ] Implement run metadata capture (commit SHA, config, input snapshot ID) for each processing run  
+- [ ] Implement run metadata capture (commit SHA, config, input snapshot ID) for each processing run
   - Acceptance: runtime stores metadata alongside logs or run records.
-- [ ] Integrate basic runtime metrics and health endpoints (latency, error count, success rate)  
+- [ ] Integrate basic runtime metrics and health endpoints (latency, error count, success rate)
   - Acceptance: metrics exposed and scraped locally (e.g., Prometheus metrics endpoint).
-- [ ] Expand CI to include pip-audit / SCA step and fail on critical severity findings  
+- [ ] Expand CI to include pip-audit / SCA step and fail on critical severity findings
   - Acceptance: CI pipeline includes SCA and blocks merges on critical issues.
 
 Governance and policy (next 30 days)
-- [ ] Define branch protection, PR review rules, and CODEOWNERS for core modules  
+- [ ] Define branch protection, PR review rules, and CODEOWNERS for core modules
   - Acceptance: repo settings enforce approvals and required checks.
-- [ ] Add CI policy for automated dependency updates (Dependabot or equivalent) and review cycle  
+- [ ] Add CI policy for automated dependency updates (Dependabot or equivalent) and review cycle
   - Acceptance: automated PRs created and triage workflow defined.
-- [ ] Plan and schedule a security/architecture review covering supply chain and incident response processes  
+- [ ] Plan and schedule a security/architecture review covering supply chain and incident response processes
   - Acceptance: review scheduled with attendees and scope.
 
 Verification checklist (to close the audit remediation sprint)
@@ -220,5 +220,5 @@ Verification checklist (to close the audit remediation sprint)
 
 The gold_standard project has a sound structural foundation and public documentation practices. To reach production-grade readiness, prioritize defenses around external input validation, testing and CI, dependency and secret hygiene, and operational observability. Implementing the prioritized remediation plan above will significantly reduce material risk and improve auditability, reproducibility, and maintainability.
 
-Prepared by: Audit automation and manual review of public artifacts (no private/config artifacts analyzed).  
+Prepared by: Audit automation and manual review of public artifacts (no private/config artifacts analyzed).
 Prepared on: 2025-12-04
