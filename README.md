@@ -94,7 +94,9 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 ---
 
-> 2d
+<p align="center">
+<img src="docs/images/gold_standard-infographic-2d.png" alt="Gold Standard Infographic 2D" />
+</p>
 
 ---
 
@@ -497,6 +499,12 @@ The system is organized into modular components:
 
 ---
 
+<p align="center">
+<img src="docs/images/gold_standard-infographic-3d.png" alt="Gold Standard Infographic 3D" />
+</p>
+
+---
+
 ## Notion Integration
 
 Gold Standard can automatically publish reports to a Notion database with **rich formatting** and **embedded charts**.
@@ -669,10 +677,6 @@ When running `--sync-all`, the publisher automatically skips non-published docum
 
 ---
 
-> 3D
-
----
-
 ## Configuration
 
 ### Environment Variables
@@ -741,7 +745,7 @@ gold_standard/
 │
 ├── data/
 │   └── gold_standard.db      # SQLite database for report storage
-│
+|
 ├── tests/
 │   ├── test_core.py          # Core pipeline tests (bias extraction)
 │   ├── test_gemini.py        # Gemini AI integration tests
@@ -826,7 +830,7 @@ The project uses:
 | `scripts/notion_publisher.py` | Notion database sync and publishing |
 | `scripts/notion_formatter.py` | Rich Notion blocks (callouts, colors, tables, TOC) |
 | `scripts/chart_publisher.py` | imgbb upload, smart ticker detection, caching |
-| `scripts/cleanup_manager.py` | Usage tracking, retention policies, limit warnings |
+| `scripts/cleanup_manager.py` | Usage tracking and retention policies, limit warnings |
 | `scripts/file_organizer.py` | Auto-categorizes, dates, and archives reports |
 | `scripts/insights_engine.py` | Entity and action insight extraction |
 | `scripts/task_executor.py` | Autonomous task execution from insights |

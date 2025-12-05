@@ -97,6 +97,206 @@ import mplfinance as mpf
 import yfinance as yf
 from colorama import init
 
+# ==========================================
+# LLM PROVIDER ABSTRACTION
+# ==========================================
+
+
+class LLMProvider:
+    """Abstract interface for LLM providers (Gemini, Local, etc.)"""
+
+    def generate_content(self, prompt: str) -> Any:
+        raise NotImplementedError
+
+
+class GeminiProvider(LLMProvider):
+    """Google Gemini API provider."""
+
+    def __init__(self, model_name: str = "models/gemini-pro-latest"):
+        self.model = genai.GenerativeModel(model_name)
+        self.name = "Gemini"
+
+    def generate_content(self, prompt: str) -> Any:
+        return self.model.generate_content(prompt)
+
+
+class LocalLLMProvider(LLMProvider):
+    """Local LLM provider using llama.cpp via Vector Studio."""
+
+    def __init__(self, model_path: str = None):
+        self.name = "Local"
+        self._llm = None
+        self._available = False
+
+        try:
+            from scripts.local_llm import GeminiCompatibleLLM, LocalLLM
+
+            if model_path:
+                self._llm = GeminiCompatibleLLM(model_path)
+                self._available = self._llm._llm.is_loaded
+            else:
+                # Try to find a model
+                llm = LocalLLM()
+                models = llm.find_models()
+                if models:
+                    self._llm = GeminiCompatibleLLM(models[0]["path"])
+                    self._available = self._llm._llm.is_loaded
+        except ImportError:
+            pass
+
+    @property
+    def is_available(self) -> bool:
+        return self._available
+
+    def generate_content(self, prompt: str) -> Any:
+        if not self._available:
+            raise RuntimeError("Local LLM not available")
+        return self._llm.generate_content(prompt)
+
+
+class FallbackLLMProvider(LLMProvider):
+    """
+    Robust LLM provider with automatic fallback chain.
+    Tries Gemini first, falls back to local LLM after 1 failure.
+    """
+
+    def __init__(self, config: "Config", logger: logging.Logger):
+        self.name = "Fallback"
+        self.config = config
+        self.logger = logger
+        self._gemini = None
+        self._local = None
+        self._current = None
+        self._gemini_failures = 0
+        self._max_gemini_failures = 1  # Switch to local after 1 failure
+
+        # Initialize Gemini (primary)
+        if config.GEMINI_API_KEY:
+            try:
+                genai.configure(api_key=config.GEMINI_API_KEY)
+                self._gemini = GeminiProvider(config.GEMINI_MODEL)
+                self._current = self._gemini
+                self.name = "Gemini+Fallback"
+                logger.info(f"[LLM] Primary: Gemini ({config.GEMINI_MODEL})")
+            except Exception as e:
+                logger.warning(f"[LLM] Gemini init failed: {e}")
+
+        # Initialize local LLM (fallback)
+        try:
+            self._local = LocalLLMProvider()
+            if self._local.is_available:
+                if not self._current:
+                    self._current = self._local
+                    self.name = "Local"
+                logger.info("[LLM] Fallback: Local LLM ready")
+            else:
+                self._local = None
+        except Exception as e:
+            logger.debug(f"[LLM] Local LLM not available: {e}")
+            self._local = None
+
+        if not self._current:
+            logger.warning("[LLM] No LLM providers available!")
+
+    @property
+    def is_available(self) -> bool:
+        return self._current is not None
+
+    def _is_quota_error(self, error: Exception) -> bool:
+        """Check if error is a quota/rate limit error."""
+        error_str = str(error).lower()
+        quota_patterns = [
+            "quota",
+            "rate limit",
+            "429",
+            "resource exhausted",
+            "too many requests",
+            "capacity",
+            "overloaded",
+        ]
+        return any(p in error_str for p in quota_patterns)
+
+    def _switch_to_local(self, reason: str):
+        """Switch to local LLM provider."""
+        if self._local and self._local.is_available:
+            self._current = self._local
+            self.name = "Local (fallback)"
+            self.logger.warning(f"[LLM] Switched to local LLM: {reason}")
+            return True
+        return False
+
+    def generate_content(self, prompt: str) -> Any:
+        """
+        Generate content with immediate fallback on quota/errors.
+        Switches to local LLM after just 1 Gemini failure.
+        """
+        if not self._current:
+            raise RuntimeError("No LLM provider available")
+
+        # If we've already switched to local, use it directly
+        if self._current == self._local:
+            return self._local.generate_content(prompt)
+
+        # Try Gemini first (if not exhausted)
+        if self._gemini and self._gemini_failures < self._max_gemini_failures:
+            try:
+                result = self._gemini.generate_content(prompt)
+                return result
+            except Exception as e:
+                self._gemini_failures += 1
+                self.logger.warning(f"[LLM] Gemini failed ({self._gemini_failures}/{self._max_gemini_failures}): {e}")
+
+                # Immediately switch to local on ANY error (quota, rate limit, etc.)
+                if self._switch_to_local(str(e)[:100]):
+                    # Try local immediately
+                    return self._local.generate_content(prompt)
+                else:
+                    raise
+
+        # Gemini exhausted, try local
+        if self._local and self._local.is_available:
+            try:
+                return self._local.generate_content(prompt)
+            except Exception as e:
+                self.logger.error(f"[LLM] Local LLM also failed: {e}")
+                raise
+
+        raise RuntimeError("All LLM providers failed")
+
+
+def create_llm_provider(config: "Config", logger: logging.Logger) -> Optional[LLMProvider]:
+    """
+    Create a robust LLM provider with automatic fallback.
+
+    Returns a FallbackLLMProvider that:
+    1. Tries Gemini API first (better quality)
+    2. Falls back to local LLM on quota errors
+    3. Local LLM completes what Gemini cannot
+
+    Set PREFER_LOCAL_LLM=1 to always use local LLM first.
+    """
+    # Check if user prefers local LLM
+    local_model = os.environ.get("LOCAL_LLM_MODEL", "")
+    prefer_local = os.environ.get("PREFER_LOCAL_LLM", "").lower() in ("1", "true", "yes")
+
+    if prefer_local or local_model:
+        # User explicitly wants local LLM
+        try:
+            provider = LocalLLMProvider(local_model if local_model else None)
+            if provider.is_available:
+                logger.info("[LLM] Using local model (user preference, no quotas)")
+                return provider
+        except Exception as e:
+            logger.debug(f"[LLM] Local LLM not available: {e}")
+
+    # Use fallback provider for automatic switching
+    provider = FallbackLLMProvider(config, logger)
+    if provider.is_available:
+        return provider
+
+    logger.warning("[LLM] No AI provider available")
+    return None
+
 
 # ==========================================
 # CONFIGURATION
@@ -111,6 +311,12 @@ class Config:
     # Use an available model name from Google GenAI model list.
     # Default will work for the current API: 'models/gemini-pro-latest'
     GEMINI_MODEL: str = "models/gemini-pro-latest"
+
+    # Local LLM Configuration
+    LOCAL_LLM_MODEL: str = field(default_factory=lambda: os.environ.get("LOCAL_LLM_MODEL", ""))
+    PREFER_LOCAL_LLM: bool = field(
+        default_factory=lambda: os.environ.get("PREFER_LOCAL_LLM", "").lower() in ("1", "true", "yes")
+    )
 
     # Filesystem paths
     BASE_DIR: str = field(default_factory=lambda: os.path.dirname(os.path.abspath(__file__)))
@@ -1342,8 +1548,18 @@ def execute(
         # Clean non-ASCII / emoji characters from report before saving
         safe_report = strip_emojis(report)
 
-        # Note: Frontmatter is applied as the FINAL step in run.py after all
-        # file organization is complete. Do not add frontmatter here.
+        # Apply frontmatter with correct AI status
+        # This ensures the document has proper lifecycle tracking from creation
+        try:
+            from scripts.frontmatter import add_frontmatter
+
+            ai_was_used = not no_ai and "[NO AI MODE]" not in safe_report
+            lifecycle_status = "in_progress" if ai_was_used else "draft"
+            safe_report = add_frontmatter(
+                safe_report, report_filename, status=lifecycle_status, ai_processed=ai_was_used
+            )
+        except ImportError:
+            pass  # Frontmatter module not available
 
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(safe_report)

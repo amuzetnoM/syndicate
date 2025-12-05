@@ -25,9 +25,14 @@ from typing import Dict
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import pandas as pd
 
-from main import Config, Cortex, QuantEngine, Strategist, setup_logging
+from main import Config, Cortex, QuantEngine, Strategist, create_llm_provider, setup_logging
 
 
 def ensure_dirs(config: Config):
@@ -39,22 +44,54 @@ def ensure_dirs(config: Config):
     return reports, charts
 
 
-def write_report(report_path: str, markdown: str, doc_type: str = "reports", ai_processed: bool = False):
-    """Write report to file and register in lifecycle system. Frontmatter is applied in final pass by run.py."""
+def write_report(
+    report_path: str,
+    markdown: str,
+    doc_type: str = "reports",
+    ai_processed: bool = False,
+    report_type: str = None,
+    period: str = None,
+):
+    """
+    Write report to file and register in lifecycle system.
+    Also registers in reports table for frequency tracking.
+    Frontmatter is applied in final pass by run.py.
+
+    Args:
+        report_path: Path to write the report
+        markdown: Report content
+        doc_type: Document type for lifecycle
+        ai_processed: Whether AI was used
+        report_type: 'weekly', 'monthly', 'yearly' for frequency tracking
+        period: Period string like '2025-12', '2025-W49', '2025'
+    """
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(markdown)
 
-    # Register in lifecycle database
+    # Register in database for tracking
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from db_manager import get_db
+        from db_manager import Report, get_db
 
         db = get_db()
-        # Status is 'in_progress' if AI processed, 'draft' if no-AI mode
+
+        # Register in lifecycle database
         lifecycle_status = "in_progress" if ai_processed else "draft"
         db.register_document(report_path, doc_type=doc_type, status=lifecycle_status)
-    except Exception:
-        pass  # Lifecycle registration is optional
+
+        # Register in reports table for frequency tracking
+        if report_type and period:
+            report = Report(
+                report_type=report_type,
+                period=period,
+                content=markdown[:500],  # Store summary only
+                summary=f"Generated on {datetime.date.today()}",
+                ai_enabled=ai_processed,
+            )
+            db.save_report(report, overwrite=False)
+            print(f"[REPORT] Registered {report_type} report for period {period}")
+    except Exception as e:
+        print(f"[REPORT] DB registration failed: {e}")  # Log but don't fail
 
 
 def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_ai=False) -> str:
@@ -176,7 +213,30 @@ def monthly_yearly_report(config: Config, logger, model=None, dry_run=False, no_
             md.append("\n## AI Forecast for Next Year\n")
             md.append("*AI analysis pending - quota limit reached or error occurred.*\n")
 
-    write_report(path, "\n".join(md), doc_type="reports", ai_processed=ai_success)
+    # Register both monthly AND yearly reports
+    write_report(
+        path,
+        "\n".join(md),
+        doc_type="reports",
+        ai_processed=ai_success,
+        report_type="monthly",
+        period=f"{now.year:04d}-{now.month:02d}",
+    )
+    # Also register yearly
+    try:
+        from db_manager import Report, get_db
+
+        db = get_db()
+        yearly_report = Report(
+            report_type="yearly",
+            period=f"{now.year:04d}",
+            content=f"Generated on {now}",
+            summary=f"Yearly report for {now.year}",
+            ai_enabled=ai_success,
+        )
+        db.save_report(yearly_report, overwrite=False)
+    except Exception:
+        pass
     logger.info(f"Monthly & Yearly report written to {path}")
     return path
 
@@ -245,7 +305,18 @@ def weekly_rundown(config: Config, logger, model=None, dry_run=False, no_ai=Fals
         except Exception:
             continue
 
-    write_report(report_path, "\n".join(md), doc_type="reports", ai_processed=ai_success)
+    # Get ISO week for period tracking
+    iso_cal = now.isocalendar()
+    week_period = f"{iso_cal[0]:04d}-W{iso_cal[1]:02d}"
+
+    write_report(
+        report_path,
+        "\n".join(md),
+        doc_type="reports",
+        ai_processed=ai_success,
+        report_type="weekly",
+        period=week_period,
+    )
     logger.info(f"Weekly rundown written to {report_path}")
     return report_path
 
@@ -267,17 +338,17 @@ def main():
     logger = setup_logging(config)
     logger.setLevel(getattr(logger, args.log_level.upper(), "INFO"))
 
-    # Configure AI
+    # Configure AI (uses local LLM if available, falls back to Gemini)
     model_obj = None
     if not args.no_ai:
         try:
-            import google.generativeai as genai
-
-            genai.configure(api_key=config.GEMINI_API_KEY)
-            model_obj = genai.GenerativeModel(config.GEMINI_MODEL)
-            logger.info(f"Configured Gemini model: {config.GEMINI_MODEL}")
+            model_obj = create_llm_provider(config, logger)
+            if model_obj:
+                logger.info(f"Using LLM provider: {model_obj.name}")
+            else:
+                logger.warning("No LLM provider available")
         except Exception as e:
-            logger.error(f"Failed to configure Gemini: {e}")
+            logger.error(f"Failed to configure LLM: {e}")
             model_obj = None
 
     if args.mode in ("monthly", "all", "yearly"):

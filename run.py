@@ -32,7 +32,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
 # Task execution configuration
-MAX_RETRIES = 10  # Max retries before marking task as failed
+MAX_RETRIES = 3  # Max retries before marking task as failed
 
 
 def ensure_venv():
@@ -228,10 +228,25 @@ def run_all(no_ai: bool = False, force: bool = False):
 
     results = {}
 
-    # 1. Always run daily journal (will update/create for today)
+    # 1. Daily journal (check if already done in this cycle)
     print("\n[1/5] DAILY JOURNAL")
     print("-" * 40)
-    results["daily"] = run_daily(no_ai=no_ai)
+    if db.has_journal_for_date(today.isoformat()) and not force:
+        # Journal exists - only update if it's been more than 4 hours
+        last_update = db.get_journal_last_update(today.isoformat())
+        if last_update:
+            from datetime import datetime, timedelta
+
+            last_dt = datetime.fromisoformat(last_update) if isinstance(last_update, str) else last_update
+            if datetime.now() - last_dt < timedelta(hours=4):
+                print("  [SKIP] Daily journal recently updated (within 4 hours)")
+                results["daily"] = True
+            else:
+                results["daily"] = run_daily(no_ai=no_ai)
+        else:
+            results["daily"] = run_daily(no_ai=no_ai)
+    else:
+        results["daily"] = run_daily(no_ai=no_ai)
 
     # 2. Pre-market plan (if not already done today)
     print("\n[2/5] PRE-MARKET PLAN")
@@ -425,41 +440,28 @@ def _run_post_analysis_tasks():
     - Notion sync: runs daily (but skips unchanged files)
     """
     try:
-        import os
         from pathlib import Path
 
-        import google.generativeai as genai
-
+        from main import Config, create_llm_provider, setup_logging
         from scripts.file_organizer import FileOrganizer
         from scripts.insights_engine import InsightsExtractor
         from scripts.task_executor import TaskExecutor
 
-        # Get config-like object
-        class RuntimeConfig:
-            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-            OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+        # Use the full Config for proper LLM provider initialization
+        config = Config()
 
-        config = RuntimeConfig()
-
-        # Simple logger
-        import logging
-
-        logger = logging.getLogger("GoldStandard.Daemon")
+        # Set up proper logger
+        logger = setup_logging(config)
 
         # Get database for schedule tracking
         from db_manager import get_db
 
         db = get_db()
 
-        # Try to get model
-        model = None
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel("models/gemini-pro-latest")
-            except Exception as e:
-                logger.warning(f"Failed to initialize Gemini model: {e}")
+        # Use unified LLM provider (local LLM or Gemini)
+        model = create_llm_provider(config, logger)
+        if model:
+            logger.info(f"[DAEMON] Using LLM provider: {model.name}")
 
         # 1. Extract insights from today's reports (DAILY)
         if db.should_run_task("insights_extraction"):
@@ -544,7 +546,7 @@ def _run_post_analysis_tasks():
                             title=action_dict["title"],
                             description=action_dict.get("description", ""),
                             priority=action_dict.get("priority", "medium"),
-                            status="in_progress",
+                            status="pending",  # Must be 'pending' for executor to find it
                             source_report=action_dict.get("source_report", ""),
                             source_context=action_dict.get("source_context", ""),
                             deadline=action_dict.get("deadline"),
@@ -639,23 +641,36 @@ def _run_post_analysis_tasks():
                     # Detect if AI was used by checking content patterns
                     # AI-generated content typically has these markers
                     ai_markers = [
-                        "## AI ",
-                        "## Strategic",
-                        "## Tactical",
-                        "**Bias:**",
-                        "**Entry Zone",
-                        "## Market Intelligence",
-                        "## Outlook",
+                        # Journal/Report markers
+                        "## 1. Market Context",
+                        "## 2. Asset-Specific Analysis",
+                        "## 3. Sentiment Summary",
+                        "## 4. Strategic Thesis",
+                        "## 5. Setup Scan",
+                        "## 6. Scenario Probability",
+                        "## 7. Risk Management",
+                        "## 8. Algo Self-Reflection",
+                        "**Bias: ",
+                        "**Primary Thesis:",
+                        # Pre-market markers
+                        "## 1. Strategic Bias",
+                        "## 2. Key Risk",
+                        "## 3. Critical Events",
+                        "## 4. Trade Management",
+                        "## 5. Key Levels",
+                        "**Overall Bias:**",
+                        "**Entry Zone**",
+                        "**Stop Loss**",
                     ]
                     ai_processed = any(marker in content for marker in ai_markers)
 
                     # Also check for NO AI markers
-                    no_ai_markers = ["[NO AI MODE]", "AI disabled", "no AI", "skeleton report"]
+                    no_ai_markers = ["[NO AI MODE]", "AI disabled", "no AI", "skeleton report", "[PENDING AI"]
                     if any(marker.lower() in content.lower() for marker in no_ai_markers):
                         ai_processed = False
 
-                    # Set status: in_progress if AI processed, draft if not
-                    status = "in_progress" if ai_processed else "draft"
+                    # Set status: published if AI processed (ready for Notion), draft if not
+                    status = "published" if ai_processed else "draft"
 
                     # Add frontmatter based on filename with proper status
                     updated = add_frontmatter(content, md_file.name, status=status, ai_processed=ai_processed)
@@ -679,37 +694,145 @@ def _run_post_analysis_tasks():
         except Exception as fm_err:
             print(f"[DAEMON] Frontmatter error: {fm_err}")
 
-        # 5. Publish to Notion (DAILY - with file-level deduplication)
-        # The notion_publisher will check if files have changed since last sync
-        if db.should_run_task("notion_sync"):
-            print("[DAEMON] Publishing to Notion...")
-            try:
-                from scripts.notion_publisher import sync_all_outputs
+        # 5. Publish to Notion with TYPE-AWARE SCHEDULING
+        # Different doc types have different sync frequencies:
+        # - journal, premarket, research: EVERY CYCLE (daily content)
+        # - weekly reports: WEEKLY
+        # - monthly reports: MONTHLY
+        # - yearly reports: YEARLY
+        print("[DAEMON] Publishing to Notion...")
+        try:
+            from scripts.frontmatter import is_ready_for_sync
+            from scripts.notion_publisher import NotionPublisher
 
-                results = sync_all_outputs()
-                success_count = len(results.get("success", []))
-                skipped_count = len(results.get("skipped", []))
-                failed_count = len(results.get("failed", []))
+            publisher = NotionPublisher()
+            output_path = Path(config.OUTPUT_DIR)
+            reports_path = output_path / "reports"
+            research_path = output_path / "research"
 
-                if success_count > 0:
-                    print(f"[DAEMON] Published {success_count} new/changed files to Notion")
-                if skipped_count > 0:
-                    print(f"[DAEMON] Skipped {skipped_count} unchanged files")
-                if failed_count > 0:
-                    print(f"[DAEMON] Failed to publish {failed_count} files")
+            today = date.today()
+            iso_cal = today.isocalendar()
 
-                # Mark as run even if some failed
-                db.mark_task_run("notion_sync")
+            # Track results
+            published = 0
+            skipped_schedule = 0
+            skipped_status = 0
+            failed = 0
 
-            except ImportError:
-                print("[DAEMON] Notion publisher not available, skipping")
-            except ValueError as e:
-                # Missing API keys
-                print(f"[DAEMON] Notion not configured: {e}")
-            except Exception as notion_err:
-                print(f"[DAEMON] Notion publishing error: {notion_err}")
-        else:
-            print("[DAEMON] Notion sync already done today, skipping")
+            # Define document type schedules
+            def should_sync_doc(filepath: Path, doc_type: str) -> bool:
+                """Check if document should be synced based on type-aware schedule."""
+                filename = filepath.name.lower()
+
+                # EXCLUDED from Notion sync - internal task outputs
+                excluded_patterns = ["monitor_", "data_fetch_", "calc_", "code_"]
+                if any(p in filename for p in excluded_patterns):
+                    return False
+
+                # Daily documents - always sync if ready
+                daily_patterns = [
+                    "journal_",
+                    "premarket_",
+                    "pre_market_",
+                    "research_",
+                    "news_scan_",
+                    "catalyst",
+                    "economic_",
+                    "calendar_",
+                ]
+                if any(p in filename for p in daily_patterns):
+                    return True
+
+                # Weekly reports - only on weekends or if not synced this week
+                if "weekly_" in filename or "rundown_" in filename:
+                    sync_key = f"notion_sync_weekly_{today.year}_{iso_cal[1]}"
+                    if db.should_run_task(sync_key):
+                        db.mark_task_run(sync_key)
+                        return True
+                    return False
+
+                # Monthly reports - only once per month
+                if "monthly_" in filename:
+                    sync_key = f"notion_sync_monthly_{today.year}_{today.month:02d}"
+                    if db.should_run_task(sync_key):
+                        db.mark_task_run(sync_key)
+                        return True
+                    return False
+
+                # Yearly reports - only once per year
+                if "yearly_" in filename or "1y_" in filename:
+                    sync_key = f"notion_sync_yearly_{today.year}"
+                    if db.should_run_task(sync_key):
+                        db.mark_task_run(sync_key)
+                        return True
+                    return False
+
+                # Default: sync daily documents
+                return True
+
+            # Collect all markdown files
+            all_md_files = []
+            for search_path in [output_path, reports_path, research_path]:
+                if search_path.exists():
+                    all_md_files.extend(search_path.glob("*.md"))
+                    all_md_files.extend(search_path.glob("**/*.md"))
+
+            # Deduplicate
+            seen = set()
+            md_files = []
+            for f in all_md_files:
+                if f not in seen and "FILE_INDEX" not in f.name and "/archive/" not in str(f).replace("\\", "/"):
+                    seen.add(f)
+                    md_files.append(f)
+
+            for filepath in md_files:
+                try:
+                    content = filepath.read_text(encoding="utf-8")
+
+                    # Check if document is ready for sync (has proper frontmatter status)
+                    try:
+                        if not is_ready_for_sync(content):
+                            skipped_status += 1
+                            continue
+                    except Exception:
+                        pass  # If frontmatter check fails, try to sync anyway
+
+                    # Check type-aware schedule
+                    doc_type = "journal" if "Journal_" in filepath.name else "reports"
+                    if not should_sync_doc(filepath, doc_type):
+                        skipped_schedule += 1
+                        continue
+
+                    # Sync the file
+                    result = publisher.sync_file(str(filepath), force=False)
+                    if result.get("skipped"):
+                        # File unchanged - this is fine
+                        pass
+                    else:
+                        published += 1
+                        print(f"  ✓ {filepath.name} → {result.get('type', 'notes')}")
+
+                except Exception as e:
+                    failed += 1
+                    logger.debug(f"Failed to sync {filepath.name}: {e}")
+
+            # Summary
+            if published > 0:
+                print(f"[DAEMON] Published {published} documents to Notion")
+            if skipped_schedule > 0:
+                print(f"[DAEMON] Skipped {skipped_schedule} docs (not scheduled yet)")
+            if skipped_status > 0:
+                print(f"[DAEMON] Skipped {skipped_status} docs (not ready - draft/not AI processed)")
+            if failed > 0:
+                print(f"[DAEMON] Failed to publish {failed} documents")
+
+        except ImportError:
+            print("[DAEMON] Notion publisher not available, skipping")
+        except ValueError as e:
+            # Missing API keys
+            print(f"[DAEMON] Notion not configured: {e}")
+        except Exception as notion_err:
+            print(f"[DAEMON] Notion publishing error: {notion_err}")
 
     except ImportError as e:
         print(f"[DAEMON] Post-analysis skipped (missing module): {e}")

@@ -691,6 +691,14 @@ class DatabaseManager:
             cursor.execute("SELECT 1 FROM journals WHERE date = ?", (date_str,))
             return cursor.fetchone() is not None
 
+    def get_journal_last_update(self, date_str: str) -> Optional[str]:
+        """Get the last update timestamp for a journal entry."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT updated_at FROM journals WHERE date = ?", (date_str,))
+            row = cursor.fetchone()
+            return row["updated_at"] if row else None
+
     def save_journal(self, entry: JournalEntry, overwrite: bool = True) -> bool:
         """
         Save a journal entry. If overwrite=True, updates existing entry.

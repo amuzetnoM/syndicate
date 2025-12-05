@@ -299,13 +299,46 @@ class NotionPublisher:
         return meta, body
 
     def markdown_to_blocks(self, content: str) -> List[Dict]:
-        """Convert markdown to Notion blocks."""
+        """Convert markdown to Notion blocks with rich formatting."""
         blocks = []
         lines = content.split("\n")
         i = 0
 
+        def parse_rich_text(text: str) -> List[Dict]:
+            """Parse inline markdown to rich text annotations."""
+            rich_texts = []
+
+            # Simple approach: split by bold/italic markers
+            # For now, just detect **bold** and *italic*
+            parts = re.split(r"(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)", text)
+
+            for part in parts:
+                if not part:
+                    continue
+
+                if part.startswith("**") and part.endswith("**"):
+                    rich_texts.append({"type": "text", "text": {"content": part[2:-2]}, "annotations": {"bold": True}})
+                elif part.startswith("*") and part.endswith("*") and not part.startswith("**"):
+                    rich_texts.append(
+                        {"type": "text", "text": {"content": part[1:-1]}, "annotations": {"italic": True}}
+                    )
+                elif part.startswith("`") and part.endswith("`"):
+                    rich_texts.append({"type": "text", "text": {"content": part[1:-1]}, "annotations": {"code": True}})
+                else:
+                    rich_texts.append({"type": "text", "text": {"content": part}})
+
+            return rich_texts if rich_texts else [{"type": "text", "text": {"content": text}}]
+
         while i < len(lines):
             line = lines[i]
+
+            # Skip frontmatter (YAML between ---)
+            if line.strip() == "---" and i == 0:
+                i += 1
+                while i < len(lines) and lines[i].strip() != "---":
+                    i += 1
+                i += 1  # Skip closing ---
+                continue
 
             # Skip empty lines
             if not line.strip():
@@ -323,10 +356,33 @@ class NotionPublisher:
                     {
                         "object": "block",
                         "type": block_type,
-                        block_type: {"rich_text": [{"type": "text", "text": {"content": text}}]},
+                        block_type: {"rich_text": parse_rich_text(text)},
                     }
                 )
                 i += 1
+                continue
+
+            # Tables (convert to code block for better display)
+            if line.startswith("|") and i + 1 < len(lines) and lines[i + 1].startswith("|"):
+                table_lines = []
+                while i < len(lines) and lines[i].startswith("|"):
+                    # Skip separator rows (|---|---|)
+                    if not re.match(r"^\|[-:\s|]+\|$", lines[i]):
+                        table_lines.append(lines[i])
+                    i += 1
+
+                if table_lines:
+                    # Create a simple formatted table
+                    blocks.append(
+                        {
+                            "object": "block",
+                            "type": "code",
+                            "code": {
+                                "rich_text": [{"type": "text", "text": {"content": "\n".join(table_lines)}}],
+                                "language": "plain text",
+                            },
+                        }
+                    )
                 continue
 
             # Code blocks
@@ -346,10 +402,46 @@ class NotionPublisher:
                         "type": "code",
                         "code": {
                             "rich_text": [{"type": "text", "text": {"content": "\n".join(code_lines)}}],
-                            "language": language.lower(),
+                            "language": language.lower()
+                            if language.lower() in ["python", "javascript", "json", "markdown", "sql", "bash"]
+                            else "plain text",
                         },
                     }
                 )
+                continue
+
+            # Callout (> **text** format often used for metadata)
+            if line.startswith("> **"):
+                # Collect all blockquote lines
+                quote_lines = []
+                while i < len(lines) and lines[i].startswith(">"):
+                    quote_lines.append(re.sub(r"^>\s*", "", lines[i]))
+                    i += 1
+
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "callout",
+                        "callout": {
+                            "rich_text": parse_rich_text("\n".join(quote_lines)),
+                            "icon": {"emoji": "📊"},
+                            "color": "gray_background",
+                        },
+                    }
+                )
+                continue
+
+            # Regular blockquote
+            if line.startswith(">"):
+                text = re.sub(r"^>\s*", "", line)
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "quote",
+                        "quote": {"rich_text": parse_rich_text(text)},
+                    }
+                )
+                i += 1
                 continue
 
             # Bullet list
@@ -359,7 +451,7 @@ class NotionPublisher:
                     {
                         "object": "block",
                         "type": "bulleted_list_item",
-                        "bulleted_list_item": {"rich_text": [{"type": "text", "text": {"content": text}}]},
+                        "bulleted_list_item": {"rich_text": parse_rich_text(text)},
                     }
                 )
                 i += 1
@@ -372,22 +464,7 @@ class NotionPublisher:
                     {
                         "object": "block",
                         "type": "numbered_list_item",
-                        "numbered_list_item": {
-                            "rich_text": [{"type": "text", "text": {"content": num_match.group(1)}}]
-                        },
-                    }
-                )
-                i += 1
-                continue
-
-            # Blockquote
-            if line.startswith(">"):
-                text = re.sub(r"^>\s*", "", line)
-                blocks.append(
-                    {
-                        "object": "block",
-                        "type": "quote",
-                        "quote": {"rich_text": [{"type": "text", "text": {"content": text}}]},
+                        "numbered_list_item": {"rich_text": parse_rich_text(num_match.group(1))},
                     }
                 )
                 i += 1
@@ -399,12 +476,12 @@ class NotionPublisher:
                 i += 1
                 continue
 
-            # Default: paragraph
+            # Default: paragraph with rich text
             blocks.append(
                 {
                     "object": "block",
                     "type": "paragraph",
-                    "paragraph": {"rich_text": [{"type": "text", "text": {"content": line}}]},
+                    "paragraph": {"rich_text": parse_rich_text(line)},
                 }
             )
             i += 1
