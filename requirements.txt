@@ -18,6 +18,7 @@ mplfinance>=0.12.10b0         # Financial charting library
 # AI & Machine Learning
 # -----------------------------------------------------------------------------
 google-generativeai>=0.8.0    # Google Gemini AI API client
+requests>=2.31.0              # HTTP client for Ollama API
 
 # -----------------------------------------------------------------------------
 # Local LLM (Optional - for offline/fallback AI)
@@ -35,6 +36,12 @@ google-generativeai>=0.8.0    # Google Gemini AI API client
 #   LOCAL_LLM_AUTO_DOWNLOAD=1             # Auto-download default model
 #   LOCAL_LLM_CONTEXT=4096                # Context window size
 #   PREFER_LOCAL_LLM=1                    # Use local LLM as primary
+#
+# Ollama (Alternative local LLM - server-based):
+#   Install from: https://ollama.ai
+#   Start server: ollama serve
+#   Pull models:  ollama pull llama3.2
+#   Configure:    OLLAMA_MODEL=llama3.2
 
 # -----------------------------------------------------------------------------
 # Utilities & Runtime
@@ -43,6 +50,7 @@ schedule>=1.2.0               # Job scheduling for recurring tasks
 colorama>=0.4.6               # Cross-platform colored terminal output
 filelock>=3.0.0               # File-based locking for concurrent access
 python-dotenv>=1.0.0          # Environment variable management from .env files
+tqdm>=4.66.0                  # Progress bars for downloads
 
 # -----------------------------------------------------------------------------
 # Testing (included for CI/CD compatibility)

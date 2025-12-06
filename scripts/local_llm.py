@@ -769,7 +769,7 @@ RECOMMENDED_MODELS = {
 
 def download_model(model_key: str, dest_dir: Optional[str] = None) -> Optional[str]:
     """
-    Download a recommended model.
+    Download a recommended model with progress bar and resume support.
 
     Args:
         model_key: Key from RECOMMENDED_MODELS (e.g., 'mistral-7b')
@@ -789,28 +789,101 @@ def download_model(model_key: str, dest_dir: Optional[str] = None) -> Optional[s
     dest_path.mkdir(parents=True, exist_ok=True)
 
     filepath = dest_path / model_info["filename"]
+    expected_size = int(model_info["size_gb"] * 1024 * 1024 * 1024)  # Convert to bytes
 
+    # Check if complete file exists
     if filepath.exists():
-        print(f"[LLM] Model already exists: {filepath}")
-        return str(filepath)
+        current_size = filepath.stat().st_size
+        # Allow 5% tolerance for size check
+        if current_size >= expected_size * 0.95:
+            print(f"[LLM] Model already exists: {filepath}")
+            return str(filepath)
+        else:
+            print(
+                f"[LLM] Incomplete download detected ({current_size / 1024**3:.2f} GB / {model_info['size_gb']:.1f} GB)"
+            )
+            print("[LLM] Resuming download...")
 
     print(f"[LLM] Downloading {model_key} ({model_info['size_gb']:.1f} GB)...")
     print(f"[LLM] {model_info['description']}")
+    print(f"[LLM] Destination: {filepath}")
 
     try:
-        import urllib.request
+        import requests
+        from tqdm import tqdm
 
-        # Download with progress
-        def progress_hook(count, block_size, total_size):
-            percent = int(count * block_size * 100 / total_size)
-            print(f"\r[LLM] Downloading: {percent}%", end="", flush=True)
+        # Get file size and check for resume support
+        head_response = requests.head(model_info["url"], allow_redirects=True, timeout=30)
+        total_size = int(head_response.headers.get("content-length", 0))
+        accept_ranges = head_response.headers.get("accept-ranges", "none")
 
-        urllib.request.urlretrieve(model_info["url"], filepath, progress_hook)
-        print(f"\n[LLM] Downloaded: {filepath}")
-        return str(filepath)
+        # Check existing file for resume
+        resume_pos = 0
+        mode = "wb"
+        if filepath.exists() and accept_ranges == "bytes":
+            resume_pos = filepath.stat().st_size
+            if resume_pos < total_size:
+                mode = "ab"
+                print(f"[LLM] Resuming from {resume_pos / 1024**3:.2f} GB")
+
+        # Download with progress bar
+        headers = {}
+        if resume_pos > 0 and mode == "ab":
+            headers["Range"] = f"bytes={resume_pos}-"
+
+        response = requests.get(model_info["url"], headers=headers, stream=True, timeout=30)
+        response.raise_for_status()
+
+        # Progress bar
+        with open(filepath, mode) as f:
+            with tqdm(
+                total=total_size,
+                initial=resume_pos,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+                desc=model_key,
+                ncols=80,
+            ) as pbar:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+
+        # Verify download
+        final_size = filepath.stat().st_size
+        if final_size >= total_size * 0.99:  # Allow 1% tolerance
+            print(f"\n[LLM] Download complete: {filepath}")
+            return str(filepath)
+        else:
+            print(
+                f"\n[LLM] WARNING: Download may be incomplete ({final_size / 1024**3:.2f} GB / {total_size / 1024**3:.2f} GB)"
+            )
+            return str(filepath)
+
+    except ImportError:
+        # Fallback without tqdm
+        print("[LLM] Note: Install 'tqdm' for progress bars")
+        try:
+            import urllib.request
+
+            def progress_hook(count, block_size, total_size):
+                percent = int(count * block_size * 100 / total_size) if total_size > 0 else 0
+                downloaded = count * block_size / (1024**3)
+                print(f"\r[LLM] Downloading: {percent}% ({downloaded:.2f} GB)", end="", flush=True)
+
+            urllib.request.urlretrieve(model_info["url"], filepath, progress_hook)
+            print(f"\n[LLM] Downloaded: {filepath}")
+            return str(filepath)
+        except Exception as e:
+            print(f"\n[LLM] Download failed: {e}")
+            return None
 
     except Exception as e:
         print(f"\n[LLM] Download failed: {e}")
+        if filepath.exists():
+            size = filepath.stat().st_size / (1024**3)
+            print(f"[LLM] Partial file saved ({size:.2f} GB). Re-run to resume.")
         return None
 
 

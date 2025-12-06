@@ -211,14 +211,34 @@ if ($null -ne $ollamaCmd) {
 
 # GGUF downloads for llama.cpp fallback
 Write-Host "[8/8] Downloading GGUF models..." -ForegroundColor Cyan
-$ggufModels = @("mistral-7b")
-foreach ($model in $ggufModels) {
-    Write-Host "      Downloading GGUF model '$model'..." -ForegroundColor Gray
-    python scripts/local_llm.py --download $model
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "      GGUF model '$model' ready." -ForegroundColor Green
+
+$ggufDir = "$env:USERPROFILE\.cache\gold_standard\models"
+if (-not (Test-Path $ggufDir)) {
+    New-Item -ItemType Directory -Path $ggufDir -Force | Out-Null
+}
+
+$ggufFile = "$ggufDir\mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+$ggufUrl = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+$expectedSize = 4370000000  # ~4.37 GB
+
+if (Test-Path $ggufFile) {
+    $currentSize = (Get-Item $ggufFile).Length
+    if ($currentSize -ge ($expectedSize * 0.95)) {
+        Write-Host "      GGUF model already downloaded ($([math]::Round($currentSize/1GB, 2)) GB)" -ForegroundColor Green
     } else {
-        Write-Host "      WARNING: Failed to download GGUF model '$model'." -ForegroundColor Yellow
+        Write-Host "      Incomplete GGUF detected ($([math]::Round($currentSize/1GB, 2)) GB / 4.37 GB)" -ForegroundColor Yellow
+        Write-Host "      Resuming download via Python..." -ForegroundColor Gray
+        python scripts/local_llm.py --download mistral-7b
+    }
+} else {
+    Write-Host "      Downloading Mistral 7B GGUF (4.4 GB)..." -ForegroundColor Gray
+    Write-Host "      This may take 10-30 minutes depending on connection." -ForegroundColor Gray
+    python scripts/local_llm.py --download mistral-7b
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "      GGUF model downloaded successfully." -ForegroundColor Green
+    } else {
+        Write-Host "      WARNING: GGUF download may have failed. Re-run setup to retry." -ForegroundColor Yellow
+        Write-Host "      Manual download: python scripts/local_llm.py --download mistral-7b" -ForegroundColor Gray
     }
 }
 

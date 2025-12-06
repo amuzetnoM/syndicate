@@ -216,15 +216,35 @@ fi
 
 # GGUF downloads for llama.cpp fallback
 echo -e "[8/8] Downloading GGUF models..."
-GGUF_MODELS=("mistral-7b")
-for model in "${GGUF_MODELS[@]}"; do
-    echo -e "      ${CYAN}Downloading GGUF model '$model'...${NC}"
-    if python scripts/local_llm.py --download "$model"; then
-        echo -e "      ${GREEN}GGUF model '$model' ready.${NC}"
+
+GGUF_DIR="$HOME/.cache/gold_standard/models"
+mkdir -p "$GGUF_DIR"
+
+GGUF_FILE="$GGUF_DIR/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+EXPECTED_SIZE=4370000000  # ~4.37 GB
+
+if [ -f "$GGUF_FILE" ]; then
+    CURRENT_SIZE=$(stat -f%z "$GGUF_FILE" 2>/dev/null || stat -c%s "$GGUF_FILE" 2>/dev/null || echo 0)
+    THRESHOLD=$((EXPECTED_SIZE * 95 / 100))
+    if [ "$CURRENT_SIZE" -ge "$THRESHOLD" ]; then
+        SIZE_GB=$(echo "scale=2; $CURRENT_SIZE / 1073741824" | bc)
+        echo -e "      ${GREEN}GGUF model already downloaded (${SIZE_GB} GB)${NC}"
     else
-        echo -e "      ${YELLOW}WARNING: Failed to download GGUF model '$model'.${NC}"
+        SIZE_GB=$(echo "scale=2; $CURRENT_SIZE / 1073741824" | bc)
+        echo -e "      ${YELLOW}Incomplete GGUF detected (${SIZE_GB} GB / 4.37 GB)${NC}"
+        echo -e "      ${CYAN}Resuming download via Python...${NC}"
+        python scripts/local_llm.py --download mistral-7b
     fi
-done
+else
+    echo -e "      ${CYAN}Downloading Mistral 7B GGUF (4.4 GB)...${NC}"
+    echo -e "      ${CYAN}This may take 10-30 minutes depending on connection.${NC}"
+    if python scripts/local_llm.py --download mistral-7b; then
+        echo -e "      ${GREEN}GGUF model downloaded successfully.${NC}"
+    else
+        echo -e "      ${YELLOW}WARNING: GGUF download may have failed. Re-run setup to retry.${NC}"
+        echo -e "      ${CYAN}Manual download: python scripts/local_llm.py --download mistral-7b${NC}"
+    fi
+fi
 
 # Setup .env file
 echo ""
