@@ -2,21 +2,41 @@
 
 All notable changes to Gold Standard are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [3.3.0] - 2025-12-05
+## [3.3.0] - 2025-12-06
 
 ### Added
-- **FallbackLLMProvider System**
-  - Intelligent LLM fallback chain: Gemini → Local LLM → Error handling
-  - Automatic retry tracking with per-provider failure counts
-  - Graceful degradation when primary AI provider hits quota limits
-  - `scripts/local_llm.py` - Local LLM provider abstraction layer
-  - Dual backend support: pyvdb (native C++) and llama-cpp-python (pip)
-  - `HAS_LLM_SUPPORT`, `BACKEND` flags for runtime detection
+- **Multi-Provider LLM System**
+  - Three-tier fallback chain: Gemini → Ollama → llama.cpp
+  - Automatic provider switching on quota errors, rate limits, or failures
+  - `LLM_PROVIDER` env var to force specific provider (`gemini`, `ollama`, `local`)
+  - `PREFER_LOCAL_LLM=1` for local-first mode (no cloud calls)
+
+- **Ollama Integration**
+  - Full Ollama server support via REST API
+  - `OllamaLLM` class in `scripts/local_llm.py`
+  - `OllamaProvider` class in `main.py`
+  - `OLLAMA_HOST` and `OLLAMA_MODEL` environment variables
+  - Auto-detection of running Ollama server
+  - Compatible with all Ollama models (llama3.2, mistral, phi3, etc.)
+
+- **Enhanced Local LLM (llama.cpp)**
+  - Full GPU acceleration via `LOCAL_LLM_GPU_LAYERS` (-1=all, 0=CPU)
+  - Environment variable configuration for all settings
+  - Auto-discovery of GGUF models in models/ directory
+  - Auto-download of recommended models (`LOCAL_LLM_AUTO_DOWNLOAD=1`)
+  - Configurable context window (`LOCAL_LLM_CONTEXT=4096`)
+  - Model download CLI: `python scripts/local_llm.py --download mistral-7b`
+
+- **Comprehensive LLM Documentation**
+  - New `docs/LLM_PROVIDERS.md` - complete provider guide
+  - Quick start for each provider (Gemini, Ollama, llama.cpp)
+  - GPU configuration and VRAM requirements
+  - Offline/air-gapped usage instructions
+  - Troubleshooting guide
 
 - **Document Lifecycle Management System**
   - New `document_lifecycle` SQLite table for tracking document states
