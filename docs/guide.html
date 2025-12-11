@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Standard | Technical Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #15151a;
+            --border: #2a2a30;
+            --border-hover: #3a3a40;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b5;
+            --text-muted: #7a7a7f;
+            --accent-gold: #d4a853;
+            --accent-gold-dim: rgba(212, 168, 83, 0.1);
+            --accent-gold-dark: rgba(212, 168, 83, 0.05);
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 11, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            height: 56px;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo:hover {
+            color: var(--accent-gold);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Main Content */
+        main {
+            margin-top: 56px;
+            padding: 3rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .guide-header {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .guide-header h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .guide-header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .guide-header .version {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent-gold-dim);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .toc h2 {
+            font-size: 1.125rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .toc-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .toc-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .toc-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .toc-number {
+            font-weight: 600;
+            color: var(--accent-gold);
+            min-width: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .toc-item a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .toc-item a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 4rem;
+            padding-bottom: 3rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h4 {
+            font-size: 1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Code */
+        code {
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent-gold);
+        }
+
+        pre {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-gold);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Blockquotes */
+        blockquote {
+            border-left: 3px solid var(--accent-gold);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Divider */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+
+        /* Links */
+        a {
+            color: var(--accent-gold);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: none;
+        }
+
+        @media (min-width: 1200px) {
+            main {
+                display: grid;
+                grid-template-columns: 1fr 250px;
+                gap: 2rem;
+                max-width: 1400px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .sidebar {
+                display: sticky;
+                top: 76px;
+                height: fit-content;
+            }
+
+            .sidebar-nav {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.5rem;
+            }
+
+            .sidebar-nav h3 {
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 1rem;
+                color: var(--accent-gold);
+                border: none;
+                padding: 0;
+                margin-top: 0;
+            }
+
+            .sidebar-nav ul {
+                list-style: none;
+                margin: 0;
+            }
+
+            .sidebar-nav li {
+                margin: 0.5rem 0;
+            }
+
+            .sidebar-nav a {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+
+            .sidebar-nav a:hover {
+                color: var(--accent-gold);
+            }
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-content {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .footer-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            color: var(--accent-gold);
+        }
+
+        .footer-section ul {
+            list-style: none;
+            margin: 0;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-section a:hover {
+            color: var(--accent-gold);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Utilities */
+        .text-muted {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .highlight {
+            background: var(--accent-gold-dim);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-gold);
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            background: var(--accent-gold-dim);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        /* Back to Home */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            main {
+                padding: 1.5rem 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            h3 {
+                font-size: 1.1rem;
+            }
+
+            .toc {
+                padding: 1.5rem;
+            }
+
+            pre {
+                padding: 1rem;
+                font-size: 0.75rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">
+                <span>◆</span>
+                <span>Gold Standard</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="https://github.com/amuzetnoM/gold_standard" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <a href="index.html" class="back-link">← Back to Home</a>
+
+            <div class="guide-header">
+                <h1>Technical Guide</h1>
+                <p class="subtitle">In-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system.</p>
+                <div class="version">Version 3.3</div>
+            </div>
+
+            <!-- Table of Contents -->
+            <div class="toc">
+                <h2>Table of Contents</h2>
+                <div class="toc-grid">
+                    <div class="toc-item"><span class="toc-number">1</span> <a href="#technical-indicators">Technical Indicators</a></div>
+                    <div class="toc-item"><span class="toc-number">2</span> <a href="#intermarket-analysis">Intermarket Analysis</a></div>
+                    <div class="toc-item"><span class="toc-number">3</span> <a href="#memory-grading">Memory and Grading</a></div>
+                    <div class="toc-item"><span class="toc-number">4</span> <a href="#ai-prompt">AI Prompt Engineering</a></div>
+                    <div class="toc-item"><span class="toc-number">5</span> <a href="#data-pipeline">Data Pipeline</a></div>
+                    <div class="toc-item"><span class="toc-number">6</span> <a href="#report-types">Report Types</a></div>
+                    <div class="toc-item"><span class="toc-number">7</span> <a href="#live-analysis">Live Analysis Suite</a></div>
+                    <div class="toc-item"><span class="toc-number">8</span> <a href="#economic-calendar">Economic Calendar</a></div>
+                    <div class="toc-item"><span class="toc-number">9</span> <a href="#database">Database Manager</a></div>
+                    <div class="toc-item"><span class="toc-number">10</span> <a href="#scheduling">Intelligent Scheduling</a></div>
+                    <div class="toc-item"><span class="toc-number">11</span> <a href="#notion-sync">Notion Sync</a></div>
+                    <div class="toc-item"><span class="toc-number">12</span> <a href="#lifecycle">Document Lifecycle</a></div>
+                    <div class="toc-item"><span class="toc-number">13</span> <a href="#insights">Insights Engine</a></div>
+                    <div class="toc-item"><span class="toc-number">14</span> <a href="#task-executor">Task Executor</a></div>
+                    <div class="toc-item"><span class="toc-number">15</span> <a href="#file-organizer">File Organizer</a></div>
+                    <div class="toc-item"><span class="toc-number">16</span> <a href="#frontmatter">Frontmatter System</a></div>
+                    <div class="toc-item"><span class="toc-number">17</span> <a href="#notion-integration">Notion Integration</a></div>
+                    <div class="toc-item"><span class="toc-number">18</span> <a href="#tagging">Comprehensive Tagging</a></div>
+                    <div class="toc-item"><span class="toc-number">19</span> <a href="#testing">Testing Guidelines</a></div>
+                    <div class="toc-item"><span class="toc-number">20</span> <a href="#deployment">Deployment Notes</a></div>
+                    <div class="toc-item"><span class="toc-number">21</span> <a href="#extensions">Extension Patterns</a></div>
+                </div>
+            </div>
+
+            <!-- Sections -->
+            <section id="technical-indicators">
+                <h2>Technical Indicators</h2>
+
+                <h3>RSI (Relative Strength Index)</h3>
+                <p><strong>Definition:</strong> Momentum oscillator measuring speed and magnitude of price movements.</p>
+
+                <h4>Formula</h4>
+                <pre><code>RSI = 100 - (100 / (1 + RS))
+RS = Average Gain / Average Loss (over N periods, default 14)</code></pre>
+
+                <h4>Interpretation</h4>
+                <ul>
+                    <li>RSI > 70: Overbought condition</li>
+                    <li>RSI < 30: Oversold condition</li>
+                    <li>Divergences between RSI and price can signal reversals</li>
+                </ul>
+
+                <h4>Implementation</h4>
+                <pre><code>def rsi(close, length=14):
+    delta = close.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain = gain.rolling(length, min_periods=length).mean()
+    avg_loss = loss.rolling(length, min_periods=length).mean()
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))</code></pre>
+
+                <hr>
+
+                <h3>ATR (Average True Range)</h3>
+                <p><strong>Definition:</strong> Volatility indicator measuring the average range of price movement.</p>
+
+                <h4>Formula</h4>
+                <pre><code>True Range = max(
+    High - Low,
+    |High - Previous Close|,
+    |Low - Previous Close|
+)
+ATR = Rolling Mean of True Range (default 14 periods)</code></pre>
+
+                <h4>Use Cases</h4>
+                <ul>
+                    <li>Position sizing (larger ATR = smaller position)</li>
+                    <li>Stop loss placement (e.g., 2x ATR from entry)</li>
+                    <li>Volatility regime detection</li>
+                </ul>
+
+                <hr>
+
+                <h3>ADX (Average Directional Index)</h3>
+                <p><strong>Definition:</strong> Trend strength indicator (not direction) derived from Directional Movement Index.</p>
+
+                <h4>Interpretation</h4>
+                <ul>
+                    <li>ADX > 25: Strong trend present</li>
+                    <li>ADX < 20: Weak or no trend (ranging market)</li>
+                    <li>Rising ADX: Trend strengthening</li>
+                    <li>Falling ADX: Trend weakening</li>
+                </ul>
+
+                <hr>
+
+                <h3>SMA (Simple Moving Average)</h3>
+                <p><strong>Definition:</strong> Arithmetic mean of prices over N periods.</p>
+
+                <h4>Common Periods</h4>
+                <ul>
+                    <li>SMA 50: Intermediate-term trend</li>
+                    <li>SMA 200: Long-term trend</li>
+                    <li><span class="highlight">Golden Cross</span>: SMA 50 crosses above SMA 200 (bullish)</li>
+                    <li><span class="highlight">Death Cross</span>: SMA 50 crosses below SMA 200 (bearish)</li>
+                </ul>
+            </section>
+
+            <section id="intermarket-analysis">
+                <h2>Intermarket Analysis</h2>
+
+                <h3>Gold/Silver Ratio (GSR)</h3>
+                <p><strong>Definition:</strong> Price of gold divided by price of silver.</p>
+
+                <h4>Interpretation</h4>
+                <pre><code>GSR > 85: Silver relatively cheap (consider silver)
+GSR < 75: Gold relatively cheap (consider gold)</code></pre>
+
+                <p><strong>Rationale:</strong> Both metals move together but the ratio oscillates around historical norms. Extreme readings can indicate relative value opportunities.</p>
+
+                <h3>Correlation Framework</h3>
+                <p>The system tracks six assets for intermarket analysis:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Ticker</th>
+                            <th>Typical Correlation to Gold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Gold</td>
+                            <td><code>GC=F</code></td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Silver</td>
+                            <td><code>SI=F</code></td>
+                            <td>Strong positive</td>
+                        </tr>
+                        <tr>
+                            <td>Dollar Index</td>
+                            <td><code>DX-Y.NYB</code></td>
+                            <td>Inverse</td>
+                        </tr>
+                        <tr>
+                            <td>US 10Y Yield</td>
+                            <td><code>^TNX</code></td>
+                            <td>Inverse</td>
+                        </tr>
+                        <tr>
+                            <td>VIX</td>
+                            <td><code>^VIX</code></td>
+                            <td>Positive (flight to safety)</td>
+                        </tr>
+                        <tr>
+                            <td>S&P 500</td>
+                            <td><code>^GSPC</code></td>
+                            <td>Weak/Variable</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="memory-grading">
+                <h2>Memory and Grading System</h2>
+
+                <h3>Cortex Architecture</h3>
+                <p>The Cortex module maintains persistent memory across runs:</p>
+
+                <pre><code>{
+  "last_bias": "BULLISH",
+  "last_price": 1960.50,
+  "wins": 7,
+  "losses": 3,
+  "current_streak": 2,
+  "streak_type": "win",
+  "history": [
+    {
+      "date": "2025-11-30",
+      "bias": "BULLISH",
+      "price": 1940.00,
+      "result": "WIN"
+    }
+  ],
+  "last_run": "2025-11-30T12:00:00"
+}</code></pre>
+
+                <h3>Grading Logic</h3>
+                <pre><code>def grade_performance(current_price, last_price, last_bias):
+    delta = current_price - last_price
+
+    if last_bias == "BULLISH" and delta > 0:
+        return "WIN"
+    elif last_bias == "BEARISH" and delta < 0:
+        return "WIN"
+    elif last_bias == "NEUTRAL":
+        return "NEUTRAL"
+    else:
+        return "LOSS"</code></pre>
+
+                <h3>File Safety</h3>
+                <ul>
+                    <li>Memory file protected by <code>filelock.FileLock</code></li>
+                    <li>Prevents corruption from concurrent access</li>
+                    <li>Lock file: <code>cortex_memory.lock</code></li>
+                </ul>
+            </section>
+
+            <section id="ai-prompt">
+                <h2>AI Prompt Engineering</h2>
+
+                <h3>Prompt Structure</h3>
+                <p>The Strategist builds prompts with these components:</p>
+
+                <ol>
+                    <li><strong>System Context</strong> - Role and output format instructions</li>
+                    <li><strong>Memory History</strong> - Past predictions and performance</li>
+                    <li><strong>Quant Telemetry</strong> - Current prices, indicators, regime</li>
+                    <li><strong>Intermarket Data</strong> - Ratios, correlations, divergences</li>
+                    <li><strong>News Headlines</strong> - Recent market news (when available)</li>
+                </ol>
+
+                <h3>Output Format</h3>
+                <p>The system expects structured output with explicit bias declaration:</p>
+
+                <pre><code>## Strategic Thesis
+
+**Bias:** BULLISH
+
+**Rationale:** ADX indicates strong trend, RSI not overbought,
+yields declining supports gold prices...</code></pre>
+
+                <h3>Best Practices</h3>
+                <ul>
+                    <li>Request specific output format (Markdown or JSON)</li>
+                    <li>Include example outputs in prompt</li>
+                    <li>Constrain to canonical tokens: BULLISH, BEARISH, NEUTRAL</li>
+                    <li>Validate AI response before processing</li>
+                </ul>
+            </section>
+
+            <section id="data-pipeline">
+                <h2>Data Pipeline and Safety</h2>
+
+                <h3>Fetch Strategy</h3>
+                <p>Each asset has primary and backup tickers:</p>
+
+                <pre><code>ASSETS = {
+    'GOLD':   {'p': 'GC=F', 'b': 'GLD'},
+    'SILVER': {'p': 'SI=F', 'b': 'SLV'},
+    # ...
+}</code></pre>
+
+                <p>If primary fails, backup is attempted automatically.</p>
+
+                <h3>Indicator Fallbacks</h3>
+                <p>The system provides safe wrappers for indicator computation:</p>
+
+                <ol>
+                    <li>Attempt pandas_ta calculation</li>
+                    <li>If error or mismatched length, use fallback</li>
+                    <li>Fallback uses pure pandas operations</li>
+                    <li>Log warnings but continue processing</li>
+                </ol>
+
+                <h3>Data Validation</h3>
+                <ul>
+                    <li>Verify OHLC columns exist</li>
+                    <li>Only drop rows with missing OHLC (not indicator NaNs)</li>
+                    <li>Validate chart files are non-empty after generation</li>
+                </ul>
+            </section>
+
+            <section id="report-types">
+                <h2>Report Types</h2>
+
+                <h3>Daily Journal</h3>
+                <p>Generated by <code>main.py</code>, includes:</p>
+                <ul>
+                    <li>Self-correction analysis (grading previous prediction)</li>
+                    <li>Technical indicator summary</li>
+                    <li>Intermarket analysis</li>
+                    <li>AI-generated thesis</li>
+                    <li>Embedded charts</li>
+                </ul>
+                <p><strong>Output:</strong> <code>output/Journal_YYYY-MM-DD.md</code></p>
+
+                <h3>Weekly Rundown</h3>
+                <p>Generated by <code>scripts/split_reports.py --mode weekly</code>:</p>
+                <ul>
+                    <li>Short-horizon tactical overview</li>
+                    <li>Current asset status</li>
+                    <li>AI tactical thesis (optional)</li>
+                    <li>Weekly timeframe charts</li>
+                </ul>
+                <p><strong>Output:</strong> <code>output/reports/weekly_rundown_YYYY-MM-DD.md</code></p>
+
+                <h3>Monthly and Yearly Reports</h3>
+                <p>Comprehensive aggregated performance tables, return calculations per asset, and outlook.</p>
+            </section>
+
+            <section id="live-analysis">
+                <h2>Live Analysis Suite</h2>
+
+                <p>The <code>scripts/live_analysis.py</code> module provides real-time analysis reports with HTML-formatted tables.</p>
+
+                <h3>Report Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Report</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Catalyst Watchlist</td>
+                            <td><code>generate_catalyst_watchlist()</code></td>
+                            <td>Active market catalysts with gold impact</td>
+                        </tr>
+                        <tr>
+                            <td>Institutional Matrix</td>
+                            <td><code>generate_institutional_matrix()</code></td>
+                            <td>Central bank activity, ETF flows</td>
+                        </tr>
+                        <tr>
+                            <td>1Y Analysis</td>
+                            <td><code>generate_1y_analysis()</code></td>
+                            <td>One-year trend and pattern analysis</td>
+                        </tr>
+                        <tr>
+                            <td>3M Analysis</td>
+                            <td><code>generate_3m_analysis()</code></td>
+                            <td>Three-month tactical view</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="economic-calendar">
+                <h2>Economic Calendar Module</h2>
+
+                <p>The <code>scripts/economic_calendar.py</code> module provides a self-maintaining economic calendar system.</p>
+
+                <h3>Key Classes</h3>
+                <pre><code>from enum import Enum
+
+class EventImpact(Enum):
+    HIGH = "HIGH"   # 🔴 FOMC, NFP, CPI, GDP
+    MED = "MED"     # 🟡 ADP, JOLTS, PPI
+    LOW = "LOW"     # 🟢 Beige Book, Fed Speeches</code></pre>
+
+                <h3>Event Structure</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>date</code></td>
+                            <td>Event datetime</td>
+                        </tr>
+                        <tr>
+                            <td><code>name</code></td>
+                            <td>Event name (e.g., "Nonfarm Payrolls")</td>
+                        </tr>
+                        <tr>
+                            <td><code>impact</code></td>
+                            <td>EventImpact enum (HIGH/MED/LOW)</td>
+                        </tr>
+                        <tr>
+                            <td><code>forecast</code></td>
+                            <td>Expected value</td>
+                        </tr>
+                        <tr>
+                            <td><code>previous</code></td>
+                            <td>Prior reading</td>
+                        </tr>
+                        <tr>
+                            <td><code>gold_impact</code></td>
+                            <td>Directional gold analysis</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="database">
+                <h2>Database Manager</h2>
+
+                <p>The <code>db_manager.py</code> module provides SQLite persistence for all reports, scheduling, and sync tracking.</p>
+
+                <h3>Using DBManager</h3>
+                <pre><code>from db_manager import DBManager
+
+db = DBManager()
+
+# Save a report
+db.save_journal(date="2025-12-01", content="...", bias="BULLISH")
+
+# Query historical reports
+reports = db.get_journals(limit=30)</code></pre>
+
+                <h3>Key Benefits</h3>
+                <ul>
+                    <li>Persistent storage across runs</li>
+                    <li>Historical analysis queries</li>
+                    <li>Performance tracking over time</li>
+                    <li>Data export capabilities</li>
+                    <li>Schedule tracking for frequency-based task execution</li>
+                    <li>Notion sync tracking for deduplication</li>
+                </ul>
+            </section>
+
+            <section id="scheduling">
+                <h2>Intelligent Scheduling</h2>
+
+                <p>Version 3.2 introduces revolutionary intelligent task scheduling that transforms Gold Standard from a periodic runner into a sophisticated autonomous execution engine.</p>
+
+                <h3>Core Principles</h3>
+                <ol>
+                    <li><strong>Immediate by Default:</strong> Tasks without explicit scheduling execute immediately</li>
+                    <li><strong>Natural Language Dates:</strong> Automatic extraction of dates from task descriptions</li>
+                    <li><strong>Self-Healing:</strong> Automatic recovery from crashes, restarts, and API quota exhaustion</li>
+                    <li><strong>Atomic Operations:</strong> Race-condition-free task claiming and execution</li>
+                </ol>
+
+                <h3>Date Extraction Engine</h3>
+                <p>The system automatically parses temporal references from task descriptions:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Format</th>
+                            <th>Example</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Short month + day</td>
+                            <td>"Dec 18"</td>
+                            <td>2025-12-18T09:00:00</td>
+                        </tr>
+                        <tr>
+                            <td>Full month + day</td>
+                            <td>"December 18"</td>
+                            <td>2025-12-18T09:00:00</td>
+                        </tr>
+                        <tr>
+                            <td>With year</td>
+                            <td>"Dec 18, 2025"</td>
+                            <td>2025-12-18T09:00:00</td>
+                        </tr>
+                        <tr>
+                            <td>ISO format</td>
+                            <td>"2025-12-25"</td>
+                            <td>2025-12-25T09:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Frequency-Based Scheduling</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Frequency</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Journal</td>
+                            <td>Daily</td>
+                            <td>Once per day</td>
+                        </tr>
+                        <tr>
+                            <td>Notion Sync</td>
+                            <td>Daily</td>
+                            <td>Publish new/changed files</td>
+                        </tr>
+                        <tr>
+                            <td>Insights Extraction</td>
+                            <td>Daily</td>
+                            <td>Extract from new reports</td>
+                        </tr>
+                        <tr>
+                            <td>Economic Calendar</td>
+                            <td>Weekly</td>
+                            <td>Update calendar events</td>
+                        </tr>
+                        <tr>
+                            <td>Monthly Reports</td>
+                            <td>Monthly</td>
+                            <td>Generate monthly summaries</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="notion-sync">
+                <h2>Notion Sync & Deduplication</h2>
+
+                <p>Version 3.2 prevents duplicate Notion pages through content-based deduplication.</p>
+
+                <h3>Overview</h3>
+                <p>The system tracks which files have been synced to Notion and their content hashes. Files are only re-uploaded when content changes.</p>
+
+                <h3>Sync Tracking</h3>
+                <pre><code>from db_manager import DBManager
+
+db = DBManager()
+
+# Check if file needs sync
+file_path = "output/reports/Journal_2025-12-04.md"
+current_hash = db.get_file_hash(file_path)
+
+if not db.is_file_synced(file_path, current_hash):
+    # File is new or changed - publish to Notion
+    result = publisher.sync_file(file_path)
+    db.record_notion_sync(file_path, current_hash, result['page_id'])</code></pre>
+
+                <h3>Benefits</h3>
+                <ul>
+                    <li><strong>No duplicates:</strong> Same content never uploaded twice</li>
+                    <li><strong>Change detection:</strong> Only modified files are synced</li>
+                    <li><strong>Audit trail:</strong> Track which Notion page corresponds to each file</li>
+                    <li><strong>Efficiency:</strong> Reduces API calls and bandwidth</li>
+                </ul>
+            </section>
+
+            <section id="lifecycle">
+                <h2>Document Lifecycle Management</h2>
+
+                <p>Version 3.3 introduces a document lifecycle system to control which documents are synced to Notion.</p>
+
+                <h3>Lifecycle States</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Notion Sync</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>draft</code></td>
+                            <td>Initial state, work in progress</td>
+                            <td><strong>No</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>in_progress</code></td>
+                            <td>Active editing/analysis</td>
+                            <td><strong>No</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>review</code></td>
+                            <td>Ready for final review</td>
+                            <td><strong>No</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>published</code></td>
+                            <td>Approved for external visibility</td>
+                            <td><strong>Yes</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>archived</code></td>
+                            <td>Historical reference</td>
+                            <td><strong>No</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Frontmatter Integration</h3>
+                <p>Status is stored in YAML frontmatter:</p>
+
+                <pre><code>---
+type: journal
+title: "Gold Analysis - December 5, 2025"
+date: 2025-12-05
+status: draft
+generated: 2025-12-05T10:30:00
+tags: [gold, xauusd, technical-analysis]
+---</code></pre>
+            </section>
+
+            <section id="insights">
+                <h2>Insights Engine</h2>
+
+                <p>The <code>scripts/insights_engine.py</code> module extracts actionable intelligence from generated reports.</p>
+
+                <h3>Overview</h3>
+                <p>The Insights Engine scans reports for:</p>
+                <ul>
+                    <li><strong>Entity Insights:</strong> Named entities (Fed, ECB, CME, indicators, assets)</li>
+                    <li><strong>Action Insights:</strong> Research tasks, data to fetch, news to scan, calculations</li>
+                </ul>
+
+                <h3>Entity Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Institution</td>
+                            <td>Fed, ECB, BOJ, CME, Goldman Sachs</td>
+                        </tr>
+                        <tr>
+                            <td>Indicator</td>
+                            <td>CPI, NFP, GDP, RSI, ADX</td>
+                        </tr>
+                        <tr>
+                            <td>Asset</td>
+                            <td>Gold, Silver, DXY, VIX, S&P 500</td>
+                        </tr>
+                        <tr>
+                            <td>Event</td>
+                            <td>FOMC Meeting, Rate Decision, OpEx</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Action Types</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>research</code></td>
+                            <td>Topics requiring further investigation</td>
+                        </tr>
+                        <tr>
+                            <td><code>data_fetch</code></td>
+                            <td>Data to retrieve (COT, ETF flows)</td>
+                        </tr>
+                        <tr>
+                            <td><code>news_scan</code></td>
+                            <td>News/headlines to monitor</td>
+                        </tr>
+                        <tr>
+                            <td><code>calculation</code></td>
+                            <td>Math/risk calculations to perform</td>
+                        </tr>
+                        <tr>
+                            <td><code>monitoring</code></td>
+                            <td>Price levels or conditions to watch</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="task-executor">
+                <h2>Task Executor</h2>
+
+                <p>The <code>scripts/task_executor.py</code> module autonomously executes extracted action insights with persistent retry logic.</p>
+
+                <h3>Task Handlers</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Handler</th>
+                            <th>Action Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>_handle_research</code></td>
+                            <td>research</td>
+                            <td>AI-powered research synthesis</td>
+                        </tr>
+                        <tr>
+                            <td><code>_handle_data_fetch</code></td>
+                            <td>data_fetch</td>
+                            <td>Retrieve market data and COT reports</td>
+                        </tr>
+                        <tr>
+                            <td><code>_handle_news_scan</code></td>
+                            <td>news_scan</td>
+                            <td>Scan for relevant news headlines</td>
+                        </tr>
+                        <tr>
+                            <td><code>_handle_calculation</code></td>
+                            <td>calculation</td>
+                            <td>Execute quantitative calculations</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Retry Logic</h3>
+                <p>The executor uses exponential backoff for handling API quota errors:</p>
+                <pre><code>MAX_RETRIES = 10
+INITIAL_BACKOFF_SECONDS = 30
+MAX_BACKOFF_SECONDS = 600  # 10 minutes</code></pre>
+            </section>
+
+            <section id="file-organizer">
+                <h2>File Organizer</h2>
+
+                <p>The <code>scripts/file_organizer.py</code> module provides intelligent file organization for outputs.</p>
+
+                <h3>Directory Structure</h3>
+                <pre><code>output/
+├── journals/
+│   └── 2025/12/
+├── reports/
+│   ├── daily/
+│   ├── weekly/
+│   └── monthly/
+├── charts/
+│   ├── gold/
+│   └── intermarket/
+└── archive/</code></pre>
+
+                <h3>File Categories</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Patterns</th>
+                            <th>Destination</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>journal</td>
+                            <td><code>Journal_*.md</code></td>
+                            <td><code>journals/YYYY/MM/</code></td>
+                        </tr>
+                        <tr>
+                            <td>weekly</td>
+                            <td><code>weekly_*.md</code></td>
+                            <td><code>reports/weekly/</code></td>
+                        </tr>
+                        <tr>
+                            <td>monthly</td>
+                            <td><code>monthly_*.md</code></td>
+                            <td><code>reports/monthly/</code></td>
+                        </tr>
+                        <tr>
+                            <td>chart</td>
+                            <td><code>*.png</code>, <code>*.svg</code></td>
+                            <td><code>charts/{asset}/</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="frontmatter">
+                <h2>Frontmatter System</h2>
+
+                <p>The <code>scripts/frontmatter.py</code> module generates YAML frontmatter metadata for all reports.</p>
+
+                <h3>Frontmatter Structure</h3>
+                <pre><code>---
+type: journal
+title: "Journal 2025 12 03"
+date: 2025-12-03
+generated: 2025-12-03T21:47:56.739323
+tags: [DXY, GOLD, Risk, SILVER, SPY, VIX]
+bias: BULLISH
+gold_price: 2650.50
+---</code></pre>
+
+                <h3>Auto-Detection</h3>
+                <p>The module automatically detects document types based on filename patterns.</p>
+
+                <h3>Tag Extraction</h3>
+                <p>Tags are automatically extracted from content:</p>
+                <ul>
+                    <li><strong>Ticker symbols:</strong> GOLD, SILVER, DXY, SPY, VIX, etc.</li>
+                    <li><strong>Keywords:</strong> Fed, FOMC, CPI, NFP, Inflation, Bullish, Bearish</li>
+                </ul>
+            </section>
+
+            <section id="notion-integration">
+                <h2>Notion Integration</h2>
+
+                <p>The <code>scripts/notion_publisher.py</code> module syncs reports to a Notion database automatically.</p>
+
+                <h3>Setup</h3>
+                <ol>
+                    <li>Create a Notion integration at <a href="https://notion.so/my-integrations" target="_blank">notion.so/my-integrations</a></li>
+                    <li>Share your database with the integration</li>
+                    <li>Add credentials to <code>.env</code></li>
+                </ol>
+
+                <h3>Markdown Conversion</h3>
+                <p>The publisher converts Markdown to Notion blocks:</p>
+                <ul>
+                    <li>Headers → Heading blocks (H1-H3)</li>
+                    <li>Paragraphs → Paragraph blocks</li>
+                    <li>Lists → Bulleted/Numbered list items</li>
+                    <li>Code blocks → Code blocks with language</li>
+                    <li>Tables → Table blocks</li>
+                </ul>
+
+                <h3>CLI Commands</h3>
+                <pre><code># Test connection
+python scripts/notion_publisher.py --test
+
+# Publish single file
+python scripts/notion_publisher.py --file path/to/report.md
+
+# Sync all outputs
+python scripts/notion_publisher.py --sync-all</code></pre>
+            </section>
+
+            <section id="tagging">
+                <h2>Comprehensive Tagging</h2>
+
+                <p>Version 3.2 introduces comprehensive file tagging to ensure all outputs are properly categorized and published to Notion.</p>
+
+                <h3>Type Patterns</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pattern</th>
+                            <th>Type</th>
+                            <th>Emoji</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Journal_*</code></td>
+                            <td>journal</td>
+                            <td>📓</td>
+                        </tr>
+                        <tr>
+                            <td><code>premarket_*</code></td>
+                            <td>premarket</td>
+                            <td>🌅</td>
+                        </tr>
+                        <tr>
+                            <td><code>weekly_*</code></td>
+                            <td>reports</td>
+                            <td>📰</td>
+                        </tr>
+                        <tr>
+                            <td><code>monthly_*</code></td>
+                            <td>reports</td>
+                            <td>📊</td>
+                        </tr>
+                        <tr>
+                            <td><code>catalyst*</code></td>
+                            <td>research</td>
+                            <td>⚡</td>
+                        </tr>
+                        <tr>
+                            <td><code>economic_*</code></td>
+                            <td>economic</td>
+                            <td>📅</td>
+                        </tr>
+                        <tr>
+                            <td><code>inst_matrix*</code></td>
+                            <td>institutional</td>
+                            <td>🏦</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="testing">
+                <h2>Testing Guidelines</h2>
+
+                <h3>Test Suite Overview</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Tests</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>test_core.py</code></td>
+                            <td>2</td>
+                            <td>Bias extraction logic</td>
+                        </tr>
+                        <tr>
+                            <td><code>test_gemini.py</code></td>
+                            <td>27</td>
+                            <td>Gemini AI integration</td>
+                        </tr>
+                        <tr>
+                            <td><code>test_split_reports.py</code></td>
+                            <td>2</td>
+                            <td>Report generation</td>
+                        </tr>
+                        <tr>
+                            <td><code>test_ta_fallback.py</code></td>
+                            <td>2</td>
+                            <td>Technical analysis fallback</td>
+                        </tr>
+                        <tr>
+                            <td><code>test_integration.py</code></td>
+                            <td>1</td>
+                            <td>Integration tests for v3.0 modules</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Running Tests</h3>
+                <pre><code># Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=. --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_gemini.py -v</code></pre>
+            </section>
+
+            <section id="deployment">
+                <h2>Deployment Notes</h2>
+
+                <h3>Environment</h3>
+                <ul>
+                    <li>Python 3.10+ recommended</li>
+                    <li>Python 3.14 supported with fallback indicators</li>
+                </ul>
+
+                <h3>Daemon Mode</h3>
+                <p>The system supports autonomous background operation:</p>
+                <pre><code># Run with 1-minute intervals
+python run.py --daemon --interval-min 1
+
+# Single daily run
+python run.py --mode daily --once</code></pre>
+
+                <h3>Scheduling</h3>
+                <p>For automated runs, use system scheduler:</p>
+                <pre><code># Cron (Unix) - Daemon mode
+@reboot cd /path/to/gold_standard && python run.py --daemon --interval-min 1
+
+# Single daily run at 8 AM
+0 8 * * * cd /path/to/gold_standard && python run.py --mode daily --once</code></pre>
+
+                <h3>Security</h3>
+                <ul>
+                    <li>Never commit <code>.env</code> or API keys</li>
+                    <li>Use pre-commit hooks for secret detection</li>
+                    <li>Rotate API keys if accidentally exposed</li>
+                </ul>
+            </section>
+
+            <section id="extensions">
+                <h2>Extension Patterns</h2>
+
+                <h3>Adding New Assets</h3>
+                <ol>
+                    <li>Add entry to <code>ASSETS</code> dictionary</li>
+                    <li>Update chart generation if needed</li>
+                    <li>Add to report templates</li>
+                </ol>
+
+                <h3>Adding New Indicators</h3>
+                <ol>
+                    <li>Add computation in <code>QuantEngine._fetch</code></li>
+                    <li>Add fallback implementation</li>
+                    <li>Include in quant telemetry for AI prompt</li>
+                </ol>
+
+                <h3>Custom Report Types</h3>
+                <ol>
+                    <li>Create new function in <code>split_reports.py</code> or <code>live_analysis.py</code></li>
+                    <li>Add CLI mode option in <code>run.py</code></li>
+                    <li>Add to GUI mode selector</li>
+                </ol>
+
+                <h3>Extending Economic Calendar</h3>
+                <p>Add new events to the <code>economic_calendar.py</code> module with proper impact classifications and gold impact analysis.</p>
+            </section>
+        </div>
+
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#technical-indicators">Indicators</a></li>
+                    <li><a href="#intermarket-analysis">Intermarket</a></li>
+                    <li><a href="#memory-grading">Memory</a></li>
+                    <li><a href="#ai-prompt">AI Engineering</a></li>
+                    <li><a href="#data-pipeline">Data Pipeline</a></li>
+                    <li><a href="#report-types">Reports</a></li>
+                    <li><a href="#live-analysis">Live Analysis</a></li>
+                    <li><a href="#economic-calendar">Calendar</a></li>
+                    <li><a href="#database">Database</a></li>
+                    <li><a href="#scheduling">Scheduling</a></li>
+                    <li><a href="#notion-sync">Notion Sync</a></li>
+                    <li><a href="#lifecycle">Lifecycle</a></li>
+                    <li><a href="#insights">Insights Engine</a></li>
+                    <li><a href="#task-executor">Task Executor</a></li>
+                    <li><a href="#file-organizer">File Organizer</a></li>
+                    <li><a href="#frontmatter">Frontmatter</a></li>
+                    <li><a href="#notion-integration">Notion</a></li>
+                    <li><a href="#tagging">Tagging</a></li>
+                    <li><a href="#testing">Testing</a></li>
+                    <li><a href="#deployment">Deployment</a></li>
+                    <li><a href="#extensions">Extensions</a></li>
+                </ul>
+            </nav>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="guide.html">Guide</a></li>
+                    <li><a href="https://github.com/amuzetnoM/gold_standard" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="docs/ARCHITECTURE.md" target="_blank">Architecture</a></li>
+                    <li><a href="docs/CONTRIBUTING.md" target="_blank">Contributing</a></li>
+                    <li><a href="docs/LICENSE" target="_blank">License</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="https://github.com/amuzetnoM" target="_blank">GitHub Profile</a></li>
+                    <li><a href="https://github.com/amuzetnoM/gold_standard/issues" target="_blank">Issues</a></li>
+                    <li><a href="https://github.com/amuzetnoM/gold_standard/discussions" target="_blank">Discussions</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Gold Standard. A precious metals intelligence system.</p>
+        </div>
+    </footer>
+</body>
+</html>
