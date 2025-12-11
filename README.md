@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.3.0* [[CHANGELOG]](changelog/CHANGELOG.md)
+*version 3.3.0* [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
