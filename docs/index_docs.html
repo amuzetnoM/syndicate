@@ -3,505 +3,925 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation | Gold Standard v3.3.0</title>
-    <meta name="description" content="Complete documentation for Gold Standard multi-provider LLM market intelligence platform.">
+    <title>Documentation | Gold Standard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FFD700'/%3E%3Cstop offset='50%25' stop-color='%23FFA500'/%3E%3Cstop offset='100%25' stop-color='%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='50,8 61,35 90,35 67,54 76,82 50,66 24,82 33,54 10,35 39,35' fill='url(%23gold)'/%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gold: #FFD700;
-            --gold-dark: #B8860B;
-            --bg-dark: #050507;
-            --bg-card: #0a0a0d;
-            --bg-sidebar: #080809;
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --border: #27272a;
+            --border-hover: #3f3f46;
             --text-primary: #fafafa;
-            --text-secondary: #9898a8;
-            --text-muted: #555570;
-            --border: #18181f;
-            --border-gold: rgba(255, 215, 0, 0.2);
-            --success: #22c55e;
-            --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #B8860B 100%);
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-gold: #d4a853;
+            --accent-gold-dim: rgba(212, 168, 83, 0.1);
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --sidebar-width: 280px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg-dark);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
+            min-height: 100vh;
         }
-        a { color: var(--gold); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-
-        /* Header */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: rgba(5,5,7,0.9);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding: 0 1.5rem;
-            height: 56px;
-            display: flex;
-            align-items: center;
-        }
-        .header-container {
-            max-width: 1600px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header-logo {
-            font-weight: 800;
-            font-size: 1rem;
-            background: var(--gradient-gold);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-        }
-        .header-nav {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .header-nav a {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 500;
-            padding: 0.4rem 0.75rem;
-            border-radius: 6px;
-            text-decoration: none;
-        }
-        .header-nav a:hover {
-            color: var(--gold);
-            background: rgba(255,215,0,0.05);
-        }
-        .mobile-menu { display: none; background: none; border: none; color: var(--text-primary); cursor: pointer; }
 
         /* Layout */
         .layout {
             display: flex;
-            padding-top: 56px;
+            min-height: 100vh;
         }
 
         /* Sidebar */
         .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
             position: fixed;
-            top: 56px;
+            top: 0;
             left: 0;
             bottom: 0;
-            width: 260px;
-            background: var(--bg-sidebar);
-            border-right: 1px solid rgba(255,255,255,0.05);
             overflow-y: auto;
             padding: 1.5rem 0;
-        }
-        .sidebar-section { margin-bottom: 1.5rem; }
-        .sidebar-title {
-            font-size: 0.65rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            padding: 0 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .sidebar-links { list-style: none; }
-        .sidebar-links a {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem 1.25rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            text-decoration: none;
-            border-left: 2px solid transparent;
-            transition: all 0.15s;
-        }
-        .sidebar-links a:hover {
-            color: var(--text-primary);
-            background: rgba(255,255,255,0.02);
-            border-left-color: rgba(255,215,0,0.3);
-        }
-        .sidebar-links a.active {
-            color: var(--gold);
-            background: rgba(255,215,0,0.05);
-            border-left-color: var(--gold);
-        }
-        .sidebar-links svg {
-            width: 16px;
-            height: 16px;
-            opacity: 0.6;
-        }
-        .sidebar-badge {
-            margin-left: auto;
-            font-size: 0.6rem;
-            font-weight: 600;
-            padding: 0.1rem 0.35rem;
-            border-radius: 4px;
-            background: rgba(255,215,0,0.15);
-            color: var(--gold);
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
         }
 
-        /* Main */
-        .main {
-            flex: 1;
-            margin-left: 260px;
-            padding: 2rem;
-            min-height: calc(100vh - 56px);
-        }
-        .content {
-            max-width: 900px;
-            margin: 0 auto;
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
         }
 
-        /* Page Header */
-        .page-header {
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .page-header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .page-header p {
-            font-size: 1rem;
-            color: var(--text-secondary);
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        /* Version Box */
-        .version-box {
-            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(184,134,11,0.04));
-            border: 1px solid var(--border-gold);
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 2.5rem;
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
         }
-        .version-box h3 {
-            font-size: 0.9rem;
-            margin-bottom: 0.75rem;
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-logo {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-        .version-badge {
-            background: var(--gradient-gold);
-            color: #000;
-            font-size: 0.65rem;
             font-weight: 700;
-            padding: 0.15rem 0.4rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .sidebar-logo-mark {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%);
             border-radius: 4px;
-        }
-        .version-box ul {
-            list-style: none;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.4rem;
-        }
-        .version-box li {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            justify-content: center;
+            font-size: 0.7rem;
         }
-        .version-box li::before {
-            content: '✓';
-            color: var(--success);
+
+        .sidebar-section {
+            padding: 0.5rem 0;
+        }
+
+        .sidebar-section-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
             font-weight: 600;
         }
 
-        /* Doc Cards */
-        .doc-section { margin-bottom: 2.5rem; }
-        .doc-section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+        .sidebar-nav {
+            list-style: none;
         }
-        .doc-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+
+        .sidebar-nav a {
+            display: block;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.15s;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-nav a:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav a.active {
+            background: var(--accent-gold-dim);
+            color: var(--accent-gold);
+            border-left-color: var(--accent-gold);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-width: 0;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 11, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .topbar-title {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .topbar-actions {
+            display: flex;
             gap: 1rem;
         }
-        .doc-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 10px;
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Content */
+        .content {
+            max-width: 900px;
+            padding: 3rem;
+        }
+
+        .content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .content p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .content ul, .content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .content code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875em;
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            color: var(--accent-gold);
+        }
+
+        .content pre {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
             padding: 1.25rem;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.15s;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
         }
+
+        .content pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Doc Cards */
+        .doc-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .doc-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .doc-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
         .doc-card:hover {
-            border-color: var(--border-gold);
-            transform: translateY(-2px);
-            text-decoration: none;
+            border-color: var(--border-hover);
+            background: var(--bg-tertiary);
         }
+
         .doc-card-icon {
-            width: 36px;
-            height: 36px;
-            background: rgba(255,215,0,0.08);
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 0.75rem;
-            font-size: 1.1rem;
-        }
-        .doc-card h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 0.3rem;
-        }
-        .doc-card p {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-        .doc-card-badge {
-            display: inline-block;
-            margin-top: 0.5rem;
-            font-size: 0.6rem;
-            font-weight: 600;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            background: rgba(255,215,0,0.15);
-            color: var(--gold);
+            font-size: 1rem;
+            margin-bottom: 1rem;
         }
 
-        /* Quick Links */
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.75rem;
+        .doc-card:hover .doc-card-icon {
+            background: var(--accent-gold-dim);
         }
-        .quick-link {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.875rem;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: all 0.15s;
-        }
-        .quick-link:hover {
-            border-color: var(--border-gold);
+
+        .doc-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
             color: var(--text-primary);
+            margin-bottom: 0.375rem;
         }
-        .quick-link svg {
-            width: 18px;
-            height: 18px;
-            color: var(--gold);
+
+        .doc-card-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
         }
-        .quick-link span {
+
+        /* Tables */
+        .content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .content th,
+        .content td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .content th {
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .content td {
+            color: var(--text-secondary);
+        }
+
+        .content td:first-child {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
-            font-weight: 500;
+            color: var(--accent-gold);
+        }
+
+        /* Alert Boxes */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .alert-warning {
+            background: rgba(212, 168, 83, 0.1);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            color: var(--accent-gold);
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Page Lead */
+        .page-lead {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        /* Divider */
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 3rem 0;
         }
 
         /* Mobile */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 99;
-        }
-        @media (max-width: 1024px) {
+        @media (max-width: 900px) {
             .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.2s;
-                z-index: 100;
+                display: none;
             }
-            .sidebar.active { transform: translateX(0); }
-            .sidebar-overlay.active { display: block; }
-            .main { margin-left: 0; }
-            .mobile-menu { display: block; }
-            .header-nav { display: none; }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
         }
-        @media (max-width: 640px) {
-            .page-header h1 { font-size: 1.5rem; }
-            .doc-grid { grid-template-columns: 1fr; }
-            .main { padding: 1.25rem; }
-            .quick-links { grid-template-columns: 1fr; }
+
+        /* File Tree */
+        .file-tree {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .file-tree .folder {
+            color: var(--accent-gold);
+        }
+
+        .file-tree .file {
+            color: var(--text-muted);
+        }
+
+        /* Version Badge */
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.625rem;
+            background: var(--accent-gold-dim);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <a href="index.html" class="header-logo">GOLD STANDARD</a>
-            <nav class="header-nav">
-                <a href="index.html">Home</a>
-                <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank">Live Reports</a>
-                <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
-            </nav>
-            <button class="mobile-menu" onclick="toggleSidebar()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
-            </button>
-        </div>
-    </header>
-
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
     <div class="layout">
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">
+                    <div class="sidebar-logo-mark">&#9670;</div>
+                    Gold Standard
+                </a>
+            </div>
+
             <div class="sidebar-section">
-                <div class="sidebar-title">Getting Started</div>
-                <ul class="sidebar-links">
-                    <li><a href="GUIDE.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a></li>
-                    <li><a href="LLM_PROVIDERS.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>LLM Providers<span class="sidebar-badge">New</span></a></li>
-                    <li><a href="../README.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>README</a></li>
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul class="sidebar-nav">
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#quickstart">Quick Start</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
                 </ul>
             </div>
+
             <div class="sidebar-section">
-                <div class="sidebar-title">Architecture</div>
-                <ul class="sidebar-links">
-                    <li><a href="ARCHITECTURE.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>System Architecture</a></li>
-                    <li><a href="CONTRIBUTING.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contributing</a></li>
+                <div class="sidebar-section-title">Core Concepts</div>
+                <ul class="sidebar-nav">
+                    <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#modules">Core Modules</a></li>
+                    <li><a href="#data-flow">Data Flow</a></li>
+                    <li><a href="#persistence">Persistence</a></li>
                 </ul>
             </div>
+
             <div class="sidebar-section">
-                <div class="sidebar-title">Release</div>
-                <ul class="sidebar-links">
-                    <li><a href="CHANGELOG.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Changelog</a></li>
-                    <li><a href="RELEASE.md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Release Notes</a></li>
-                    <li><a href="LICENSE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>License</a></li>
+                <div class="sidebar-section-title">Features</div>
+                <ul class="sidebar-nav">
+                    <li><a href="#daemon">Daemon Mode</a></li>
+                    <li><a href="#analysis">Analysis Types</a></li>
+                    <li><a href="#llm">LLM Providers</a></li>
+                    <li><a href="#notion">Notion Integration</a></li>
+                    <li><a href="#charts">Chart Generation</a></li>
                 </ul>
             </div>
+
             <div class="sidebar-section">
-                <div class="sidebar-title">Resources</div>
-                <ul class="sidebar-links">
-                    <li><a href="android_blueprint/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Android Blueprint</a></li>
-                    <li><a href="output_samples(test).md"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Output Samples</a></li>
+                <div class="sidebar-section-title">Reference</div>
+                <ul class="sidebar-nav">
+                    <li><a href="#commands">Commands</a></li>
+                    <li><a href="#scripts">Scripts</a></li>
+                    <li><a href="#environment">Environment Variables</a></li>
+                    <li><a href="#api">API Reference</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Resources</div>
+                <ul class="sidebar-nav">
+                    <li><a href="ARCHITECTURE.md">Architecture Doc</a></li>
+                    <li><a href="GUIDE.md">User Guide</a></li>
+                    <li><a href="LLM_PROVIDERS.md">LLM Providers</a></li>
+                    <li><a href="CONTRIBUTING.md">Contributing</a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main">
+            <div class="topbar">
+                <div class="topbar-title">Documentation</div>
+                <div class="topbar-actions">
+                    <a href="index.html" class="btn">&#8592; Home</a>
+                    <a href="https://github.com/amuzetnoM/gold_standard" class="btn">GitHub</a>
+                </div>
+            </div>
+
             <div class="content">
-                <div class="page-header">
-                    <h1>Documentation</h1>
-                    <p>Everything you need to build and analyze with Gold Standard's multi-provider LLM intelligence platform.</p>
+                <span class="version-badge">&#9679; v3.3</span>
+                <h1>Documentation</h1>
+                <p class="page-lead">
+                    Comprehensive reference for the Gold Standard Precious Metals Intelligence System.
+                    From installation to advanced configuration, everything you need to deploy and operate
+                    the autonomous analysis daemon.
+                </p>
+
+                <div class="doc-cards">
+                    <a href="#quickstart" class="doc-card">
+                        <div class="doc-card-icon">&#9654;</div>
+                        <div class="doc-card-title">Quick Start</div>
+                        <div class="doc-card-desc">Get up and running in 5 minutes with the essential setup steps</div>
+                    </a>
+                    <a href="#architecture" class="doc-card">
+                        <div class="doc-card-icon">&#9636;</div>
+                        <div class="doc-card-title">Architecture</div>
+                        <div class="doc-card-desc">Understand the three-module design and data flow patterns</div>
+                    </a>
+                    <a href="#llm" class="doc-card">
+                        <div class="doc-card-icon">&#9733;</div>
+                        <div class="doc-card-title">LLM Providers</div>
+                        <div class="doc-card-desc">Configure Gemini, Ollama, and llama.cpp fallback chain</div>
+                    </a>
+                    <a href="#commands" class="doc-card">
+                        <div class="doc-card-icon">&#9003;</div>
+                        <div class="doc-card-title">Command Reference</div>
+                        <div class="doc-card-desc">Complete CLI documentation with all flags and options</div>
+                    </a>
                 </div>
 
-                <div class="version-box">
-                    <h3>What's New <span class="version-badge">v3.3.0</span></h3>
-                    <ul>
-                        <li>Multi-Provider LLM Architecture</li>
-                        <li>Ollama Integration</li>
-                        <li>llama.cpp with GPU Support</li>
-                        <li>Local-First Mode</li>
-                        <li>Auto Provider Failover</li>
-                        <li>LLM_PROVIDER Selection</li>
-                    </ul>
+                <hr>
+
+                <h2 id="overview">Overview</h2>
+                <p>
+                    Gold Standard is a Precious Metals Intelligence System that combines market data ingestion,
+                    technical analysis, regime/strategy synthesis, memory/persistence, and optional AI-enhanced insights.
+                </p>
+
+                <h3>Key Capabilities</h3>
+                <ul>
+                    <li><strong>Autonomous Operation</strong> &#8212; Daemon mode with configurable intervals from 1 minute to hours</li>
+                    <li><strong>Multi-Asset Analysis</strong> &#8212; Gold, Silver, DXY, 10Y Yields, VIX, S&amp;P 500</li>
+                    <li><strong>Technical Indicators</strong> &#8212; RSI, ADX, Bollinger Bands, SMA/EMA via pandas_ta</li>
+                    <li><strong>AI Integration</strong> &#8212; Gemini, Ollama, llama.cpp with automatic fallback</li>
+                    <li><strong>Persistent Memory</strong> &#8212; Cortex system with prediction grading and trade simulation</li>
+                    <li><strong>Report Generation</strong> &#8212; Daily journals, weekly rundowns, monthly/yearly reports</li>
+                </ul>
+
+                <hr>
+
+                <h2 id="installation">Installation</h2>
+
+                <h3>Requirements</h3>
+                <ul>
+                    <li>Python 3.10 - 3.14</li>
+                    <li>SQLite (bundled with Python)</li>
+                    <li>Optional: Ollama server for local LLM</li>
+                    <li>Optional: Docker for containerized deployment</li>
+                </ul>
+
+                <h3>Clone and Setup</h3>
+                <pre><code>git clone https://github.com/amuzetnoM/gold_standard.git
+cd gold_standard
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt</code></pre>
+
+                <h3>Environment Configuration</h3>
+                <pre><code># .env file
+GEMINI_API_KEY=your_api_key_here
+NOTION_API_KEY=your_notion_key  # Optional
+NOTION_DATABASE_ID=your_db_id   # Optional
+LLM_PROVIDER=gemini             # gemini, ollama, or local</code></pre>
+
+                <hr>
+
+                <h2 id="quickstart">Quick Start</h2>
+
+                <div class="alert alert-info">
+                    <div class="alert-title">First Run</div>
+                    The system will automatically initialize the Cortex memory and database on first execution.
                 </div>
 
-                <div class="doc-section">
-                    <h2 class="doc-section-title">Getting Started</h2>
-                    <div class="doc-grid">
-                        <a href="GUIDE.md" class="doc-card">
-                            <div class="doc-card-icon">📖</div>
-                            <h3>User Guide</h3>
-                            <p>Complete walkthrough of Gold Standard setup, configuration, and daily usage patterns.</p>
-                        </a>
-                        <a href="LLM_PROVIDERS.md" class="doc-card">
-                            <div class="doc-card-icon">🤖</div>
-                            <h3>LLM Providers</h3>
-                            <p>Configure Gemini, Ollama, or llama.cpp. Includes GPU setup and offline operation.</p>
-                            <span class="doc-card-badge">v3.3.0</span>
-                        </a>
-                        <a href="../README.md" class="doc-card">
-                            <div class="doc-card-icon">🚀</div>
-                            <h3>Quick Start</h3>
-                            <p>Get up and running in minutes with basic installation and configuration.</p>
-                        </a>
-                    </div>
+                <h3>Start Autonomous Daemon</h3>
+                <pre><code>python run.py</code></pre>
+                <p>Runs continuous analysis every 1 minute. Press Ctrl+C to stop gracefully.</p>
+
+                <h3>Single Analysis Run</h3>
+                <pre><code>python run.py --once</code></pre>
+
+                <h3>Launch GUI</h3>
+                <pre><code>python gui.py</code></pre>
+
+                <hr>
+
+                <h2 id="architecture">Architecture</h2>
+
+                <p>Gold Standard follows a three-module design with clear separation of concerns:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Class</th>
+                            <th>Responsibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Memory</td>
+                            <td>Cortex</td>
+                            <td>Persistent memory, prediction grading, trade simulation</td>
+                        </tr>
+                        <tr>
+                            <td>Data</td>
+                            <td>QuantEngine</td>
+                            <td>Market data fetchers, TA indicators, chart generation</td>
+                        </tr>
+                        <tr>
+                            <td>Strategy</td>
+                            <td>Strategist</td>
+                            <td>Regime detection, bias synthesis, AI augmentation</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Data Flow</h3>
+                <pre><code>[yfinance] &#8594; QuantEngine &#8594; Strategist &#8594; Cortex (memory)
+     |              &#8593;
+     &#8595;              |
+ reports/charts     |
+     &#8595;              |
+ db_manager &#8592; run/gui &#8594; user
+     &#8593;
+     +&#8212;&#8212; scripts/ &#8594; [Notion DB]</code></pre>
+
+                <hr>
+
+                <h2 id="llm">LLM Providers</h2>
+
+                <p>The FallbackLLMProvider pattern ensures resilient AI-powered analysis:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Environment Variable</th>
+                            <th>Provider Order</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Default</td>
+                            <td>(none)</td>
+                            <td>Gemini &#8594; Ollama &#8594; llama.cpp</td>
+                        </tr>
+                        <tr>
+                            <td>Local-First</td>
+                            <td>PREFER_LOCAL_LLM=1</td>
+                            <td>llama.cpp &#8594; Ollama &#8594; Gemini</td>
+                        </tr>
+                        <tr>
+                            <td>Local Only</td>
+                            <td>LLM_PROVIDER=local</td>
+                            <td>llama.cpp only</td>
+                        </tr>
+                        <tr>
+                            <td>Ollama Only</td>
+                            <td>LLM_PROVIDER=ollama</td>
+                            <td>Ollama only</td>
+                        </tr>
+                        <tr>
+                            <td>Gemini Only</td>
+                            <td>LLM_PROVIDER=gemini</td>
+                            <td>Gemini only</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <h2 id="commands">Command Reference</h2>
+
+                <h3>Daemon Mode</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>python run.py</td>
+                            <td>Autonomous daemon (1 min interval)</td>
+                        </tr>
+                        <tr>
+                            <td>python run.py --interval-min 5</td>
+                            <td>Custom interval (5 minutes)</td>
+                        </tr>
+                        <tr>
+                            <td>python run.py --interval 2</td>
+                            <td>Legacy hours-based interval</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Single Run</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>python run.py --once</td>
+                            <td>Run once and exit</td>
+                        </tr>
+                        <tr>
+                            <td>python run.py --run</td>
+                            <td>Run all analysis once</td>
+                        </tr>
+                        <tr>
+                            <td>python run.py --daily</td>
+                            <td>Quick daily journal only</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Options</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>--interactive</td>
+                            <td>Menu-driven mode selection</td>
+                        </tr>
+                        <tr>
+                            <td>--status</td>
+                            <td>Show system status</td>
+                        </tr>
+                        <tr>
+                            <td>--no-ai</td>
+                            <td>Run without LLM integration</td>
+                        </tr>
+                        <tr>
+                            <td>--lifecycle list</td>
+                            <td>List documents by status</td>
+                        </tr>
+                        <tr>
+                            <td>--help</td>
+                            <td>Show all options</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <h2 id="scripts">Scripts Reference</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Script</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>start_daemon.py</td>
+                            <td>Launch autonomous daemon</td>
+                        </tr>
+                        <tr>
+                            <td>chart_publisher.py</td>
+                            <td>Generate candlestick charts</td>
+                        </tr>
+                        <tr>
+                            <td>economic_calendar.py</td>
+                            <td>Track economic events</td>
+                        </tr>
+                        <tr>
+                            <td>insights_engine.py</td>
+                            <td>Entity extraction</td>
+                        </tr>
+                        <tr>
+                            <td>task_executor.py</td>
+                            <td>Autonomous task execution</td>
+                        </tr>
+                        <tr>
+                            <td>notion_publisher.py</td>
+                            <td>Sync to Notion</td>
+                        </tr>
+                        <tr>
+                            <td>file_organizer.py</td>
+                            <td>Directory organization</td>
+                        </tr>
+                        <tr>
+                            <td>frontmatter.py</td>
+                            <td>YAML metadata generation</td>
+                        </tr>
+                        <tr>
+                            <td>live_analysis.py</td>
+                            <td>Real-time analysis</td>
+                        </tr>
+                        <tr>
+                            <td>pre_market.py</td>
+                            <td>Pre-market blueprints</td>
+                        </tr>
+                        <tr>
+                            <td>local_llm.py</td>
+                            <td>Local LLM abstraction</td>
+                        </tr>
+                        <tr>
+                            <td>metrics_server.py</td>
+                            <td>Prometheus metrics</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <h2 id="environment">Environment Variables</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>GEMINI_API_KEY</td>
+                            <td>Google Gemini API key</td>
+                        </tr>
+                        <tr>
+                            <td>GEMINI_PROJECT_ID</td>
+                            <td>Google Cloud project ID</td>
+                        </tr>
+                        <tr>
+                            <td>NOTION_API_KEY</td>
+                            <td>Notion integration token</td>
+                        </tr>
+                        <tr>
+                            <td>NOTION_DATABASE_ID</td>
+                            <td>Notion database ID</td>
+                        </tr>
+                        <tr>
+                            <td>LLM_PROVIDER</td>
+                            <td>gemini, ollama, or local</td>
+                        </tr>
+                        <tr>
+                            <td>PREFER_LOCAL_LLM</td>
+                            <td>Set to 1 for local-first</td>
+                        </tr>
+                        <tr>
+                            <td>OLLAMA_HOST</td>
+                            <td>Ollama server URL</td>
+                        </tr>
+                        <tr>
+                            <td>IMGBB_API_KEY</td>
+                            <td>ImgBB upload key (optional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr>
+
+                <h2 id="project-structure">Project Structure</h2>
+
+                <div class="file-tree">
+<span class="folder">gold_standard/</span>
+├── <span class="file">run.py</span>              # Main entry point
+├── <span class="file">gui.py</span>              # GUI dashboard
+├── <span class="file">main.py</span>             # Core logic
+├── <span class="file">db_manager.py</span>       # SQLite persistence
+├── <span class="file">.env</span>                # Environment config
+├── <span class="folder">scripts/</span>
+│   ├── <span class="file">start_daemon.py</span>
+│   ├── <span class="file">chart_publisher.py</span>
+│   ├── <span class="file">economic_calendar.py</span>
+│   ├── <span class="file">notion_publisher.py</span>
+│   └── <span class="file">...</span>
+├── <span class="folder">src/</span>
+│   └── <span class="folder">gost/</span>           # Package source
+├── <span class="folder">data/</span>               # Generated data
+├── <span class="folder">docs/</span>               # Documentation
+└── <span class="folder">docker/</span>             # Container configs
                 </div>
 
-                <div class="doc-section">
-                    <h2 class="doc-section-title">Architecture & Development</h2>
-                    <div class="doc-grid">
-                        <a href="ARCHITECTURE.md" class="doc-card">
-                            <div class="doc-card-icon">🏗️</div>
-                            <h3>System Architecture</h3>
-                            <p>Deep dive into the multi-provider fallback chain, data flow, and component interactions.</p>
-                        </a>
-                        <a href="CONTRIBUTING.md" class="doc-card">
-                            <div class="doc-card-icon">👥</div>
-                            <h3>Contributing Guide</h3>
-                            <p>Code standards, PR guidelines, and development workflow for contributors.</p>
-                        </a>
-                    </div>
-                </div>
+                <hr>
 
-                <div class="doc-section">
-                    <h2 class="doc-section-title">Release Information</h2>
-                    <div class="doc-grid">
-                        <a href="CHANGELOG.md" class="doc-card">
-                            <div class="doc-card-icon">📋</div>
-                            <h3>Changelog</h3>
-                            <p>Complete history of all changes, features, and fixes across versions.</p>
-                        </a>
-                        <a href="RELEASE.md" class="doc-card">
-                            <div class="doc-card-icon">🏷️</div>
-                            <h3>Release Notes</h3>
-                            <p>Detailed release notes for major versions with migration guides.</p>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="doc-section">
-                    <h2 class="doc-section-title">Quick Links</h2>
-                    <div class="quick-links">
-                        <a href="https://github.com/amuzetnoM/gold_standard" class="quick-link">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                            <span>GitHub Repository</span>
-                        </a>
-                        <a href="https://false-pillow-a63.notion.site/2be743b492d58026b633cd407535658a" target="_blank" class="quick-link">
-                            <svg viewBox="0 0 100 100" fill="currentColor"><path d="M6.017 4.313l55.333-4.087c6.797-.583 8.543-.19 12.817 2.917l17.663 12.443c2.913 2.14 3.883 2.723 3.883 5.053v68.243c0 4.277-1.553 6.807-6.99 7.193L24.467 99.967c-4.08.193-6.023-.39-8.16-3.113L3.3 79.94c-2.333-3.113-3.3-5.443-3.3-8.167V11.113c0-3.497 1.553-6.413 6.017-6.8z"/></svg>
-                            <span>Live Reports</span>
-                        </a>
-                        <a href="https://github.com/amuzetnoM/gold_standard/issues" class="quick-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>Report an Issue</span>
-                        </a>
-                        <a href="android_blueprint/" class="quick-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                            <span>Android Guide</span>
-                        </a>
-                    </div>
-                </div>
+                <p style="text-align: center; color: var(--text-muted); margin-top: 4rem;">
+                    Gold Standard &#183; Precious Metals Intelligence System
+                </p>
             </div>
         </main>
     </div>
-
-    <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('sidebarOverlay').classList.toggle('active');
-        }
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 1024) {
-                document.getElementById('sidebar').classList.remove('active');
-                document.getElementById('sidebarOverlay').classList.remove('active');
-            }
-        });
-    </script>
 </body>
 </html>
