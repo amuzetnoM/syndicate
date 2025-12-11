@@ -1934,11 +1934,10 @@ Max Drawdown: -2.1%
     <script>
         let particles = [];
         let flowfield;
-        let resolution = 20;
+        let resolution = 50;
         let zoff = 0;
-        let particleCount = 600;
+        let particleCount = 120;
         let baseParticleColor;
-        let clickParticleColor;
 
         function setup() {
             let container = document.getElementById('p5-background');
@@ -1946,10 +1945,10 @@ Max Drawdown: -2.1%
                 p.setup = function() {
                     p.createCanvas(p.windowWidth, p.windowHeight);
                     p.pixelDensity(1);
-                    p.background(0);
+                    p.background(10, 10, 11);
 
-                    baseParticleColor = p.color(20, 100, 200, 150);
-                    clickParticleColor = p.color(255, 160, 0, 200);
+                    // Subtle gold/amber color matching theme
+                    baseParticleColor = p.color(212, 168, 83, 20);
 
                     flowfield = new Array(p.floor(p.width / resolution) * p.floor(p.height / resolution));
 
@@ -1959,46 +1958,31 @@ Max Drawdown: -2.1%
                 };
 
                 p.draw = function() {
-                    p.background(0, 0, 0, 15);
+                    // Very subtle background decay for gentle trails
+                    p.background(10, 10, 11, 8);
 
+                    // Generate flow field with much slower animation
                     let yoff = 0;
                     for (let y = 0; y < p.height / resolution; y++) {
                         let xoff = 0;
                         for (let x = 0; x < p.width / resolution; x++) {
                             let index = x + y * p.floor(p.width / resolution);
-                            let angle = p.noise(xoff, yoff, zoff) * p.TWO_PI * 4;
+                            // Smooth Perlin noise curves
+                            let angle = p.noise(xoff, yoff, zoff) * p.TWO_PI * 1.5;
                             let v = p5.Vector.fromAngle(angle);
-                            v.setMag(1);
+                            v.setMag(0.4);
                             flowfield[index] = v;
-                            xoff += 0.08;
+                            xoff += 0.05;
                         }
-                        yoff += 0.08;
+                        yoff += 0.05;
                     }
-                    zoff += 0.005;
+                    zoff += 0.001; // Much slower time progression
 
                     for (let i = particles.length - 1; i >= 0; i--) {
                         let part = particles[i];
                         part.follow(flowfield);
-                        part.attractToMouse();
                         part.update();
                         part.show();
-
-                        if (part.isClickSpawned && part.lifespan <= 0) {
-                            particles.splice(i, 1);
-                        }
-                    }
-                };
-
-                p.mousePressed = function() {
-                    if (p.mouseX > 0 && p.mouseX < p.width && p.mouseY > 0 && p.mouseY < p.height) {
-                        let burstCount = 50;
-                        for (let i = 0; i < burstCount; i++) {
-                            let newParticle = new Particle(p.mouseX, p.mouseY, clickParticleColor, p);
-                            newParticle.isClickSpawned = true;
-                            newParticle.lifespan = p.random(100, 200);
-                            newParticle.vel.add(p5.Vector.random2D().mult(p.random(2, 5)));
-                            particles.push(newParticle);
-                        }
                     }
                 };
 
@@ -2017,11 +2001,9 @@ Max Drawdown: -2.1%
                 this.pos = p.createVector(x, y);
                 this.vel = p.createVector(0, 0);
                 this.acc = p.createVector(0, 0);
-                this.maxspeed = 4;
+                this.maxspeed = 1.2;
                 this.history = [];
                 this.color = c;
-                this.isClickSpawned = false;
-                this.lifespan = 255;
             }
 
             follow(vectors) {
@@ -2038,19 +2020,6 @@ Max Drawdown: -2.1%
                 this.acc.add(force);
             }
 
-            attractToMouse() {
-                let mouse = this.p.createVector(this.p.mouseX, this.p.mouseY);
-                let distToMouse = p5.Vector.dist(this.pos, mouse);
-                let attractionRadius = 150;
-                let attractionStrength = 0.5;
-
-                if (distToMouse < attractionRadius) {
-                    let steer = p5.Vector.sub(mouse, this.pos);
-                    steer.setMag(this.p.map(distToMouse, 0, attractionRadius, this.maxspeed * attractionStrength, 0));
-                    this.applyForce(steer);
-                }
-            }
-
             update() {
                 this.vel.add(this.acc);
                 this.vel.limit(this.maxspeed);
@@ -2060,30 +2029,14 @@ Max Drawdown: -2.1%
                 this.edges();
 
                 this.history.push(this.pos.copy());
-                if (this.history.length > 20) {
+                if (this.history.length > 25) {
                     this.history.splice(0, 1);
-                }
-
-                if (this.isClickSpawned) {
-                    this.lifespan -= 2;
-                    if (this.lifespan > 150) {
-                        this.vel.mult(1.02);
-                    }
                 }
             }
 
             show() {
-                this.p.strokeWeight(1);
-
-                if (this.isClickSpawned) {
-                    let alpha = this.p.map(this.lifespan, 0, 255, 0, 200);
-                    let c = this.color;
-                    c.setAlpha(alpha);
-                    this.p.stroke(c);
-                } else {
-                    this.p.stroke(this.color);
-                }
-
+                this.p.strokeWeight(0.6);
+                this.p.stroke(this.color);
                 this.p.noFill();
                 this.p.beginShape();
                 for (let i = 0; i < this.history.length; i++) {
