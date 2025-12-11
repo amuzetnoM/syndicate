@@ -1,6 +1,6 @@
 # System Documentation
 
-This document provides a comprehensive overview of the system's configuration, purpose, and the operational parameters of the Gemini agent managing it.
+This document provides a comprehensive overview of the system's configuration, purpose, and the operational parameters of the agent managing it.
 
 ---
 
