@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odyssey README</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        h1, h2, h3 {
+            color: #ffd700;
+        }
+        p, li {
+            line-height: 1.6;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <div class="container">
+        <h1>Odyssey Virtual Machine</h1>
+        <!-- Insert converted HTML content here -->
+        <div id="content">
+            <!-- Content from README.html -->
+            <h1>Odyssey Virtual Machine</h1>
+<p>The Odyssey Virtual Machine (VM) is a specialized containerized infrastructure designed for artifact virtualization and serum processing. This system provides a robust, scalable environment for running containerized applications with integrated monitoring, security, and performance optimization features.</p>
+<h2>System Architecture</h2>
+<p>The VM is built on Debian GNU/Linux with Docker as the primary containerization platform. Key components include:</p>
+<ul>
+<li><strong>Host OS:</strong> Debian 12 (bookworm)</li>
+<li><strong>Container Engine:</strong> Docker 29.1.2</li>
+<li><strong>Monitoring:</strong> Prometheus/Grafana stack</li>
+<li><strong>Security:</strong> AppArmor, Seccomp, and cgroup isolation</li>
+</ul>
+<h2>Quick Start</h2>
+<p>To get started with the Odyssey VM:</p>
+<ol>
+<li>Ensure Docker is installed and running</li>
+<li>Pull the required container images</li>
+<li>Configure environment variables</li>
+<li>Start the application containers</li>
+</ol>
+<h2>Configuration</h2>
+<p>The VM supports various configuration options through environment variables and configuration files. Refer to the technical documentation for detailed setup instructions.</p>
+<h2>Monitoring and Maintenance</h2>
+<p>The system includes built-in monitoring tools and regular maintenance scripts. Use the provided dashboard for real-time system metrics and performance monitoring.</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script>
+        let particles = [];
+        let numParticles = 120;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('particleCanvas');
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function draw() {
+            clear();
+            for (let p of particles) {
+                p.update();
+                p.display();
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.x = random(width);
+                this.y = random(height);
+                this.vx = random(-0.5, 0.5);
+                this.vy = random(-0.5, 0.5);
+                this.size = random(1, 3);
+                this.alpha = random(50, 150);
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            display() {
+                fill(212, 175, 55, this.alpha); // Gold color
+                noStroke();
+                ellipse(this.x, this.y, this.size);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas(windowWidth, windowHeight);
+        });
+    </script>
+</body>
+</html>

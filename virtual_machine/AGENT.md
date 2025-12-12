@@ -1,4 +1,3 @@
-
 ## 3. Gemini Agent Profile
 
 This section defines the operational parameters, personality, and responsibilities of the Gemini agent tasked with managing this system.
