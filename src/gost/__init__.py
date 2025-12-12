@@ -25,7 +25,7 @@ Usage:
     gost --interactive   # Interactive menu
 """
 
-__version__ = "3.1.0"
+__version__ = "3.3.0"
 __author__ = "amuzetnoM"
 __license__ = "MIT"
 
