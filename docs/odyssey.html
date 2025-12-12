@@ -26,22 +26,34 @@
         p, li {
             line-height: 1.6;
         }
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 0;
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #ffd700;
+            color: #000;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .nav-btn:hover {
+            background: #e6c200;
         }
     </style>
 </head>
 <body>
     <canvas id="particleCanvas"></canvas>
     <div class="container">
+        <nav class="nav-buttons">
+            <a href="../virtual_machine/odyssey_sys.html" class="nav-btn">Technical Specs</a>
+        </nav>
         <h1>Odyssey Virtual Machine</h1>
         <!-- Insert converted HTML content here -->
         <div id="content">
             <!-- Content from README.html -->
-            <h1>Odyssey Virtual Machine</h1>
 <p>The Odyssey Virtual Machine (VM) is a specialized containerized infrastructure designed for artifact virtualization and serum processing. This system provides a robust, scalable environment for running containerized applications with integrated monitoring, security, and performance optimization features.</p>
 <h2>System Architecture</h2>
 <p>The VM is built on Debian GNU/Linux with Docker as the primary containerization platform. Key components include:</p>
