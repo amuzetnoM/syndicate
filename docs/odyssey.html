@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odyssey | Deployment Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --border: #27272a;
+            --border-hover: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-gold: #d4a853;
+            --accent-gold-dim: rgba(212, 168, 83, 0.1);
+            --accent-green: #22c55e;
+            --accent-blue: #3b82f6;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        #p5-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        body > * { position: relative; z-index: 1; }
+
+        /* Navigation */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(10, 10, 11, 0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1400px; margin: 0 auto; padding: 0 2rem; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo {
+            font-weight: 700; font-size: 1.1rem; color: var(--text-primary);
+            display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
+        }
+        .logo-mark {
+            width: 24px; height: 24px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%);
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .nav-links { display: flex; gap: 2rem; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-links a.active { color: var(--accent-gold); }
+        .nav-cta { display: flex; gap: 1rem; }
+
+        .btn {
+            padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;
+            font-weight: 500; text-decoration: none; transition: all 0.2s;
+            cursor: pointer; border: none;
+        }
+        .btn-primary { background: var(--text-primary); color: var(--bg-primary); }
+        .btn-primary:hover { background: var(--text-secondary); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-outline:hover { border-color: var(--border-hover); background: var(--bg-secondary); }
+        .btn-gold { background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%); color: #000; }
+        .btn-gold:hover { opacity: 0.9; }
+
+        /* Hero */
+        .hero { padding: 10rem 2rem 6rem; max-width: 1400px; margin: 0 auto; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.375rem 0.875rem; background: var(--accent-gold-dim);
+            border: 1px solid rgba(212, 168, 83, 0.2); border-radius: 100px;
+            font-size: 0.8rem; color: var(--accent-gold); margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700;
+            letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1.5rem; max-width: 800px;
+        }
+        .hero h1 span { color: var(--accent-gold); }
+        .hero-desc { font-size: 1.25rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 2.5rem; line-height: 1.7; }
+        .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .hero-actions .btn { padding: 0.875rem 1.5rem; font-size: 0.95rem; }
+
+        /* Stats */
+        .stats-bar { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1px; background: var(--border); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+        }
+        .stat-item { background: var(--bg-secondary); padding: 1.5rem; text-align: center; }
+        .stat-value { font-size: 1.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+        /* Sections */
+        section { padding: 5rem 2rem; max-width: 1400px; margin: 0 auto; }
+        .section-header { margin-bottom: 3rem; }
+        .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-gold); font-weight: 600; margin-bottom: 0.75rem; }
+        .section-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1rem; }
+        .section-desc { font-size: 1.1rem; color: var(--text-secondary); max-width: 600px; }
+
+        /* Architecture */
+        .arch-visual {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 16px; padding: 3rem; margin-bottom: 3rem;
+            position: relative; overflow: hidden;
+        }
+        .arch-visual::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(212, 168, 83, 0.04) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .flow-container { display: flex; flex-direction: column; gap: 2rem; position: relative; z-index: 1; }
+        .flow-row { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .flow-node {
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 1rem 1.5rem; text-align: center;
+            transition: all 0.3s ease; min-width: 130px;
+        }
+        .flow-node:hover { border-color: var(--accent-gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212, 168, 83, 0.1); }
+        .flow-node.source { background: linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.05) 100%); border-color: rgba(212, 168, 83, 0.3); }
+        .flow-node.core { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%); border-color: rgba(59, 130, 246, 0.3); }
+        .flow-node.output { background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%); border-color: rgba(34, 197, 94, 0.3); }
+        .flow-node-icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .flow-node-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .flow-node-sub { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .flow-connector { color: var(--text-muted); font-size: 1.25rem; }
+
+        /* Modules */
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+        .module-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; transition: all 0.2s; }
+        .module-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+        .module-icon { width: 48px; height: 48px; background: var(--bg-tertiary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1.25rem; }
+        .module-name { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .module-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-gold); background: var(--accent-gold-dim); padding: 0.25rem 0.5rem; border-radius: 4px; margin-bottom: 1rem; }
+        .module-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* Quick Start */
+        .quick-start { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; margin-top: 3rem; }
+        .quick-start h3 { font-size: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .steps { display: grid; gap: 1.5rem; }
+        .step { display: flex; gap: 1rem; align-items: flex-start; }
+        .step-num { width: 32px; height: 32px; background: var(--accent-gold-dim); border: 1px solid rgba(212, 168, 83, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; color: var(--accent-gold); flex-shrink: 0; }
+        .step-content h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .step-content p { font-size: 0.9rem; color: var(--text-secondary); }
+        .step-content code { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: var(--bg-tertiary); padding: 0.125rem 0.375rem; border-radius: 4px; color: var(--accent-gold); }
+
+        /* Footer */
+        footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+        footer a { color: var(--accent-gold); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding: 8rem 1.5rem 4rem; }
+            .hero h1 { font-size: 2rem; }
+            .hero-desc { font-size: 1rem; }
+            section { padding: 4rem 1.5rem; }
+            .arch-visual { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="p5-background"></div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">
+                <div class="logo-mark">GS</div>
+                Gold Standard
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index_docs.html">Documentation</a></li>
+                <li><a href="odyssey.html" class="active">Deployment</a></li>
+                <li><a href="guide.html">Guide</a></li>
+            </ul>
+            <div class="nav-cta">
+                <a href="odyssey_sys.html" class="btn btn-outline">System Specs</a>
+                <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-badge">
+            <span>⚡</span> Production Ready
+        </div>
+        <h1>Odyssey <span>Deployment</span> Infrastructure</h1>
+        <p class="hero-desc">
+            A specialized containerized virtual machine designed for artifact virtualization
+            and production-grade Gold Standard deployments. Built on Debian with Docker orchestration,
+            optimized for performance and security.
+        </p>
+        <div class="hero-actions">
+            <a href="odyssey_sys.html" class="btn btn-gold">View Full Specs →</a>
+            <a href="index_docs.html" class="btn btn-outline">Documentation</a>
+            <a href="index.html" class="btn btn-outline">Back to Home</a>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">2</div>
+                <div class="stat-label">vCPUs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3.8</div>
+                <div class="stat-label">GiB RAM</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">500</div>
+                <div class="stat-label">GiB Storage</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">94%</div>
+                <div class="stat-label">CPU Idle</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">KVM</div>
+                <div class="stat-label">Hypervisor</div>
+            </div>
+        </div>
+    </div>
+
+    <section>
+        <div class="section-header">
+            <div class="section-label">Architecture</div>
+            <h2 class="section-title">System Architecture Overview</h2>
+            <p class="section-desc">
+                The Odyssey VM provides a robust, scalable environment for containerized applications
+                with integrated monitoring, security, and performance optimization.
+            </p>
+        </div>
+
+        <div class="arch-visual">
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="flow-node source">
+                        <span class="flow-node-icon">🖥️</span>
+                        <div class="flow-node-label">Host VM</div>
+                        <div class="flow-node-sub">odyssey</div>
+                    </div>
+                    <div class="flow-connector">→</div>
+                    <div class="flow-node core">
+                        <span class="flow-node-icon">🐳</span>
+                        <div class="flow-node-label">Docker Engine</div>
+                        <div class="flow-node-sub">v29.1.2</div>
+                    </div>
+                    <div class="flow-connector">→</div>
+                    <div class="flow-node output">
+                        <span class="flow-node-icon">📦</span>
+                        <div class="flow-node-label">Containers</div>
+                        <div class="flow-node-sub">overlay2</div>
+                    </div>
+                </div>
+                <div class="flow-row">
+                    <div class="flow-node">
+                        <span class="flow-node-icon">🔒</span>
+                        <div class="flow-node-label">AppArmor</div>
+                        <div class="flow-node-sub">Security</div>
+                    </div>
+                    <div class="flow-node">
+                        <span class="flow-node-icon">📊</span>
+                        <div class="flow-node-label">Monitoring</div>
+                        <div class="flow-node-sub">Prometheus</div>
+                    </div>
+                    <div class="flow-node">
+                        <span class="flow-node-icon">🌐</span>
+                        <div class="flow-node-label">Network</div>
+                        <div class="flow-node-sub">BBR TCP</div>
+                    </div>
+                    <div class="flow-node">
+                        <span class="flow-node-icon">💾</span>
+                        <div class="flow-node-label">Storage</div>
+                        <div class="flow-node-sub">/mnt/newdisk</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modules-grid">
+            <div class="module-card">
+                <div class="module-icon">🐧</div>
+                <div class="module-name">Operating System</div>
+                <div class="module-tag">Debian 12</div>
+                <p class="module-desc">Debian GNU/Linux 12 (bookworm) with kernel 6.1.0-41-cloud-amd64. Cloud-optimized for containerized workloads.</p>
+            </div>
+            <div class="module-card">
+                <div class="module-icon">🐳</div>
+                <div class="module-name">Container Engine</div>
+                <div class="module-tag">Docker 29.1.2</div>
+                <p class="module-desc">Docker CE with buildx, compose, and model plugins. Cgroup v2, overlay2 storage driver, json-file logging.</p>
+            </div>
+            <div class="module-card">
+                <div class="module-icon">🔐</div>
+                <div class="module-name">Security Stack</div>
+                <div class="module-tag">AppArmor + Seccomp</div>
+                <p class="module-desc">Multi-layer security with AppArmor profiles, Seccomp filtering, and cgroup isolation. Speculative execution mitigations applied.</p>
+            </div>
+            <div class="module-card">
+                <div class="module-icon">📈</div>
+                <div class="module-name">Monitoring</div>
+                <div class="module-tag">htop + bpytop</div>
+                <p class="module-desc">Real-time resource monitoring with htop, bpytop, iotop, and Glances. Ready for Prometheus/Grafana integration.</p>
+            </div>
+            <div class="module-card">
+                <div class="module-icon">🌐</div>
+                <div class="module-name">Networking</div>
+                <div class="module-tag">BBR Congestion</div>
+                <p class="module-desc">Optimized TCP with BBR congestion control. 16MB buffer limits, bridge networking for containers.</p>
+            </div>
+            <div class="module-card">
+                <div class="module-icon">💾</div>
+                <div class="module-name">Storage</div>
+                <div class="module-tag">500 GiB ext4</div>
+                <p class="module-desc">Dedicated secondary storage at /mnt/newdisk for Docker data. Low I/O utilization, optimized for container workloads.</p>
+            </div>
+        </div>
+
+        <div class="quick-start">
+            <h3>🚀 Quick Start</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Verify Docker Installation</h4>
+                        <p>Ensure Docker is installed and running: <code>docker --version</code></p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Pull Container Images</h4>
+                        <p>Pull the required Gold Standard images from the registry.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Configure Environment</h4>
+                        <p>Set up environment variables and configuration files.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Start Services</h4>
+                        <p>Launch containers with <code>docker compose up -d</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Odyssey Deployment Infrastructure — Part of <a href="index.html">Gold Standard</a></p>
+        <p style="margin-top: 0.5rem;"><a href="odyssey_sys.html">Full System Specifications</a> · <a href="index_docs.html">Documentation</a> · <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a></p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script>
+        let particles = [];
+        const numParticles = 80;
+        let noiseOffset = 0;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('p5-background');
+            noStroke();
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({ x: random(width), y: random(height), size: random(1, 2.5), alpha: random(30, 80), speed: random(0.2, 0.5) });
+            }
+        }
+
+        function draw() {
+            clear();
+            noiseOffset += 0.002;
+            for (let p of particles) {
+                let angle = noise(p.x * 0.003, p.y * 0.003, noiseOffset) * TWO_PI * 2;
+                p.x += cos(angle) * p.speed;
+                p.y += sin(angle) * p.speed;
+                if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
+                fill(212, 168, 83, p.alpha);
+                ellipse(p.x, p.y, p.size);
+            }
+        }
+
+        function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+    </script>
+</body>
+</html>
