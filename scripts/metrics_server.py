@@ -52,7 +52,7 @@ def get_metrics():
     # Application info
     metrics.append("# HELP gold_standard_info Application information")
     metrics.append("# TYPE gold_standard_info gauge")
-    metrics.append('gold_standard_info{version="3.2.1"} 1')
+    metrics.append('gold_standard_info{version="3.3.0"} 1')
 
     # Task counts
     metrics.append("")
