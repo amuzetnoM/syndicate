@@ -269,4 +269,3 @@ data/*.db
 tmp/
 temp/
 twine-draft.txt
-virtual_machine/
