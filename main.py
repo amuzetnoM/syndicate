@@ -529,12 +529,25 @@ class Config:
         return os.path.join(self.OUTPUT_DIR, "charts")
 
     @property
+    def DATA_DIR(self) -> str:
+        """Data directory for persistent storage (used in Docker containers)."""
+        return os.path.join(self.BASE_DIR, "data")
+
+    @property
     def MEMORY_FILE(self) -> str:
-        return os.path.join(self.BASE_DIR, "cortex_memory.json")
+        """Cortex memory file - stored in data directory for Docker volume persistence."""
+        data_dir = self.DATA_DIR
+        # Ensure data directory exists
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, "cortex_memory.json")
 
     @property
     def LOCK_FILE(self) -> str:
-        return os.path.join(self.BASE_DIR, "cortex_memory.lock")
+        """Lock file for cortex memory - stored in data directory for Docker compatibility."""
+        data_dir = self.DATA_DIR
+        # Ensure data directory exists
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, "cortex_memory.lock")
 
     # Technical Analysis Thresholds
     ADX_TREND_THRESHOLD: float = 25.0

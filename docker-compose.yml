@@ -29,7 +29,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
-    image: ghcr.io/amuzetnom/gold_standard:latest
     container_name: gold-standard
     restart: unless-stopped
     environment:
@@ -37,16 +36,17 @@ services:
       - PYTHONUNBUFFERED=1
       # API Keys - Use .env file or Docker secrets
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - NOTION_API_KEY=${NOTION_API_KEY:-}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+      - IMGBB_API_KEY=${IMGBB_API_KEY:-}
       # Prometheus metrics
       - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+      # Matplotlib cache (avoids permission errors)
+      - MPLCONFIGDIR=/tmp/matplotlib
     volumes:
       # Persistent data
       - gost_data:/app/data
       - gost_output:/app/output
-      # Configuration (optional mount)
-      - ./cortex_memory.json:/app/cortex_memory.json:ro
     networks:
       - gost-network
     healthcheck:
@@ -240,8 +240,10 @@ services:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - NOTION_API_KEY=${NOTION_API_KEY:-}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+      - IMGBB_API_KEY=${IMGBB_API_KEY:-}
+      - MPLCONFIGDIR=/tmp/matplotlib
     volumes:
       - .:/app
       - gost_data:/app/data

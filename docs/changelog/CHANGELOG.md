@@ -6,6 +6,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [3.3.1] - 2025-12-13
+
+### Fixed
+- **Docker Container Robustness**
+  - Removed hardcoded GHCR image reference to ensure local builds are always used
+  - Fixed `NOTION_TOKEN` → `NOTION_API_KEY` environment variable naming (was causing API failures)
+  - Added missing `IMGBB_API_KEY` environment variable to container
+  - Added `MPLCONFIGDIR=/tmp/matplotlib` to prevent matplotlib permission errors in container
+  - Removed read-only `cortex_memory.json` mount that caused lock file conflicts
+
+- **Cortex Memory Persistence**
+  - Relocated `MEMORY_FILE` and `LOCK_FILE` to `/app/data/` directory
+  - Files now persist correctly in Docker volume instead of container filesystem
+  - Added `DATA_DIR` property to Config for consistent data path handling
+  - Automatic directory creation for data paths
+
+- **Single Run Mode (`--once` flag)**
+  - Fixed `--once` argument being parsed but never executed
+  - Now correctly runs single analysis cycle with all post-analysis tasks
+  - Proper exit after completion (no more falling into daemon mode)
+
+- **File Organizer Stability**
+  - Added `FILE_INDEX` skip logic to prevent recursive filename explosion
+  - Prevents "[Errno 36] File name too long" errors from repeated date appending
+  - Case-insensitive check covers all FILE_INDEX variations
+
+### Changed
+- Updated dev container environment to match production configuration
+- Docker Compose now consistent across all service definitions
+
+---
+
 ## [3.3.0] - 2025-12-06
 
 ### Added
