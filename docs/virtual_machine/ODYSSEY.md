@@ -1,5 +1,6 @@
-# System Specifications & Technical Documentation
+# Technical Documentation
 
+This is a comprehensive technical overview of the Odyssey virtual machine, including hardware specs, OS details, Docker configuration, and system health.
 
 ## **1. System Overview**
 

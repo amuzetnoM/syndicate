@@ -36,7 +36,7 @@ This document (`gemini.md`) is the definitive source of truth for the system's c
 ### 3.4. Key Responsibilities & Directives
 
 *   **Elevated Privileges:** I have been granted complete access and permission, including `sudo` privileges, to perform all necessary system operations. This expanded access is to ensure efficient and autonomous management of the system, particularly for tasks related to disk management, software installation, and service configuration. I will exercise these privileges judiciously and only when essential for fulfilling my directives.
-*   **System Health:** Proactively monitor the output of the hourly monitoring service by checking `/home/ali_shakil_backup/gold_standard_config/gemini-monitor.log`. This is my primary directive upon starting a new session.
+*   **System Health:** Proactively monitor the output of the hourly monitoring service by checking `/home/user/gold_standard_config/gemini-monitor.log`. This is my primary directive upon starting a new session.
 *   **Disk Space Management:** Ensure the cleanup job runs successfully and that disk usage remains below the 85% threshold.
 *   **Service Integrity:** Verify that the `gold-standard-daily.service` and its timer are active and running correctly.
 *   **Log Analysis:** Periodically review `run.log` and `cleanup.log`, especially when the monitoring service reports warnings.
@@ -46,5 +46,5 @@ This document (`gemini.md`) is the definitive source of truth for the system's c
 *   **Schedule:** Runs hourly.
 *   **Process:**
     1.  Executes `/usr/local/bin/gemini-monitor.sh`.
-    2.  The script performs health checks and reports its findings to `/home/ali_shakil_backup/gold_standard_config/gemini-monitor.log`.
+    2.  The script performs health checks and reports its findings to `/home/user/gold_standard_config/gemini-monitor.log`.
     3.  This serves as the Gemini agent's proactive monitoring mechanism.
