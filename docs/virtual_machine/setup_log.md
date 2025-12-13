@@ -1,162 +1,371 @@
-# Gold Standard Setup Log - 2025-12-13 01:47:16
+﻿---
+description: Complete VM deployment guide and troubleshooting reference for Gold Standard v3.3.1
+icon: server
+---
 
-## 1. Introduction
-This document serves as a comprehensive log detailing the setup, configuration, issues encountered, and solutions implemented for the Gold Standard system. Its purpose is to provide a complete "source of truth" for anyone seeking to understand the system's current state and operational rationale.
+# VM Deployment & Setup Log
 
-## 2. Initial System State and Goals
-The Gold Standard system is deployed on a Virtual Machine (VM) with a specific disk configuration:
-* **Root Disk**: A small (e.g., 50GB) disk primarily for the VM's operating system and core functionalities. This disk *must not* be used for persistent application data or Docker-related storage.
-* **New Disk (`/mnt/newdisk`)**: A larger (e.g., 500GB) dedicated data disk intended for all application data, logs, Docker volumes, and other persistent storage.
+> **Last Updated:** December 13, 2025 | **Version:** 3.3.1 | **Status:** Fully Operational
 
-**The primary and critical user requirement throughout this setup was to ensure that absolutely no data is written to the root filesystem.** All persistent operations, especially those involving Docker and logs, must be directed to `/mnt/newdisk`.
+This document serves as the authoritative reference for deploying Gold Standard on a Virtual Machine (VM). It covers initial configuration, issues encountered during deployment, and their solutions.
 
-The overarching goal was to get the `gold_standard` system running correctly, robustly, and with all data persistently stored on `/mnt/newdisk`, triggered automatically as scheduled by `systemd`.
+---
 
-## 3. Core Project Overview (Pre-Modifications)
-The `gold_standard` is a Python-based quantitative analysis system.
+## Overview
 
-* **Application Structure**:
-    * Developed in Python, utilizing a virtual environment (`.venv`).
-    * Core logic in `main.py` orchestrates `Cortex` (memory), `QuantEngine` (data/TA), and `Strategist` (AI).
-    * CLI entry point `run.py` handles various execution modes (daemon, single run, interactive).
-* **Configuration**:
-    * Relies on environment variables for API keys (`GEMINI_API_KEY`, `NOTION_API_KEY`, `IMGBB_API_KEY`) typically loaded from a `.env` file in the project root.
-* **Docker Compose**:
-    * `gold_standard/docker-compose.yml` defines multiple services (e.g., `gost` for the main app, `prometheus`, `grafana`, `alertmanager`, `loki`, `promtail` for monitoring/logging, `node-exporter`, `cadvisor`).
-    * Initially used Docker named volumes for persistent data storage.
-* **Systemd Automations**:
-    * `gold-standard-daily.service` (triggering daily analysis).
-    * `gold-standard-weekly-cleanup.service` (for weekly cleanup tasks).
-    * `gold-standard-compose.service` (manages the Docker Compose stack on boot).
-    * Corresponding `.timer` files (`gold-standard-daily.timer`, `gold-standard-weekly-cleanup.timer`) define the scheduling.
-* **`codex.sh`**:
-    * A shell script (`/home/user/codex.sh`) to simplify interaction with the Docker Compose stack (run, build, monitor, stop).
+### System Architecture
 
-## 4. Issues Encountered and Solutions Implemented
+```mermaid
+graph TB
+    subgraph VM[Virtual Machine]
+        subgraph ROOT[Root Disk 50GB]
+            OS[Ubuntu OS]
+            DOCKER[Docker Engine]
+            SYSTEMD[systemd]
+        end
+        subgraph DATA[Data Disk /mnt/newdisk 500GB]
+            APP[Gold Standard App]
+            DB[SQLite Database]
+            OUTPUT[Reports and Charts]
+            LOGS[Service Logs]
+            VOLUMES[Docker Volumes]
+        end
+    end
 
-### 4.1. Issue: Docker Writes to Root Filesystem (Named Volumes)
-* **Rationale**: The initial `docker-compose.yml` defined Docker named volumes (e.g., `gost_data`, `prometheus_data`). By default, Docker stores these named volumes under `/var/lib/docker/volumes` on the host, which typically resides on the root filesystem. This directly violated the critical requirement.
-* **Solution**:
-    1. Created a dedicated directory: `/mnt/newdisk/gold_standard/docker-data`.
-    2. Modified `gold_standard/docker-compose.yml` to replace all named volumes with explicit **bind mounts** to subdirectories within `/mnt/newdisk/gold_standard/docker-data`. For example, `gost_data` was changed from a named volume to a bind mount to `./docker-data/gost_data`.
-* **Verification**: All Docker-managed persistent data (database, output, Prometheus data, Grafana data, etc.) is now stored on the `/mnt/newdisk` partition, completely avoiding the root filesystem.
+    OS --> |manages| DOCKER
+    DOCKER --> |mounts| DATA
+    SYSTEMD --> |schedules| APP
+```
 
-### 4.2. Issue: Systemd Service Logs Writing to Root Filesystem
-* **Rationale**: The `systemd` service files (`gold-standard-daily.service`, `gold-standard-weekly-cleanup.service`) were configured to append their `StandardOutput` and `StandardError` to log files within `/home/user/gold_standard_config/`. This directory is on the root filesystem.
-* **Solution**:
-    1. Created the `gold_standard_config` directory on the data disk: `/mnt/newdisk/gold_standard/gold_standard_config`.
-    2. Modified `gold-standard-daily.service` and `gold-standard-weekly-cleanup.service` using `sed` to update the `StandardOutput` and `StandardError` paths to point to the new location: `/mnt/newdisk/gold_standard/gold_standard_config/run.log` and `/mnt/newdisk/gold_standard/gold_standard_config/cleanup.log` respectively.
-    3. Executed `sudo systemctl daemon-reload` to apply these changes to `systemd`.
-* **Verification**: Service logs are now correctly directed to `/mnt/newdisk`.
+### Deployment Goals
 
-### 4.3. Issue: API Keys Not Loaded (Empty Environment Variables, incl. IMGBB)
-* **Rationale**: Initially, `GEMINI_API_KEY`, `NOTION_API_KEY`, and `IMGBB_API_KEY` were not being correctly passed to the Docker container. This was due to multiple factors:
-    * The `docker-compose.yml` `environment` section for the `gost` service initially used `NOTION_TOKEN` instead of `NOTION_API_KEY`.
-    * `IMGBB_API_KEY` was entirely missing from the `gost` service's `environment` block.
-    * `docker compose run` does not automatically load variables from `.env` for its `environment` section unless they are pre-populated in the shell environment.
-* **Solution**:
-    1. Modified `gold_standard/.env` to ensure the key was named `NOTION_API_KEY`.
-    2. Modified `gold_standard/docker-compose.yml`:
-         * Corrected the YAML syntax by properly nesting environment variables under an `environment:` key for the `gost` service.
-         * Changed `NOTION_TOKEN=${NOTION_TOKEN:-}` to `NOTION_API_KEY=${NOTION_API_KEY:-}`.
-         * Added `- IMGBB_API_KEY=${IMGBB_API_KEY:-}` to the `gost` service's `environment` block.
-    3. Modified `/home/user/codex.sh` to explicitly `source "/mnt/newdisk/gold_standard/.env"` before executing the `docker compose run` command. This ensures the shell environment variables are populated, allowing `docker compose` to substitute them correctly.
-* **Verification**: All API keys (`GEMINI_API_KEY`, `NOTION_API_KEY`, `IMGBB_API_KEY`) are now correctly loaded and available to the application, enabling Notion publishing and chart uploads.
+| Requirement | Description | Status |
+|------------|-------------|--------|
+| **Zero Root Writes** | No persistent data on root filesystem | Done |
+| **Automated Scheduling** | Daily analysis via systemd timers | Done |
+| **API Integration** | Gemini, Notion, ImgBB connected | Done |
+| **Monitoring Stack** | Prometheus + Grafana + Loki | Done |
+| **Data Persistence** | All data on /mnt/newdisk | Done |
 
-### 4.4. Issue: `run.py` Entering Autonomous Mode (`--once` flag ignored)
-* **Rationale**: The `codex.sh run` command calls `python run.py --once`, which is intended to execute a single analysis cycle and exit. However, `run.py` was observed entering "AUTONOMOUS MODE" (daemon mode) before exiting. This was due to a logic flaw in `run.py`'s `main` function (it defaulted to daemon mode if no other specific run command was matched) and an outdated Docker image.
-* **Solution**:
-    1. Modified `gold_standard/run.py` to add an explicit conditional check `if args.once: run_all(...) ; _run_post_analysis_tasks() ; return` early in the `main` function, ensuring it exits after a single `run_all` call and also performs post-analysis tasks when `--once` is present.
-    2. Removed the `image: ghcr.io/amuzetnom/gold_standard:latest` line from the `gost` service in `docker-compose.yml`. This forced `docker compose` to use the locally built image (reflecting `run.py` changes) instead of pulling a potentially outdated one from a registry.
-    3. Rebuilt the Docker image using `codex.sh build`.
-* **Verification**: The script now correctly runs a single analysis cycle including all post-analysis tasks (like Notion publishing) and exits cleanly.
+---
 
-### 4.5. Issue: `matplotlib` Cache Directory Permissions
-* **Rationale**: `matplotlib` attempted to create its cache directory (e.g., `~/.cache/matplotlib`) in a location inside the container where the `goldstandard` user did not have write permissions.
-* **Solution**: Added `MPLCONFIGDIR=/tmp/matplotlib` as an environment variable to the `gost` service in `docker-compose.yml`. This redirects `matplotlib`'s cache directory to `/tmp/matplotlib` within the container, which is always a writable temporary location.
-* **Verification**: `matplotlib` chart generation now proceeds without permission errors.
+## Initial System State
 
-### 4.6. Issue: Persistent `cortex_memory.lock` Permission Denied
-* **Rationale**: This was a stubborn permission issue, preventing `Cortex` from writing its memory file and lock file. Despite correcting file/directory ownership and ensuring `cortex_memory.json` was not read-only, the `filelock` library still reported permission denied when trying to create `/app/cortex_memory.lock`. This indicated a deeper interaction issue with `filelock` and Docker bind mounts when the file was directly in the application's root directory.
-* **Solution**:
-    1. Modified `gold_standard/main.py` to change the `Config.MEMORY_FILE` and `Config.LOCK_FILE` properties. They now point to paths within the `/app/data` directory (`/app/data/cortex_memory.json` and `/app/data/cortex_memory.lock`). This relocates the memory files to the dedicated persistent data volume (`gost_data`).
-    2. Removed the explicit `cortex_memory.json` mount from the `gost` service in `docker-compose.yml`, as the file is now expected to be within the `gost_data` volume managed by the application logic.
-    3. Reverted the `Dockerfile` changes related to `USER goldstandard` position, ensuring the image builds correctly.
-    4. Modified `/home/user/codex.sh` to add `--user "1000:1003"` to the `docker compose run` command. This ensures the ephemeral container created by `docker compose run` explicitly executes as the host's `user` user (UID 1000, GID 1003), matching the ownership of the bind-mounted directories and files.
-    5. Rebuilt the Docker image using `codex.sh build`.
-* **Verification**: `cortex_memory.lock` permission errors are resolved, and the `Cortex` memory system operates correctly.
+### Disk Configuration
 
-### 4.7. Issue: FileOrganizer "File name too long" for `FILE_INDEX.md`
-* **Rationale**: The `FileOrganizer` (`scripts/file_organizer.py`) was repeatedly processing and renaming `FILE_INDEX.md` and already dated `FILE_INDEX_YYYY-MM-DD.md` files. Its `generate_standardized_name` function, combined with the lack of robust exclusion, led to date strings being appended multiple times, resulting in excessively long filenames that eventually caused `[Errno 36] File name too long`.
-* **Solution**:
-    1. Manually cleaned up all existing excessively long `FILE_INDEX*.md` files from the `/mnt/newdisk/gold_standard/output` and `/mnt/newdisk/gold_standard/output/reports` directories using `sudo rm -f`.
-    2. Modified `gold_standard/scripts/file_organizer.py` to update the skip logic in `organize_file`. Instead of checking for an exact match to `"FILE_INDEX.md"`, it now checks if `source_path.name.startswith("FILE_INDEX")`. This ensures all variations of `FILE_INDEX` are skipped from organization.
-    3. Rebuilt the Docker image using `codex.sh build`.
-* **Verification**: The `FileOrganizer` now correctly skips `FILE_INDEX` files from renaming, preventing the "File name too long" error.
+**Root Disk**
+- **Size:** 50GB
+- **Purpose:** OS and core system files only
+- **Mount:** /
+- **Constraint:** Must NOT store application data
 
-### 4.8. Issue: `systemd` `gold-standard-compose.service` `CHDIR` Error
-* **Rationale**: The `gold-standard-compose.service` was repeatedly failing to start with a `CHDIR` error. This indicated `systemd` was having trouble changing to the `WorkingDirectory` before executing the `docker compose` command, leading to the service not being able to find the `docker` executable. The `ExecStart` line became corrupted during `sed` attempts.
-* **Solution**:
-    1. The `gold-standard-compose.service` file (`/etc/systemd/system/gold-standard-compose.service`) was manually recreated with the correct content using `sudo tee`.
-    2. The `ExecStart` line was explicitly set to `/bin/bash -c "cd /mnt/newdisk/gold_standard && /usr/bin/docker compose --profile monitoring --profile logging up -d"`. This ensures the `cd` command is part of the shell execution, resolving `systemd`'s `CHDIR` issue.
-    3. The service was re-enabled and `systemctl daemon-reload` was executed.
-* **Verification**: `gold-standard-compose.service` is now `active (running)`, indicating the Docker Compose stack is managed correctly by `systemd`.
+**Data Disk**
+- **Size:** 500GB
+- **Purpose:** All persistent application data
+- **Mount:** /mnt/newdisk
+- **Contents:** Application files, Docker volumes, Logs, Database, Output reports
 
-## 5. Current Operational Status
-As of **2025-12-13 01:47:16**, the `gold_standard` system is configured and operational as follows:
+### Application Architecture
 
-* **Execution**: The system successfully completes a full analysis run (including post-analysis tasks like insight extraction, file organization, Notion publishing, and ImgBB chart uploads) when triggered via `/home/user/codex.sh run`. The script executes `python run.py --once` inside its Docker container and exits cleanly.
-* **Data Persistence**: All persistent data (SQLite database, output reports, charts, `cortex_memory.json`, Docker volumes) and service logs are correctly directed to the `/mnt/newdisk` partition, safeguarding the root filesystem.
-* **Configuration**: All API keys (`GEMINI_API_KEY`, `NOTION_API_KEY`, `IMGBB_API_KEY`) are correctly loaded from `gold_standard/.env` and passed to the Docker container, enabling Notion publishing and ImgBB chart uploads.
-* **User Context**: Docker containers run with appropriate user permissions (`goldstandard` user internally, explicitly matched to `user` on host for bind mounts), ensuring all file access is correctly handled.
-* **Systemd Automations**: The `systemd` service and timer files (`gold-standard-daily.*`, `gold-standard-weekly-cleanup.*`, `gold-standard-compose.service`) are correctly configured, enabled, and running to manage the application's lifecycle and scheduled tasks without manual intervention.
-    * `gold-standard-compose.service`: `active (running)`
-    * `gold-standard-daily.timer`: `active (running)`
-    * `gold-standard-weekly-cleanup.timer`: `active (waiting)`
-* **New `codex.sh` Command**: A `heal` command has been added to `codex.sh` to facilitate easy restart and recovery of the Docker Compose services.
+```
+gold_standard/
+|-- main.py          # Core orchestration (Cortex, QuantEngine, Strategist)
+|-- run.py           # CLI entry point (daemon, --once, interactive)
+|-- docker-compose.yml
+|-- .env             # API keys (GEMINI, NOTION, IMGBB)
+|-- data/            # Persistent data (memory, database)
+|-- output/          # Generated reports and charts
+\-- docker/          # Monitoring stack configs
+```
 
+### Services Stack
 
-# Automation Schedule Overview
+| Service | Purpose | Profile |
+|---------|---------|---------|
+| gost | Main application | default |
+| prometheus | Metrics collection | default |
+| grafana | Dashboards | default |
+| alertmanager | Alert routing | default |
+| loki | Log aggregation | logging |
+| promtail | Log collection | logging |
+| node-exporter | Host metrics | monitoring |
+| cadvisor | Container metrics | monitoring |
 
-This section details the automated scheduling and operational parameters of the Gold Standard system, managed by `systemd` timers. These configurations ensure the system operates autonomously, generating reports and performing maintenance tasks without manual intervention.
+---
 
-## 1. Daily Analysis (`gold-standard-daily.timer`)
+## Issues and Solutions
 
-* **Purpose**: Triggers the main daily analysis and reporting cycle of the Gold Standard application.
-* **Service**: `gold-standard-daily.service`
-* **Schedule**: `OnCalendar=daily` (Runs once per day).
-* **Execution Time**: The service description indicates "at 5am".
-* **Accuracy**: `AccuracySec=1h` (The job will start within 1 hour of the scheduled time).
-* **Randomized Delay**: `RandomizedDelaySec=30m` (A random delay of up to 30 minutes is added before execution to prevent load spikes on system start or network congestion if many jobs are scheduled for the same time).
-* **Persistence**: `Persistent=true` (If the system is off during the scheduled time, the job will run shortly after the system boots up).
-* **Trigger Command**: Executes `/home/user/codex.sh run` inside a Docker container.
-* **Logs**: Output is appended to `/mnt/newdisk/gold_standard/gold_standard_config/run.log`.
+> **Production Note:** All solutions documented here have been applied to the source repository as of v3.3.1. New deployments pulling the latest image should not encounter these issues.
 
-## 2. Weekly Cleanup (`gold-standard-weekly-cleanup.timer`)
+### Issue 1: Docker Named Volumes on Root FS
 
-* **Purpose**: Triggers weekly maintenance and cleanup tasks for the Gold Standard system.
-* **Service**: `gold-standard-weekly-cleanup.service`
-* **Schedule**: `OnCalendar=weekly` (Runs once per week).
-* **Execution Time**: The service description indicates "at 1am on Sunday".
-* **Accuracy**: `AccuracySec=1h`.
-* **Randomized Delay**: `RandomizedDelaySec=30m`.
-* **Persistence**: `Persistent=true`.
-* **Trigger Command**: Executes `/usr/local/bin/gold-standard-weekly-cleanup.sh`.
-* **Logs**: Output is appended to `/mnt/newdisk/gold_standard/gold_standard_config/cleanup.log`.
+**Problem:** Docker named volumes (gost_data, prometheus_data) stored data in /var/lib/docker/volumes on the root filesystem, violating the zero-writes requirement.
 
-## 3. Docker Compose Stack Management (`gold-standard-compose.service`)
+**Solution:**
+1. Created bind mount directory: /mnt/newdisk/gold_standard/docker-data
+2. Replaced named volumes with explicit bind mounts in docker-compose.yml
 
-* **Purpose**: Manages the core Docker Compose stack, including the main Gold Standard application container (`gost`) and the monitoring/logging infrastructure (Prometheus, Grafana, Loki, etc.).
-* **Service**: `gold-standard-compose.service`
-* **Trigger**: This is a regular `systemd` service, not a timer. It is configured to start automatically on system boot.
-* **Execution**: Starts the Docker Compose stack with `--profile monitoring --profile logging up -d`.
-* **Restart Policy**: `Restart=on-failure` (Ensures the Docker stack automatically restarts if it crashes).
-* **Logs**: Standard output and error are managed by `systemd` and can be viewed with `journalctl -u gold-standard-compose.service`.
+```yaml
+volumes:
+  - ./docker-data/gost_data:/app/data
+  - ./docker-data/gost_output:/app/output
+```
 
-## 4. Key Configuration Parameters
+**Verification:**
+```bash
+# Check no docker volumes on root
+df -h /var/lib/docker/volumes
 
-* **Application Data Directory**: All persistent application data (SQLite database, `cortex_memory.json`, output reports, charts) is stored under `/mnt/newdisk/gold_standard/docker-data/`.
-* **Service Log Directory**: All `systemd` service logs (for daily and weekly operations) are stored in `/mnt/newdisk/gold_standard/gold_standard_config/`.
-* **Environment Variables**: API keys and other configurations are loaded from `/mnt/newdisk/gold_standard/.env` and passed securely to the Docker containers.
+# Verify data on newdisk
+ls -la /mnt/newdisk/gold_standard/docker-data/
+```
 
-This automated setup ensures the Gold Standard system operates reliably and autonomously, with all generated data and logs properly managed on the dedicated data disk.
+---
+
+### Issue 2: Service Logs on Root FS
+
+**Problem:** systemd services wrote logs to /home/user/gold_standard_config/ on root disk.
+
+**Solution:**
+1. Created config directory on data disk:
+```bash
+mkdir -p /mnt/newdisk/gold_standard/gold_standard_config
+```
+
+2. Updated service files:
+```ini
+StandardOutput=append:/mnt/newdisk/gold_standard/gold_standard_config/run.log
+StandardError=append:/mnt/newdisk/gold_standard/gold_standard_config/run.log
+```
+
+3. Reloaded systemd:
+```bash
+sudo systemctl daemon-reload
+```
+
+---
+
+### Issue 3: API Keys Not Loaded
+
+**Problem:** Three API failures:
+- NOTION_TOKEN used instead of NOTION_API_KEY
+- IMGBB_API_KEY missing entirely
+- .env not sourced before docker compose run
+
+**Solution - docker-compose.yml changes:**
+```yaml
+environment:
+  - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+  - NOTION_API_KEY=${NOTION_API_KEY:-}    # Fixed name
+  - IMGBB_API_KEY=${IMGBB_API_KEY:-}      # Added
+  - MPLCONFIGDIR=/tmp/matplotlib           # Added
+```
+
+**codex.sh addition:**
+```bash
+source "/mnt/newdisk/gold_standard/.env"
+```
+
+---
+
+### Issue 4: --once Flag Ignored
+
+**Problem:** python run.py --once entered daemon mode instead of single execution because the --once argument was parsed but never handled in the control flow.
+
+**Solution - Added explicit handling in run.py:**
+```python
+# Single run mode (--once) - execute once and exit cleanly
+if args.once:
+    print_banner()
+    print("[ONCE] Running single analysis cycle...")
+    run_all(no_ai=args.no_ai, force=args.force)
+    _run_post_analysis_tasks()
+    print("[ONCE] Single run complete. Exiting.")
+    return
+```
+
+---
+
+### Issue 5: Matplotlib Permission Error
+
+**Problem:** matplotlib failed creating cache at ~/.cache/matplotlib inside container where goldstandard user lacked write access.
+
+**Solution - Added environment variable to redirect cache:**
+```yaml
+environment:
+  - MPLCONFIGDIR=/tmp/matplotlib
+```
+
+---
+
+### Issue 6: cortex_memory.lock Permission Denied
+
+**Problem:** filelock failed creating /app/cortex_memory.lock due to Docker bind mount permission issues.
+
+**Solution:**
+1. **Relocated files to data volume** in main.py:
+```python
+@property
+def DATA_DIR(self) -> str:
+    return os.path.join(self.BASE_DIR, "data")
+
+@property
+def MEMORY_FILE(self) -> str:
+    data_dir = self.DATA_DIR
+    os.makedirs(data_dir, exist_ok=True)
+    return os.path.join(data_dir, "cortex_memory.json")
+
+@property
+def LOCK_FILE(self) -> str:
+    data_dir = self.DATA_DIR
+    os.makedirs(data_dir, exist_ok=True)
+    return os.path.join(data_dir, "cortex_memory.lock")
+```
+
+2. **Removed cortex_memory mount** from docker-compose.yml
+
+3. **Added user mapping** to codex.sh:
+```bash
+docker compose run --user "1000:1003" ...
+```
+
+---
+
+### Issue 7: FILE_INDEX Filename Explosion
+
+**Problem:** FileOrganizer repeatedly renamed FILE_INDEX.md files, appending dates until [Errno 36] File name too long.
+
+**Solution - Added skip logic in file_organizer.py:**
+```python
+# Skip FILE_INDEX files to prevent recursive renaming
+if filename.startswith("FILE_INDEX") or filename.lower().startswith("file_index"):
+    self.logger.debug(f"[ORGANIZER] Skipping index file: {filename}")
+    return None
+```
+
+---
+
+### Issue 8: systemd CHDIR Error
+
+**Problem:** gold-standard-compose.service failed with CHDIR error - corrupted ExecStart line.
+
+**Solution - Recreated service file with explicit bash wrapper:**
+```ini
+[Service]
+ExecStart=/bin/bash -c "cd /mnt/newdisk/gold_standard && /usr/bin/docker compose --profile monitoring --profile logging up -d"
+```
+
+---
+
+## Automation Schedule
+
+### Timer Overview
+
+```mermaid
+gantt
+    title Gold Standard Automation Schedule
+    dateFormat HH:mm
+    axisFormat %H:%M
+
+    section Daily
+    Analysis Run :05:00, 2h
+
+    section Weekly
+    Cleanup Sunday :01:00, 1h
+```
+
+### Daily Analysis Timer
+
+> **Service:** gold-standard-daily.timer -> gold-standard-daily.service
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| OnCalendar | daily | Runs once per day |
+| **Target Time** | 5:00 AM | Configured in service |
+| AccuracySec | 1h | Start within 1 hour of scheduled time |
+| RandomizedDelaySec | 30m | Random delay to prevent load spikes |
+| Persistent | true | Runs on boot if missed |
+| **Command** | /home/user/codex.sh run | Triggers Docker container |
+| **Logs** | /mnt/newdisk/.../run.log | Persistent on data disk |
+
+### Weekly Cleanup Timer
+
+> **Service:** gold-standard-weekly-cleanup.timer -> gold-standard-weekly-cleanup.service
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| OnCalendar | weekly | Runs once per week |
+| **Target Time** | Sunday 1:00 AM | Maintenance window |
+| AccuracySec | 1h | Flexibility window |
+| RandomizedDelaySec | 30m | Stagger execution |
+| Persistent | true | Catch up if missed |
+| **Logs** | /mnt/newdisk/.../cleanup.log | Persistent on data disk |
+
+### Docker Compose Service
+
+> **Service:** gold-standard-compose.service (Boot-time, not timer-based)
+
+| Parameter | Value |
+|-----------|-------|
+| **Type** | oneshot with RemainAfterExit=yes |
+| **WantedBy** | multi-user.target |
+| **Restart** | on-failure |
+| **Profiles** | monitoring, logging |
+
+---
+
+## Current Status
+
+### Service Health
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| gold-standard-compose.service | active (running) | Docker stack managed |
+| gold-standard-daily.timer | active (running) | Next trigger scheduled |
+| gold-standard-weekly-cleanup.timer | active (waiting) | Sunday execution pending |
+
+### Quick Commands
+
+```bash
+# Check all services
+systemctl status gold-standard-*
+
+# View daily timer
+systemctl list-timers gold-standard-daily.timer
+
+# Manual run
+/home/user/codex.sh run
+
+# View logs
+tail -f /mnt/newdisk/gold_standard/gold_standard_config/run.log
+
+# Restart stack
+/home/user/codex.sh heal
+```
+
+### Data Paths Reference
+
+| Data Type | Path |
+|-----------|------|
+| Application Data | /mnt/newdisk/gold_standard/docker-data/gost_data/ |
+| Output Reports | /mnt/newdisk/gold_standard/docker-data/gost_output/ |
+| Service Logs | /mnt/newdisk/gold_standard/gold_standard_config/ |
+| Environment | /mnt/newdisk/gold_standard/.env |
+| Prometheus Data | /mnt/newdisk/gold_standard/docker-data/prometheus/ |
+| Grafana Data | /mnt/newdisk/gold_standard/docker-data/grafana/ |
+
+---
+
+## codex.sh Commands
+
+```bash
+codex.sh run      # Execute single analysis cycle
+codex.sh build    # Rebuild Docker image
+codex.sh monitor  # View live logs
+codex.sh stop     # Stop all services
+codex.sh heal     # Restart and recover services
+```
+
+---
+
+> **Deployment Successful** The Gold Standard system is fully operational with automated scheduling, persistent storage on the data disk, and all API integrations functional.

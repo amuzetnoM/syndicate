@@ -1106,6 +1106,16 @@ Examples:
         print_status()
         return
 
+    # Single run mode (--once) - execute once and exit cleanly
+    if args.once:
+        print_banner()
+        print("[ONCE] Running single analysis cycle...")
+        run_all(no_ai=args.no_ai, force=args.force)
+        # Run post-analysis tasks
+        _run_post_analysis_tasks()
+        print("[ONCE] Single run complete. Exiting.")
+        return
+
     # Document lifecycle management
     if args.lifecycle:
         print_banner()

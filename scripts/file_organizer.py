@@ -209,6 +209,12 @@ class FileOrganizer:
             return None
 
         filename = source_path.name
+
+        # Skip FILE_INDEX files to prevent recursive renaming (filename explosion bug)
+        if filename.startswith("FILE_INDEX") or filename.lower().startswith("file_index"):
+            self.logger.debug(f"[ORGANIZER] Skipping index file: {filename}")
+            return None
+
         category = self.categorize_file(filename)
 
         # Determine file date from name or modification time

@@ -50,7 +50,7 @@ LABEL org.opencontainers.image.description="Gold Standard - Autonomous Precious 
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.title="Gold Standard"
 LABEL org.opencontainers.image.vendor="SIRIUS Alpha"
-LABEL org.opencontainers.image.version="3.3.0"
+LABEL org.opencontainers.image.version="3.3.1"
 
 # Security: Run as non-root user
 RUN groupadd -r goldstandard && useradd -r -g goldstandard goldstandard
