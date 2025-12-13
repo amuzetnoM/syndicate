@@ -34,9 +34,19 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        .layout { display: flex; min-height: 100vh; }
+        /* p5.js Tech Background */
+        #p5-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; overflow: hidden; pointer-events: none;
+        }
+        #p5-background canvas { display: block; width: 100% !important; height: 100% !important; }
+        body > * { position: relative; z-index: 1; }
+
+        .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
 
         /* Sidebar */
         .sidebar {
@@ -140,7 +150,6 @@
             .nav-toggle { display: block; }
             .nav-cta { display: flex; gap: 0.5rem; }
             .spec-grid, .modules-grid, .doc-cards { grid-template-columns: 1fr; }
-            #p5-background { display: none; }
         }
 
         @media (max-width: 768px) {
@@ -158,6 +167,9 @@
     </style>
 </head>
 <body>
+    <!-- p5.js Tech Background -->
+    <div id="p5-background"></div>
+
     <!-- Mobile Topbar -->
     <div class="mobile-topbar">
         <div class="mobile-topbar-inner">
@@ -456,6 +468,172 @@
             </div>
         </main>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script>
+        // Tech-centric background animation for VM deployment page
+        let nodes = [];
+        let connections = [];
+        let dataPackets = [];
+        let gridLines = [];
+        const numNodes = 25;
+        const gridSpacing = 80;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('p5-background');
+            pixelDensity(1);
+
+            // Create grid lines
+            for (let x = 0; x < width + gridSpacing; x += gridSpacing) {
+                gridLines.push({ x: x, y: 0, vertical: true, pulse: random(TWO_PI) });
+            }
+            for (let y = 0; y < height + gridSpacing; y += gridSpacing) {
+                gridLines.push({ x: 0, y: y, vertical: false, pulse: random(TWO_PI) });
+            }
+
+            // Create network nodes
+            for (let i = 0; i < numNodes; i++) {
+                nodes.push({
+                    x: random(width),
+                    y: random(height),
+                    size: random(3, 6),
+                    pulse: random(TWO_PI),
+                    pulseSpeed: random(0.02, 0.04),
+                    vx: random(-0.15, 0.15),
+                    vy: random(-0.15, 0.15),
+                    type: floor(random(3))
+                });
+            }
+        }
+
+        function draw() {
+            clear();
+
+            // Draw grid at intersections
+            noStroke();
+            for (let x = 0; x < width + gridSpacing; x += gridSpacing) {
+                for (let y = 0; y < height + gridSpacing; y += gridSpacing) {
+                    fill(59, 130, 246, 12);
+                    rect(x - 1, y - 1, 2, 2);
+                }
+            }
+
+            // Update and draw connections between nearby nodes
+            stroke(59, 130, 246, 20);
+            strokeWeight(0.5);
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    let d = dist(nodes[i].x, nodes[i].y, nodes[j].x, nodes[j].y);
+                    if (d < 150) {
+                        let alpha = map(d, 0, 150, 30, 5);
+                        stroke(59, 130, 246, alpha);
+                        line(nodes[i].x, nodes[i].y, nodes[j].x, nodes[j].y);
+
+                        if (random() < 0.001 && dataPackets.length < 20) {
+                            dataPackets.push({
+                                x: nodes[i].x, y: nodes[i].y,
+                                tx: nodes[j].x, ty: nodes[j].y,
+                                progress: 0,
+                                speed: random(0.01, 0.025)
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Update and draw data packets
+            noStroke();
+            for (let i = dataPackets.length - 1; i >= 0; i--) {
+                let p = dataPackets[i];
+                p.progress += p.speed;
+                if (p.progress >= 1) {
+                    dataPackets.splice(i, 1);
+                    continue;
+                }
+                let px = lerp(p.x, p.tx, p.progress);
+                let py = lerp(p.y, p.ty, p.progress);
+                fill(34, 211, 238, 60);
+                ellipse(px, py, 6);
+                fill(34, 211, 238, 150);
+                ellipse(px, py, 3);
+                fill(255, 255, 255, 200);
+                ellipse(px, py, 1.5);
+            }
+
+            // Update and draw nodes
+            noStroke();
+            for (let node of nodes) {
+                node.x += node.vx;
+                node.y += node.vy;
+                node.pulse += node.pulseSpeed;
+
+                if (node.x < -20) node.x = width + 20;
+                if (node.x > width + 20) node.x = -20;
+                if (node.y < -20) node.y = height + 20;
+                if (node.y > height + 20) node.y = -20;
+
+                let pulseSize = node.size + sin(node.pulse) * 1.5;
+                let alpha = 40 + sin(node.pulse) * 20;
+
+                fill(59, 130, 246, alpha * 0.3);
+                if (node.type === 0) {
+                    ellipse(node.x, node.y, pulseSize * 3);
+                } else if (node.type === 1) {
+                    rectMode(CENTER);
+                    rect(node.x, node.y, pulseSize * 2.5, pulseSize * 2.5);
+                } else {
+                    push();
+                    translate(node.x, node.y);
+                    rotate(PI / 4);
+                    rectMode(CENTER);
+                    rect(0, 0, pulseSize * 2, pulseSize * 2);
+                    pop();
+                }
+
+                fill(59, 130, 246, alpha);
+                if (node.type === 0) {
+                    ellipse(node.x, node.y, pulseSize);
+                } else if (node.type === 1) {
+                    rectMode(CENTER);
+                    rect(node.x, node.y, pulseSize * 0.8, pulseSize * 0.8);
+                } else {
+                    push();
+                    translate(node.x, node.y);
+                    rotate(PI / 4);
+                    rectMode(CENTER);
+                    rect(0, 0, pulseSize * 0.7, pulseSize * 0.7);
+                    pop();
+                }
+
+                fill(147, 197, 253, alpha * 1.5);
+                ellipse(node.x, node.y, pulseSize * 0.4);
+            }
+
+            // Floating binary/hex text
+            fill(59, 130, 246, 12);
+            textSize(10);
+            textFont('JetBrains Mono, monospace');
+            let t = frameCount * 0.02;
+            for (let i = 0; i < 8; i++) {
+                let fx = (noise(i, t * 0.1) * width * 1.2) - width * 0.1;
+                let fy = (noise(i + 100, t * 0.08) * height * 1.2) - height * 0.1;
+                let code = i % 2 === 0 ? (floor(random(256)).toString(16).padStart(2, '0').toUpperCase()) : (floor(random(2)).toString());
+                text(code, fx, fy);
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            gridLines = [];
+            for (let x = 0; x < width + gridSpacing; x += gridSpacing) {
+                gridLines.push({ x: x, y: 0, vertical: true, pulse: random(TWO_PI) });
+            }
+            for (let y = 0; y < height + gridSpacing; y += gridSpacing) {
+                gridLines.push({ x: 0, y: y, vertical: false, pulse: random(TWO_PI) });
+            }
+        }
+    </script>
     <script>
         // Mobile menu toggle
         document.querySelector('.mobile-toggle').addEventListener('click', function() {
