@@ -1,6 +1,6 @@
 # ACTIVE DEVELOPMENT
 
-[![Version](https://img.shields.io/badge/version-3.3.1-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.4.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
@@ -97,6 +97,7 @@ We are developing deep health check patterns that probe actual application readi
 
 | Initiative | Phase | Objective |
 |------------|-------|-----------|
+| **Task Executor Daemon** | `✅ IMPLEMENTED` | Standalone worker with orphan recovery, graceful shutdown, and systemd integration |
 | Deep Health Probes | `PROTOTYPE` | Extend healthchecks to validate database, yfinance, and LLM provider connectivity |
 | Exception Telemetry | `RESEARCH` | Evaluate Sentry and Bugsnag for automatic error capture, categorization, and alerting |
 | Circuit Breaker Patterns | `DESIGN` | Implement failure isolation for external service dependencies |
@@ -128,6 +129,60 @@ We are designing automated backup strategies that protect critical data without 
 
 ---
 ## Chagelog and Release History
+
+---
+
+## [3.4.0] - 2025-12-13
+
+### Added
+- **Standalone Task Executor Daemon** (`scripts/executor_daemon.py`)
+  - Independent worker process for task execution
+  - Survives main daemon restarts and graceful shutdowns
+  - Orphan recovery on startup (reclaims stuck in-progress tasks)
+  - Signal handling (SIGTERM, SIGINT, SIGHUP) for graceful shutdown
+  - Heartbeat tracking and health monitoring
+  - Quota-aware execution with exponential backoff
+  - Multiple execution modes: `--daemon`, `--once`, `--recover-orphans`, `--health`, `--spawn`
+  - **Dry-run mode** (`--dry-run`) for testing without actual execution
+  - **Task limits** (`--max-tasks N`) for controlled batch execution
+
+- **Docker Compose Executor Service**
+  - New `executor` service in docker-compose.yml
+  - Runs independently alongside main `gost` service
+  - Shares data volume for SQLite database access
+  - Health check via `--health` command
+  - Resource limits: 1 CPU, 1GB memory
+
+- **Hybrid Execution Model**
+  - Multiprocess spawn capability for detached execution
+  - Threading fallback for environments without process isolation
+  - Environment variable `GOST_DETACHED_EXECUTOR=1` to enable detached mode
+  - `spawn_executor_daemon()` function in run.py for programmatic spawning
+
+- **Systemd Service Template** (`scripts/systemd/gold-standard-executor.service`)
+  - Production-ready systemd unit file
+  - Automatic restart on failure with configurable backoff
+  - Resource limits (CPU quota, memory max)
+  - Security hardening (NoNewPrivileges, ProtectSystem, PrivateTmp)
+  - Journal integration for logging
+
+### Changed
+- **Docker Architecture** (BREAKING)
+  - Main `gost` service now sets `GOST_DETACHED_EXECUTOR=1` by default
+  - Task execution delegated to separate `executor` container
+  - Both containers share `gost_data` and `gost_output` volumes
+  - Main daemon depends on executor service startup
+
+- **Task Execution Architecture**
+  - Main daemon can now delegate task execution to detached executor
+  - Inline execution remains as fallback when executor unavailable
+  - Graceful degradation: if spawn fails, continues with blocking execution
+
+### Deprecated
+- **Inline Task Executor** (`scripts/task_executor.py`)
+  - Marked as deprecated for production use (docstring notice)
+  - Maintained for backward compatibility and development/testing
+  - Users should migrate to `scripts/executor_daemon.py`
 
 ---
 

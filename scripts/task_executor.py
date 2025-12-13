@@ -12,7 +12,23 @@
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard Task Executor
+Gold Standard Task Executor (LEGACY - Inline Execution)
+
+⚠️  DEPRECATION NOTICE ⚠️
+This module provides inline (blocking) task execution within the main daemon loop.
+For production deployments, use the standalone Executor Daemon instead:
+
+    python scripts/executor_daemon.py --daemon
+
+The Executor Daemon provides:
+- Independent lifecycle (survives main daemon restarts)
+- Orphan recovery (reclaims stuck tasks)
+- Graceful shutdown with task completion
+- Systemd integration for production
+
+This module remains for backward compatibility and development/testing scenarios.
+
+Original Description:
 Executes action insights extracted from reports before the next analysis cycle.
 Transforms the system from passive "showing" to active "doing".
 
