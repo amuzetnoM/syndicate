@@ -42,6 +42,7 @@ graph TB
 | Requirement | Description | Status |
 |------------|-------------|--------|
 | **Zero Root Writes** | No persistent data on root filesystem | Done |
+| **Guaranteed Data Survival** | All critical data isolated on dedicated storage volume | Done |
 | **Automated Scheduling** | Daily analysis via systemd timers | Done |
 | **API Integration** | Gemini, Notion, ImgBB connected | Done |
 | **Monitoring Stack** | Prometheus + Grafana + Loki | Done |
@@ -64,6 +65,7 @@ graph TB
 - **Purpose:** All persistent application data
 - **Mount:** /mnt/newdisk
 - **Contents:** Application files, Docker volumes, Logs, Database, Output reports
+- **Guarantee:** Complete data survival independent of root filesystem state
 
 ### Application Architecture
 

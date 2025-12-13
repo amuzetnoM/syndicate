@@ -11,82 +11,118 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## Active Development Focus
+## Engineering Roadmap
 
-> **Status:** `IN PROGRESS` | **Target:** v3.4.0 | **Priority:** Production Hardening
+[![Status](https://img.shields.io/badge/status-active_development-orange.svg)]()
+[![Target](https://img.shields.io/badge/target-v3.4.0-blue.svg)]()
+[![Priority](https://img.shields.io/badge/priority-production_hardening-critical.svg)]()
 
-The following areas represent the current engineering focus for enhancing system robustness, maintainability, and autonomous operation capabilities.
-
----
-
-### 1. Enhanced Observability and Alerting
-
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Consolidated Dashboards** | `PLANNED` | Integrate application logs (`run.log`, `cleanup.log`) into Grafana alongside system and Docker metrics for single-pane monitoring |
-| **Proactive Alerting** | `PLANNED` | Implement comprehensive Alertmanager rules for critical operational issues |
-
-**Planned Alert Rules:**
-- Container failures and excessive restart detection
-- Low disk space warnings for `/mnt/newdisk`
-- API connection failures (yfinance, Gemini, Notion, ImgBB)
-- LLM quota limit proximity warnings
+We are actively researching and implementing the next generation of Gold Standard's infrastructure. The following initiatives represent our current engineering focus, driven by real-world production insights gathered from VM deployments and continuous operation cycles. Each area has been identified through systematic analysis of operational patterns, failure modes, and scalability requirements.
 
 ---
 
-### 2. Advanced API Management and Resilience
+### Observability Infrastructure Expansion
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Dynamic LLM Fallback** | `PLANNED` | Enhance `FallbackLLMProvider` with performance-based provider promotion and demotion logic |
-| **Centralized Quota Tracking** | `PLANNED` | Internal API usage tracking system for Gemini, Notion, and ImgBB with preemptive rate limiting |
+**Current State:** The existing Prometheus and Grafana stack provides solid infrastructure metrics, but application-level visibility remains fragmented across multiple log files.
 
-**Design Considerations:**
-- Admin notifications when fallback providers are engaged
-- Smart delays to prevent hitting provider limits proactively
-- Free-tier constraint management
+**Active Research:**
 
----
+We are investigating unified observability patterns that consolidate application telemetry with infrastructure metrics. The goal is to establish a single-pane monitoring experience where operators can correlate application behavior with system performance in real-time.
 
-### 3. Configuration Management and Deployment
+| Initiative | Phase | Objective |
+|------------|-------|-----------|
+| Log Aggregation Pipeline | `RESEARCH` | Route `run.log` and `cleanup.log` through Loki into Grafana dashboards with structured parsing |
+| Alert Rule Engineering | `DESIGN` | Develop Alertmanager configurations for container health, disk utilization, and API connectivity |
+| Quota Proximity Detection | `PROTOTYPE` | Instrument LLM providers to emit metrics when approaching rate limits |
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Structured Configuration** | `PLANNED` | YAML/TOML configuration for non-secret parameters (TA thresholds, asset lists, model parameters) |
-| **Secrets Management** | `PLANNED` | Integration with Docker secrets, HashiCorp Vault, or cloud-native secrets managers |
-| **Deployment Automation** | `PLANNED` | CI/CD pipeline for automated builds, registry pushes, and service updates |
-
-**Automation Targets:**
-- Automatic code pull and image rebuild
-- Container registry push workflows
-- Systemd service orchestration
+**Target Alerts Under Development:**
+- Container restart frequency anomaly detection
+- Disk space threshold warnings for persistent volumes
+- API endpoint health degradation (yfinance, Gemini, Notion, ImgBB)
+- LLM token consumption velocity tracking
 
 ---
 
-### 4. Application Monitoring and Self-Healing
+### Intelligent API Orchestration Layer
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Granular Health Checks** | `PLANNED` | Extended container healthchecks covering database connectivity and external API reachability |
-| **Error Reporting Integration** | `PLANNED` | Sentry or Bugsnag integration for automatic exception capture and categorization |
+**Current State:** The multi-provider LLM fallback chain (Gemini, Ollama, llama.cpp) operates on a fixed priority basis. Provider selection is reactive rather than adaptive.
 
----
+**Active Research:**
 
-### 5. Data Integrity and Archiving
+We are exploring dynamic provider orchestration that learns from runtime performance characteristics. This involves tracking latency, success rates, and quota consumption across providers to make intelligent routing decisions.
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Automated Database Backups** | `PLANNED` | Scheduled SQLite backups to cloud storage or off-disk locations |
-| **Enhanced File Organization** | `PLANNED` | Configurable naming conventions, improved deduplication logic, customizable archival rules |
+| Initiative | Phase | Objective |
+|------------|-------|-----------|
+| Adaptive Fallback Engine | `DESIGN` | Implement performance-weighted provider selection with automatic promotion and demotion |
+| Quota Ledger System | `RESEARCH` | Build internal tracking for API consumption across all external services |
+| Preemptive Rate Limiting | `PROTOTYPE` | Introduce smart delays based on quota burn rate to prevent limit exhaustion |
 
-**Backup Strategy:**
-- Daily incremental backups
-- Weekly full backups
-- Off-site replication for disaster recovery
+**Design Principles:**
+- Operator notifications when fallback providers are engaged
+- Graceful degradation paths for free-tier constraint management
+- Provider health scoring with configurable thresholds
 
 ---
 
-> **Contribution Note:** These improvements are designed to evolve Gold Standard into a resilient, intelligent, and fully autonomous quantitative analysis platform with minimal manual intervention requirements.
+### Configuration and Deployment Architecture
+
+**Current State:** Configuration is distributed between environment variables and hardcoded defaults. Deployment requires manual intervention for updates.
+
+**Active Research:**
+
+We are evaluating structured configuration management approaches that separate secrets from operational parameters. Additionally, we are designing CI/CD pipelines that enable zero-touch deployments from commit to production.
+
+| Initiative | Phase | Objective |
+|------------|-------|-----------|
+| Hierarchical Config System | `DESIGN` | Implement YAML/TOML configuration layers for TA thresholds, asset definitions, and model parameters |
+| Secrets Vault Integration | `RESEARCH` | Evaluate Docker secrets, HashiCorp Vault, and cloud-native secret managers for credential isolation |
+| Automated Deployment Pipeline | `PLANNING` | Build GitHub Actions workflows for image builds, registry pushes, and systemd orchestration |
+
+**Deployment Automation Targets:**
+- Triggered rebuilds on code changes
+- Automatic container registry synchronization
+- Remote systemd service management
+
+---
+
+### Self-Healing and Resilience Patterns
+
+**Current State:** Health checks verify basic container operation but do not validate application-level functionality or external dependencies.
+
+**Active Research:**
+
+We are developing deep health check patterns that probe actual application readiness, including database connectivity, external API reachability, and internal subsystem status. Additionally, we are evaluating error aggregation platforms for systematic issue tracking.
+
+| Initiative | Phase | Objective |
+|------------|-------|-----------|
+| Deep Health Probes | `PROTOTYPE` | Extend healthchecks to validate database, yfinance, and LLM provider connectivity |
+| Exception Telemetry | `RESEARCH` | Evaluate Sentry and Bugsnag for automatic error capture, categorization, and alerting |
+| Circuit Breaker Patterns | `DESIGN` | Implement failure isolation for external service dependencies |
+
+---
+
+### Data Persistence and Integrity
+
+**Current State:** SQLite database and generated reports persist on the data volume, but backup and archival processes are manual.
+
+**Active Research:**
+
+We are designing automated backup strategies that protect critical data without impacting operational performance. Additionally, we are refining the file organization system to handle edge cases and provide configurable behavior.
+
+| Initiative | Phase | Objective |
+|------------|-------|-----------|
+| Scheduled Backup System | `DESIGN` | Implement daily incremental and weekly full SQLite backups to off-disk storage |
+| Archive Lifecycle Rules | `RESEARCH` | Define configurable policies for report retention, compression, and offsite replication |
+| File Organizer Hardening | `PROTOTYPE` | Enhance naming conventions, deduplication logic, and stale file detection |
+
+**Data Protection Strategy:**
+- Incremental backups during low-activity windows
+- Weekly full snapshots with integrity verification
+- Geographic replication for disaster recovery scenarios
+
+---
+
+> **Engineering Philosophy:** These initiatives represent our commitment to evolving Gold Standard into a production-grade autonomous system. Each enhancement is validated against real operational requirements and designed for minimal manual intervention. Contributions and feedback on these research areas are welcome.
 
 ---
 
