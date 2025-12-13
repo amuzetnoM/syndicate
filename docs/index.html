@@ -1138,7 +1138,14 @@
             color: var(--text-primary);
             cursor: pointer;
             padding: 0.5rem;
+            font-size: 1.5rem;
         }
+
+        /* Mobile Menu */
+        .mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; }
+        .mobile-menu a { padding: 0.75rem 2rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
+        .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu.open { display: flex; }
 
         @media (max-width: 768px) {
             .nav-toggle {
@@ -1160,6 +1167,38 @@
             section {
                 padding: 4rem 1.5rem;
             }
+        }
+
+        /* Global mobile tweaks */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .content, section { padding: 2rem 1.25rem; }
+            .nav-links { display: none; }
+            .nav-toggle { display: block; }
+            .nav-cta { display: flex; gap: 0.5rem; }
+            .features-grid, .modules-grid, .stats-grid, .doc-cards { grid-template-columns: 1fr; }
+            #p5-background { display: none; }
+            .arch-visual { padding: 1rem; }
+            .hero { padding: 6rem 1rem 3rem; }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: clamp(1.6rem, 6vw, 2rem); }
+            .hero-desc { font-size: 0.95rem; }
+            .hero-actions { flex-direction: column; align-items: stretch; }
+            .hero-actions .btn { width: 100%; padding: 0.75rem; }
+            .nav-cta .btn { padding: 0.5rem 0.75rem; }
+            footer { padding: 2rem 1rem; font-size: 0.9rem; }
+        }
+
+        @media (max-width: 480px) {
+            .hero { padding: 4rem 0.75rem 2.5rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .nav-inner { padding: 0 0.75rem; }
+            .content h1, .section-title { font-size: 1.25rem; }
+            .doc-card, .module-card, .spec-card, .feature-item { padding: 1rem; }
+            .stat-item { padding: 1rem; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
@@ -1185,7 +1224,15 @@
                 <a href="index_docs.html" class="btn btn-ghost">Documentation</a>
                 <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">GitHub &#8594;</a>
             </div>
-            <button class="nav-toggle">&#9776;</button>
+            <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <a href="index.html" class="active">Home</a>
+            <a href="index_docs.html">Documentation</a>
+            <a href="odyssey.html">Deployment</a>
+            <a href="guide.html">Guide</a>
+            <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
         </div>
     </nav>
 
@@ -2061,6 +2108,12 @@ Max Drawdown: -2.1%
         } else {
             setup();
         }
+    </script>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.toggle('open');
+        });
     </script>
 </body>
 </html>
