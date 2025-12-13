@@ -164,13 +164,50 @@
         footer a { color: var(--accent-gold); text-decoration: none; }
         footer a:hover { text-decoration: underline; }
 
-        @media (max-width: 768px) {
+        /* Mobile Menu */
+        .nav-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; }
+        .mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; }
+        .mobile-menu a { padding: 0.75rem 2rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
+        .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu.open { display: flex; }
+
+        @media (max-width: 900px) {
+            /* Sidebar / layout */
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .content, section, .stats-bar { padding: 2rem 1.25rem; }
+
+            /* Nav / actions */
             .nav-links { display: none; }
-            .hero { padding: 8rem 1.5rem 4rem; }
-            .hero h1 { font-size: 2rem; }
-            .hero-desc { font-size: 1rem; }
-            section { padding: 4rem 1.5rem; }
-            .arch-visual { padding: 1.5rem; }
+            .nav-toggle { display: block; }
+            .nav-cta { display: flex; gap: 0.5rem; }
+
+            /* Grids */
+            .stats-grid, .modules-grid, .spec-grid, .features-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+
+            /* Hero and visuals */
+            #p5-background { display: none; }
+            .arch-visual { padding: 1rem; }
+            .hero { padding: 6rem 1rem 3rem; max-width: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: clamp(1.6rem, 6vw, 2rem); }
+            .hero-desc { font-size: 0.95rem; }
+            .hero-actions { flex-direction: column; align-items: stretch; }
+            .hero-actions .btn { width: 100%; padding: 0.75rem; }
+            .nav-cta .btn { padding: 0.5rem 0.75rem; }
+            footer { padding: 2rem 1rem; font-size: 0.9rem; }
+            .stat-value { font-size: 1.25rem; }
+        }
+
+        @media (max-width: 480px) {
+            .hero { padding: 4rem 0.75rem 2.5rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .nav-inner { padding: 0 0.75rem; }
+            .content h1, .section-title { font-size: 1.25rem; }
+            .doc-card, .module-card, .spec-card, .feature-item { padding: 1rem; }
+            .stat-item { padding: 1rem; }
         }
     </style>
 </head>
@@ -193,12 +230,22 @@
                 <a href="odyssey_sys.html" class="btn btn-outline">System Specs</a>
                 <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">GitHub</a>
             </div>
+            <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <a href="index.html">Home</a>
+            <a href="index_docs.html">Documentation</a>
+            <a href="odyssey.html" class="active">Deployment</a>
+            <a href="odyssey_sys.html">System Specs</a>
+            <a href="guide.html">Guide</a>
+            <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
         </div>
     </nav>
 
     <header class="hero">
         <div class="hero-badge">
-            <span>🚀</span> Deployment
+            <span></span> Deployment Overview
         </div>
         <h1><span>Odyssey</span> Infrastructure</h1>
         <p class="hero-desc">
@@ -400,6 +447,12 @@
         }
 
         function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+    </script>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.toggle('open');
+        });
     </script>
 </body>
 </html>

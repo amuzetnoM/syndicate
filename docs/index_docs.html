@@ -274,10 +274,27 @@
             margin: 2rem 0;
         }
 
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .content { padding: 2rem 1.25rem; }
+            .doc-cards { grid-template-columns: 1fr; }
+            .doc-card { padding: 1rem; }
+            .nav-links { display: none; }
+            .nav-toggle { display: block; }
+            #p5-background { display: none; }
+        }
+
         @media (max-width: 768px) {
-            .doc-cards {
-                grid-template-columns: 1fr;
-            }
+            .content h1 { font-size: 1.5rem; }
+            .doc-cards { gap: 0.75rem; }
+            .doc-card { padding: 0.9rem; }
+            .doc-card-title { font-size: 0.95rem; }
+        }
+
+        @media (max-width: 480px) {
+            .doc-card-title { font-size: 0.9rem; }
+            .nav-inner { padding: 0 0.75rem; }
         }
 
         .doc-card {
@@ -395,13 +412,25 @@
         }
 
         /* Mobile */
+        .mobile-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; }
+        .mobile-topbar-inner { display: flex; align-items: center; justify-content: space-between; }
+        .mobile-topbar-logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; color: var(--text-primary); text-decoration: none; }
+        .mobile-topbar-logo-mark { width: 24px; height: 24px; background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+        .mobile-toggle { background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; }
+        .mobile-menu { display: none; position: fixed; top: 56px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; z-index: 999; }
+        .mobile-menu a { padding: 0.75rem 1.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
+        .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu.open { display: flex; }
+
         @media (max-width: 900px) {
+            .mobile-topbar { display: block; }
             .sidebar {
                 display: none;
             }
 
             .main {
                 margin-left: 0;
+                padding-top: 56px;
             }
 
             .content {
@@ -446,6 +475,24 @@
     </style>
 </head>
 <body>
+    <!-- Mobile Topbar -->
+    <div class="mobile-topbar">
+        <div class="mobile-topbar-inner">
+            <a href="index.html" class="mobile-topbar-logo">
+                <div class="mobile-topbar-logo-mark">&#9670;</div>
+                Gold Standard
+            </a>
+            <button class="mobile-toggle" aria-label="Toggle menu">&#9776;</button>
+        </div>
+    </div>
+    <div class="mobile-menu">
+        <a href="index.html">Home</a>
+        <a href="index_docs.html" class="active">Documentation</a>
+        <a href="odyssey.html">Deployment</a>
+        <a href="guide.html">Guide</a>
+        <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
+    </div>
+
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -923,5 +970,11 @@ LLM_PROVIDER=gemini             # gemini, ollama, or local</code></pre>
             </div>
         </main>
     </div>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.mobile-toggle').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.toggle('open');
+        });
+    </script>
 </body>
 </html>

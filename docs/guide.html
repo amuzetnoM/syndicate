@@ -98,6 +98,13 @@
             color: var(--accent-gold);
         }
 
+        /* Mobile Menu */
+        .nav-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; }
+        .mobile-menu { display: none; position: absolute; top: 56px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; }
+        .mobile-menu a { padding: 0.75rem 2rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
+        .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu.open { display: flex; }
+
         /* Main Content */
         main {
             margin-top: 56px;
@@ -497,35 +504,31 @@
         }
 
         /* Responsive */
+        @media (max-width: 900px) {
+            main { padding: 1.5rem 1rem; }
+            .sidebar { display: none; }
+            .nav-links { display: none; }
+            .nav-toggle { display: block; }
+            .nav-cta { display: flex; }
+            #p5-background { display: none; }
+        }
+
         @media (max-width: 768px) {
-            main {
-                padding: 1.5rem 1rem;
-            }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.1rem; }
+            .toc { padding: 1rem; }
+            pre { padding: 1rem; font-size: 0.75rem; }
+            table { font-size: 0.85rem; }
+            th, td { padding: 0.75rem 0.5rem; }
+            .doc-card, .module-card { padding: 1rem; }
+            .hero h1 { font-size: 1.8rem; }
+            .hero-desc { font-size: 0.95rem; }
+        }
 
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            h3 {
-                font-size: 1.1rem;
-            }
-
-            .toc {
-                padding: 1.5rem;
-            }
-
-            pre {
-                padding: 1rem;
-                font-size: 0.75rem;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            th, td {
-                padding: 0.75rem 0.5rem;
-            }
+        @media (max-width: 480px) {
+            .nav-inner { padding: 0 0.75rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .toc { padding: 0.75rem; }
         }
     </style>
 </head>
@@ -542,6 +545,15 @@
                 <a href="guide.html">Guide</a>
                 <a href="https://github.com/amuzetnoM/gold_standard" target="_blank">GitHub</a>
             </div>
+            <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <a href="index.html">Home</a>
+            <a href="index_docs.html">Documentation</a>
+            <a href="odyssey.html">Deployment</a>
+            <a href="guide.html" class="active">Guide</a>
+            <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
         </div>
     </nav>
 
@@ -1606,5 +1618,11 @@ python run.py --mode daily --once</code></pre>
             <p>&copy; 2025 Gold Standard. A precious metals intelligence system.</p>
         </div>
     </footer>
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.toggle('open');
+        });
+    </script>
 </body>
 </html>
