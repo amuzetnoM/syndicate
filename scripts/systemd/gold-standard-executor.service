@@ -1,0 +1,78 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Gold Standard - Task Executor Systemd Service
+#  Copyright (c) 2025 SIRIUS Alpha
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#  This systemd service runs the task executor daemon independently from
+#  the main analysis daemon. It provides:
+#
+#  - Guaranteed task completion (survives main daemon restart)
+#  - Orphan recovery (reclaims stuck tasks from crashed workers)
+#  - Graceful shutdown with task completion
+#  - Automatic restart on failure
+#
+#  INSTALLATION:
+#    1. Copy to /etc/systemd/system/gold-standard-executor.service
+#    2. Adjust paths as needed
+#    3. systemctl daemon-reload
+#    4. systemctl enable --now gold-standard-executor.service
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+[Unit]
+Description=Gold Standard Task Executor Daemon
+Documentation=https://github.com/amuzetnom/gold_standard
+After=network.target docker.service gold-standard-compose.service
+Wants=gold-standard-compose.service
+
+# Optional dependency on the main compose stack
+# StartLimitBurst=5
+# StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/mnt/newdisk/gold_standard/gold_standard_config
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=GOST_DATA_DIR=/mnt/newdisk/gold_standard/gold_standard_config/data
+EnvironmentFile=-/mnt/newdisk/gold_standard/gold_standard_config/.env
+
+# Execution
+ExecStart=/mnt/newdisk/gold_standard/gold_standard_config/venv312/bin/python \
+    /mnt/newdisk/gold_standard/gold_standard_config/scripts/executor_daemon.py \
+    --daemon \
+    --poll-interval=30 \
+    --log-file=/mnt/newdisk/gold_standard/gold_standard_config/output/executor.log
+
+# Graceful shutdown
+TimeoutStopSec=90
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Restart policy
+Restart=on-failure
+RestartSec=30
+RestartPreventExitStatus=0
+
+# Resource limits
+Nice=10
+CPUQuota=50%
+MemoryMax=2G
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/mnt/newdisk/gold_standard
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gold-standard-executor
+
+[Install]
+WantedBy=multi-user.target

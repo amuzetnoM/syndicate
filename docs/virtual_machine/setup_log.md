@@ -1,11 +1,11 @@
 ﻿---
-description: Complete VM deployment guide and troubleshooting reference for Gold Standard v3.3.1
+description: Complete VM deployment guide and troubleshooting reference for Gold Standard v3.4.0
 icon: server
 ---
 
 # VM Deployment & Setup Log
 
-> **Last Updated:** December 13, 2025 | **Version:** 3.3.1 | **Status:** Fully Operational
+> **Last Updated:** December 13, 2025 | **Version:** 3.4.0 | **Status:** Fully Operational
 
 This document serves as the authoritative reference for deploying Gold Standard on a Virtual Machine (VM). It covers initial configuration, issues encountered during deployment, and their solutions.
 
@@ -97,7 +97,7 @@ gold_standard/
 
 ## Issues and Solutions
 
-> **Production Note:** All solutions documented here have been applied to the source repository as of v3.3.1. New deployments pulling the latest image should not encounter these issues.
+> **Production Note:** All solutions documented here have been applied to the source repository as of v3.4.0. New deployments pulling the latest image should not encounter these issues.
 
 ### Issue 1: Docker Named Volumes on Root FS
 

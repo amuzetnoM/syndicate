@@ -34,6 +34,41 @@ sys.path.insert(0, PROJECT_ROOT)
 # Task execution configuration
 MAX_RETRIES = 3  # Max retries before marking task as failed
 
+# Executor daemon mode - set to True to use detached executor
+USE_DETACHED_EXECUTOR = os.environ.get("GOST_DETACHED_EXECUTOR", "0") == "1"
+
+
+def spawn_executor_daemon() -> bool:
+    """
+    Spawn the task executor as a detached background process.
+
+    The executor daemon runs independently and survives main process shutdown.
+    It handles orphan recovery and graceful task completion.
+
+    Returns:
+        True if spawn successful or executor already running
+    """
+    try:
+        from scripts.executor_daemon import is_executor_running, spawn_executor_subprocess
+
+        if is_executor_running():
+            print("[DAEMON] Task executor already running")
+            return True
+
+        pid = spawn_executor_subprocess(detach=True)
+        if pid:
+            print(f"[DAEMON] Spawned task executor daemon (PID: {pid})")
+            return True
+        else:
+            print("[DAEMON] Failed to spawn executor daemon")
+            return False
+    except ImportError:
+        print("[DAEMON] Executor daemon not available, using inline execution")
+        return False
+    except Exception as e:
+        print(f"[DAEMON] Executor spawn error: {e}")
+        return False
+
 
 def ensure_venv():
     """
@@ -521,9 +556,23 @@ def _run_post_analysis_tasks():
             except Exception as e:
                 print(f"[DAEMON] Health check failed: {e}")
 
-            # Get actions that are ready to execute NOW
-            ready_actions = db.get_ready_actions(limit=None)
+            # Check if we should use detached executor daemon
+            if USE_DETACHED_EXECUTOR:
+                print("[DAEMON] Using detached executor daemon mode...")
+                if spawn_executor_daemon():
+                    print("[DAEMON] Task execution delegated to executor daemon")
+                    # Skip inline execution when executor daemon is handling tasks
+                    ready_actions = []
+                else:
+                    print("[DAEMON] Falling back to inline execution...")
+                    ready_actions = db.get_ready_actions(limit=None)
+            else:
+                # Legacy inline execution mode
+                print("[DAEMON] ⚠️  Using inline executor (deprecated for production)")
+                print("[DAEMON] ℹ️  Set GOST_DETACHED_EXECUTOR=1 or use executor_daemon.py")
+                ready_actions = db.get_ready_actions(limit=None)
 
+            # Get actions that are ready to execute NOW
             if ready_actions:
                 print(f"[DAEMON] Executing {len(ready_actions)} ready tasks...")
 

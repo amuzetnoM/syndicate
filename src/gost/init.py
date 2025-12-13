@@ -31,7 +31,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 """
 
 CORTEX_TEMPLATE = """{
-  "model_version": "3.3.1",
+  "model_version": "3.4.0",
   "session_id": null,
   "last_updated": null,
   "predictions": [],

@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.3.1* | *stable: 3.2.0* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
+*version 3.4.0* | *stable: 3.3.1* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -80,6 +80,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **Entity Insights** | Auto-extracts key entities (Fed, ECB, institutions) from reports |
 | **Action Insights** | Identifies actionable tasks (research, monitoring, calculations) |
 | **Task Executor** | Autonomously executes action insights with retry logic and quota handling |
+| **Executor Daemon** | Standalone worker process with orphan recovery, graceful shutdown, and systemd integration |
 | **Economic Calendar** | Self-maintaining calendar with Fed, ECB, NFP, CPI events and gold impact analysis |
 | **Live Analysis Suite** | Catalyst watchlist, institutional matrix, 1Y/3M analysis reports |
 | **Database Storage** | SQLite persistence for all reports, insights, tasks, and sync tracking |
