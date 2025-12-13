@@ -42,21 +42,19 @@ services:
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
-      # API Keys - Use .env file or Docker secrets
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - NOTION_API_KEY=${NOTION_API_KEY:-}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
       - IMGBB_API_KEY=${IMGBB_API_KEY:-}
       # Prometheus metrics
       - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
-      # Matplotlib cache (avoids permission errors)
-      - MPLCONFIGDIR=/tmp/matplotlib
+      - MPLCONFIGDIR=/tmp/matplotlib # Set matplotlib cache directory to a writable location
       # Use detached executor (tasks handled by executor service)
       - GOST_DETACHED_EXECUTOR=1
     volumes:
       # Persistent data
-      - gost_data:/app/data
-      - gost_output:/app/output
+      - ./docker-data/gost_data:/app/data
+      - ./docker-data/gost_output:/app/output
     networks:
       - gost-network
     depends_on:
@@ -139,7 +137,7 @@ services:
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./docker/prometheus/rules:/etc/prometheus/rules:ro
-      - prometheus_data:/prometheus
+      - ./docker-data/prometheus_data:/prometheus
     networks:
       - gost-network
     ports:
@@ -166,7 +164,7 @@ services:
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - grafana_data:/var/lib/grafana
+      - ./docker-data/grafana_data:/var/lib/grafana
     networks:
       - gost-network
     ports:
@@ -193,7 +191,7 @@ services:
       - '--web.external-url=http://localhost:9093'
     volumes:
       - ./docker/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
+      - ./docker-data/alertmanager_data:/alertmanager
     networks:
       - gost-network
     ports:
@@ -214,8 +212,10 @@ services:
     command:
       - '--path.rootfs=/host'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.textfile.directory=/etc/node-exporter/textfile_collector'
     volumes:
       - /:/host:ro,rslave
+      - /tmp/node_exporter_text_collector:/etc/node-exporter/textfile_collector
     networks:
       - gost-network
     ports:
@@ -255,7 +255,7 @@ services:
     command: -config.file=/etc/loki/loki.yml
     volumes:
       - ./docker/loki/loki.yml:/etc/loki/loki.yml:ro
-      - loki_data:/loki
+      - ./docker-data/loki_data:/loki
     networks:
       - gost-network
     ports:
@@ -301,7 +301,7 @@ services:
       - MPLCONFIGDIR=/tmp/matplotlib
     volumes:
       - .:/app
-      - gost_data:/app/data
+      - ./docker-data/gost_data:/app/data
     networks:
       - gost-network
     profiles:
@@ -317,19 +317,3 @@ networks:
     driver: bridge
     name: gold-standard-network
 
-# =============================================================================
-# Volumes
-# =============================================================================
-volumes:
-  gost_data:
-    name: gold-standard-data
-  gost_output:
-    name: gold-standard-output
-  prometheus_data:
-    name: gold-standard-prometheus
-  grafana_data:
-    name: gold-standard-grafana
-  alertmanager_data:
-    name: gold-standard-alertmanager
-  loki_data:
-    name: gold-standard-loki

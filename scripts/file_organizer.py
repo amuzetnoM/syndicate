@@ -208,6 +208,11 @@ class FileOrganizer:
             self.logger.warning(f"[ORGANIZER] Source file not found: {source_path}")
             return None
 
+        # Exclude FILE_INDEX files from being organized
+        if source_path.name.startswith("FILE_INDEX"):
+            self.logger.debug(f"[ORGANIZER] Skipping organization of {source_path.name}")
+            return None
+
         filename = source_path.name
 
         # Skip FILE_INDEX files to prevent recursive renaming (filename explosion bug)

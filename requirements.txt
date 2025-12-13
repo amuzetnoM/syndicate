@@ -56,3 +56,7 @@ tqdm>=4.66.0                  # Progress bars for downloads
 # Testing (included for CI/CD compatibility)
 # -----------------------------------------------------------------------------
 pytest>=7.0                   # Testing framework
+
+# Notion and Image Hosting
+notion-client>=0.7.1
+imgbbpy==0.1.3

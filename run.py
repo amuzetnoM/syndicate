@@ -1266,6 +1266,13 @@ Examples:
         interactive_mode(no_ai=args.no_ai)
         return
 
+    # Added logic for --once flag: Run all analysis once and exit
+    if args.once:
+        print_banner()
+        run_all(no_ai=args.no_ai, force=args.force)
+        _run_post_analysis_tasks() # Execute post-analysis tasks for a single run
+        return
+
     # Default: Autonomous daemon mode
     print_banner()
     run_daemon(no_ai=args.no_ai, interval_hours=args.interval, interval_minutes=args.interval_min)

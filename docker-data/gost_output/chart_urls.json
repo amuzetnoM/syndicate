@@ -1,0 +1,41 @@
+{
+  "charts": {
+    "DXY.png": {
+      "url": "https://i.ibb.co/MxF5VLMz/DXY.png",
+      "hash": "c6091a4ff399de989e963eb434169a35",
+      "uploaded": "2025-12-13T01:34:29.837311",
+      "ticker": "DXY"
+    },
+    "SILVER.png": {
+      "url": "https://i.ibb.co/5WSZ4H3b/SILVER.png",
+      "hash": "c3b6096e09007dee0cfcc9c4bb623098",
+      "uploaded": "2025-12-13T01:34:30.209532",
+      "ticker": "SILVER"
+    },
+    "GOLD.png": {
+      "url": "https://i.ibb.co/whmbwH5Q/GOLD.png",
+      "hash": "f911f9c74db47ad82bf6957d1a31297d",
+      "uploaded": "2025-12-13T01:34:30.509240",
+      "ticker": "GOLD"
+    },
+    "VIX.png": {
+      "url": "https://i.ibb.co/gMng0fZC/VIX.png",
+      "hash": "52384a380ca3dd74003e18896a2f7108",
+      "uploaded": "2025-12-13T01:34:30.817853",
+      "ticker": "VIX"
+    },
+    "SPX.png": {
+      "url": "https://i.ibb.co/d0fQzRkM/SPX.png",
+      "hash": "e302b621fc36de63e6b2632ed26b58e8",
+      "uploaded": "2025-12-13T01:34:31.188844",
+      "ticker": "SPX"
+    },
+    "YIELD.png": {
+      "url": "https://i.ibb.co/jPBMtQx4/YIELD.png",
+      "hash": "e20dc5d275a51ab9d76799cdd6c81146",
+      "uploaded": "2025-12-13T01:34:31.514338",
+      "ticker": "YIELD"
+    }
+  },
+  "last_updated": "2025-12-13T01:34:31.514390"
+}

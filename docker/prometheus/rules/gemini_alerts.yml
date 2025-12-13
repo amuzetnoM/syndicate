@@ -1,0 +1,38 @@
+groups:
+  - name: GeminiAgentAlerts
+    rules:
+      - alert: HighDiskUsage
+        expr: gemini_disk_usage_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High disk usage detected on Odyssey ({{ $value }}%)"
+          description: "The disk usage on the Odyssey system is critically high at {{ $value }}%. Immediate action required to prevent system instability."
+
+      - alert: GoldStandardDailyServiceFailed
+        expr: gemini_service_gold_standard_daily_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gold Standard Daily Service has failed"
+          description: "The gold-standard-daily.service is reporting a failed state. The daily analysis may not be running. Check system logs for details."
+
+      - alert: RunLogErrorsDetected
+        expr: gemini_log_run_errors_found == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Errors detected in Gold Standard run log"
+          description: "The Gold Standard run log (/home/ali_shakil_backup/gold_standard_config/run.log) contains potential errors. Please review the log for details."
+
+      - alert: CleanupLogErrorsDetected
+        expr: gemini_log_cleanup_errors_found == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Errors detected in Gold Standard cleanup log"
+          description: "The Gold Standard cleanup log (/home/ali_shakil_backup/gold_standard_config/cleanup.log) contains potential errors. Please review the log for details."
