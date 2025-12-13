@@ -19,7 +19,7 @@
 > **Precious Metals Intelligence Complex**
 > A System for Quantitative Analysis
 
-A comprehensive end-to-end system combining real-time market data, technical indicators, economic calendar intelligence, and Google Gemini AI to generate structured trading reports for gold and intermarket assets.
+A comprehensive end-to-end system combining real-time market data, technical indicators, economic calendar intelligence, and artificial intelligence to generate structured trading reports for gold and intermarket assets.
 
 ---
 
