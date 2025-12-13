@@ -50,7 +50,8 @@ ASCII data flow:
 | EconomicCalendar | `scripts/economic_calendar.py` | Event tracking; gold impact analysis; self-maintenance |
 | LocalLLM | `scripts/local_llm.py` | Local LLM provider abstraction (llama-cpp-python, Ollama) |
 | InsightsEngine | `scripts/insights_engine.py` | Entity/action extraction; insight parsing |
-| TaskExecutor | `scripts/task_executor.py` | Autonomous task execution with retry logic |
+| TaskExecutor | `scripts/task_executor.py` | Inline task execution with retry logic (legacy) |
+| ExecutorDaemon | `scripts/executor_daemon.py` | **Standalone task worker** with orphan recovery, signal handling, systemd integration |
 
 ## LLM Provider Architecture
 
@@ -100,6 +101,65 @@ Gold Standard uses a **FallbackLLMProvider** pattern for resilient AI-powered an
 | `GeminiCompatibleLLM` | `scripts/local_llm.py` | Gemini-compatible wrapper for local models |
 
 > **📖 See [docs/LLM_PROVIDERS.md](LLM_PROVIDERS.md) for complete setup and configuration guide.**
+
+## Task Executor Daemon Architecture
+
+Gold Standard uses a **decoupled task execution model** that separates task identification from execution:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          MAIN DAEMON (run.py)                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Analysis Loop → Insights Extraction → Tasks Enqueued to Database          │
+│                                              │                              │
+│                                              ▼                              │
+│                                    ┌─────────────────┐                      │
+│                                    │   SQLite Queue  │                      │
+│                                    │ (action_insights)│                      │
+│                                    └────────┬────────┘                      │
+└─────────────────────────────────────────────┼───────────────────────────────┘
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    │                         ▼                         │
+                    │           EXECUTOR DAEMON (standalone)            │
+                    ├───────────────────────────────────────────────────┤
+                    │  • Polls for ready tasks                          │
+                    │  • Atomic claim/release (no duplicate execution)  │
+                    │  • Orphan recovery on startup                     │
+                    │  • Graceful shutdown (SIGTERM/SIGINT)             │
+                    │  • Exponential backoff on quota errors            │
+                    │  • Independent lifecycle from main daemon         │
+                    └───────────────────────────────────────────────────┘
+```
+
+**Execution Modes:**
+| Mode | Environment Variable | Description |
+|------|---------------------|-------------|
+| Inline (legacy) | `GOST_DETACHED_EXECUTOR=0` | Tasks execute blocking in main daemon loop |
+| Detached | `GOST_DETACHED_EXECUTOR=1` | Main daemon spawns executor subprocess |
+| Systemd | N/A | Executor runs as independent systemd service |
+
+**Daemon CLI:**
+```bash
+# Continuous daemon mode
+python scripts/executor_daemon.py --daemon
+
+# Drain queue and exit
+python scripts/executor_daemon.py --once
+
+# Recover orphaned tasks
+python scripts/executor_daemon.py --recover-orphans
+
+# Health check
+python scripts/executor_daemon.py --health
+```
+
+**Systemd Service:**
+```bash
+sudo cp scripts/systemd/gold-standard-executor.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now gold-standard-executor.service
+```
 
 Key design notes:
 - Each module exposes a small public API surface, documented in docstrings and validated by unit tests.

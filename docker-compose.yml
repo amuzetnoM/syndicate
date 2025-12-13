@@ -10,19 +10,27 @@
 # Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# Full Stack with Monitoring
+# Full Stack with Monitoring + Task Executor Daemon
+#
+# Architecture:
+#   gost       - Main analysis daemon (runs on schedule, extracts insights)
+#   executor   - Task executor daemon (processes tasks independently)
+#   prometheus - Metrics collection
+#   grafana    - Visualization dashboards
+#   loki       - Log aggregation
 #
 # Usage:
-#   docker compose up -d              # Start all services
-#   docker compose --profile dev up   # Start with development tools
-#   docker compose logs -f gost       # Follow Gold Standard logs
-#   docker compose down               # Stop all services
+#   docker compose up -d                 # Start all services
+#   docker compose up -d gost executor   # Start only Gold Standard services
+#   docker compose logs -f executor      # Follow executor logs
+#   docker compose --profile dev up      # Start with development tools
+#   docker compose down                  # Stop all services
 #
 # ══════════════════════════════════════════════════════════════════════════════
 
 services:
   # ===========================================================================
-  # Gold Standard - Main Application
+  # Gold Standard - Main Analysis Daemon
   # ===========================================================================
   gost:
     build:
@@ -43,12 +51,17 @@ services:
       - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
       # Matplotlib cache (avoids permission errors)
       - MPLCONFIGDIR=/tmp/matplotlib
+      # Use detached executor (tasks handled by executor service)
+      - GOST_DETACHED_EXECUTOR=1
     volumes:
       # Persistent data
       - gost_data:/app/data
       - gost_output:/app/output
     networks:
       - gost-network
+    depends_on:
+      executor:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "from db_manager import get_db; get_db()"]
       interval: 30s
@@ -67,6 +80,48 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+
+  # ===========================================================================
+  # Gold Standard - Task Executor Daemon
+  # ===========================================================================
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: gold-standard-executor
+    restart: unless-stopped
+    command: ["python", "scripts/executor_daemon.py", "--daemon", "--poll-interval", "30"]
+    environment:
+      - TZ=UTC
+      - PYTHONUNBUFFERED=1
+      # API Keys - same as main service
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - NOTION_API_KEY=${NOTION_API_KEY:-}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+      - IMGBB_API_KEY=${IMGBB_API_KEY:-}
+      # Matplotlib cache
+      - MPLCONFIGDIR=/tmp/matplotlib
+    volumes:
+      # Same data volume as main service (shared SQLite)
+      - gost_data:/app/data
+      - gost_output:/app/output
+    networks:
+      - gost-network
+    healthcheck:
+      test: ["CMD", "python", "scripts/executor_daemon.py", "--health"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   # ===========================================================================
   # Prometheus - Metrics Collection

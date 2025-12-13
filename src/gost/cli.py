@@ -254,7 +254,7 @@ Examples:
         """,
     )
 
-    parser.add_argument("--version", "-V", action="version", version="%(prog)s 3.3.1")
+    parser.add_argument("--version", "-V", action="version", version="%(prog)s 3.4.0")
     parser.add_argument("--run", "-r", action="store_true", help="Run complete analysis once")
     parser.add_argument("--daily", "-d", action="store_true", help="Quick daily journal update only")
     parser.add_argument("--premarket", "-p", action="store_true", help="Generate pre-market plan")

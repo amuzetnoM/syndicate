@@ -1,8 +1,8 @@
 # Gold Standard Technical Booklet
 
-> Educational Guide and Technical Reference — v3.3.1 | Stable: v3.2.0
+> Educational Guide and Technical Reference — v3.4.0 | Stable: v3.3.1
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.3.1 includes container robustness fixes and VM deployment improvements, building on v3.3's document lifecycle management, v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.4.0 introduces the standalone Task Executor Daemon with Docker containerization, building on v3.3.1's container robustness fixes, v3.3's document lifecycle management, v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
 
 ---
 
@@ -22,6 +22,8 @@ This booklet provides in-depth documentation of the mathematical foundations, de
 12. [Document Lifecycle Management](#document-lifecycle-management)
 13. [Insights Engine](#insights-engine)
 14. [Task Executor](#task-executor)
+    - [Executor Daemon (Recommended)](#executor-daemon-recommended)
+    - [Inline Executor (Legacy)](#inline-executor-legacy)
 15. [File Organizer](#file-organizer)
 16. [Frontmatter System](#frontmatter-system)
 17. [Notion Integration](#notion-integration)
@@ -995,11 +997,83 @@ actions = extractor.extract_actions(report_content, "Journal_2025-12-01.md")
 
 ## Task Executor
 
-The `scripts/task_executor.py` module autonomously executes extracted action insights with persistent retry logic.
+Gold Standard provides **two execution architectures** for processing action insights:
 
-### Overview
+1. **Inline Executor** (`scripts/task_executor.py`) - Legacy blocking execution within main daemon
+2. **Executor Daemon** (`scripts/executor_daemon.py`) - **Recommended** standalone worker with production hardening
 
-The Task Executor moves the system from "showing" to "doing" by automatically executing actionable tasks identified by the Insights Engine. Version 3.2 adds robust retry logic for handling API quota limits.
+### Architecture Comparison
+
+| Feature | Inline Executor | Executor Daemon |
+|---------|-----------------|-----------------|
+| Lifecycle | Tied to main daemon | Independent process |
+| Shutdown | Killed with daemon | Graceful drain |
+| Orphan Recovery | None | Automatic on startup |
+| Signal Handling | None | SIGTERM, SIGINT, SIGHUP |
+| Systemd Support | No | Yes |
+| Recommended For | Development | Production |
+
+---
+
+### Executor Daemon (Recommended)
+
+The `scripts/executor_daemon.py` module provides a standalone, production-hardened task execution service.
+
+#### Features
+
+- **Independent lifecycle** - Survives main daemon restarts and graceful shutdowns
+- **Orphan recovery** - Reclaims stuck `in_progress` tasks on startup
+- **Signal handling** - SIGTERM/SIGINT for graceful drain, SIGHUP for config reload
+- **Atomic claiming** - Prevents duplicate task execution across workers
+- **Quota-aware** - Exponential backoff on rate limits
+- **Health monitoring** - Heartbeat tracking, statistics, consecutive error detection
+
+#### CLI Usage
+
+```bash
+# Run as continuous daemon (production)
+python scripts/executor_daemon.py --daemon
+
+# Drain queue and exit (CI/testing)
+python scripts/executor_daemon.py --once
+
+# Recover orphaned tasks only
+python scripts/executor_daemon.py --recover-orphans
+
+# Health check (JSON output)
+python scripts/executor_daemon.py --health
+
+# Spawn detached subprocess
+python scripts/executor_daemon.py --spawn
+```
+
+#### Systemd Deployment
+
+```bash
+# Install service
+sudo cp scripts/systemd/gold-standard-executor.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now gold-standard-executor.service
+
+# Check status
+sudo systemctl status gold-standard-executor
+
+# View logs
+sudo journalctl -u gold-standard-executor -f
+```
+
+#### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GOST_DETACHED_EXECUTOR` | `0` | Set to `1` to enable detached mode in run.py |
+| `GOST_DATA_DIR` | `/app/data` | Data directory for executor |
+
+---
+
+### Inline Executor (Legacy)
+
+The `scripts/task_executor.py` module executes tasks within the main daemon loop.
 
 ### TaskExecutor Class
 

@@ -1,8 +1,8 @@
 # Gold Standard Documentation
 
-[![Latest](https://img.shields.io/badge/latest-v3.3.1-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases/tag/v3.3.1)
-[![Stable](https://img.shields.io/badge/stable-v3.2.0-green.svg)](https://github.com/amuzetnoM/gold_standard/releases/tag/v3.2.0)
-[![Docs](https://img.shields.io/badge/docs-gitbook-blue.svg)](https://artifact-virtual.gitbook.io/gold-standard)
+[![Latest](https://img.shields.io/badge/latest-v3.4.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases/tag/v3.4.0)
+[![Stable](https://img.shields.io/badge/stable-v3.3.1-green.svg)](https://github.com/amuzetnoM/gold_standard/releases/tag/v3.3.1)
+[![Docs](https://img.shields.io/badge/changelog-gitbook-blue.svg)](https://artifact-virtual.gitbook.io/gold-standard)
 
 ## Documentation Index
 
@@ -32,25 +32,25 @@
 
 ## Release Information
 
-**Current Release:** v3.3.1 (December 13, 2025)
+**Current Release:** v3.4.0 (December 13, 2025)
+- Standalone Task Executor Daemon (`scripts/executor_daemon.py`)
+- Docker Compose with separate executor service
+- Orphan recovery and graceful shutdown
+- Dry-run mode and task limits for testing
+
+**Stable Release:** v3.3.1
 - Container robustness and VM deployment fixes
 - Environment variable naming fixes
 - Cortex memory persistence improvements
-- Single run mode (`--once`) fix
-
-**Stable Release:** v3.2.0
-- Recommended for production environments requiring maximum stability
-- Multi-provider LLM system
-- Document lifecycle management
 
 ## Docker Images
 
 ```bash
 # Latest release
-docker pull ghcr.io/amuzetnom/gold_standard:v3.3.1
+docker pull ghcr.io/amuzetnom/gold_standard:v3.4.0
 
 # Stable release
-docker pull ghcr.io/amuzetnom/gold_standard:v3.2.0
+docker pull ghcr.io/amuzetnom/gold_standard:v3.3.1
 
 # Latest main branch
 docker pull ghcr.io/amuzetnom/gold_standard:latest
