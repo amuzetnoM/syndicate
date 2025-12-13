@@ -173,6 +173,8 @@
         .mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; }
         .mobile-menu a { padding: 0.75rem 2rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
         .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu a.gold { color: var(--accent-gold); background: var(--accent-gold-dim); }
+        .mobile-menu a.gold:hover { background: rgba(212, 168, 83, 0.2); }
         .mobile-menu.open { display: flex; }
 
         @media (max-width: 900px) {
@@ -231,6 +233,7 @@
             </ul>
             <div class="nav-cta">
                 <a href="odyssey_sys.html" class="btn btn-outline">System Specs</a>
+                <a href="https://artifact-virtual.gitbook.io/gold-standard/" class="btn btn-gold" target="_blank">Active Development</a>
                 <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">GitHub</a>
             </div>
             <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
@@ -239,6 +242,7 @@
         <div class="mobile-menu">
             <a href="index.html">Home</a>
             <a href="index_docs.html">Documentation</a>
+            <a href="https://artifact-virtual.gitbook.io/gold-standard/" target="_blank" class="gold">Active Development</a>
             <a href="odyssey.html" class="active">Deployment</a>
             <a href="odyssey_sys.html">System Specs</a>
             <a href="guide.html">Guide</a>

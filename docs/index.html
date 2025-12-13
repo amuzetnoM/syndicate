@@ -163,6 +163,16 @@
             background: var(--text-secondary);
         }
 
+        .btn-gold {
+            background: var(--accent-gold-dim);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .btn-gold:hover {
+            background: rgba(212, 168, 83, 0.2);
+        }
+
         /* Hero */
         .hero {
             padding: 10rem 2rem 6rem;
@@ -1214,6 +1224,8 @@
         .mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem 0; }
         .mobile-menu a { padding: 0.75rem 2rem; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
         .mobile-menu a:hover, .mobile-menu a.active { background: var(--bg-tertiary); color: var(--accent-gold); }
+        .mobile-menu a.gold { color: var(--accent-gold); background: var(--accent-gold-dim); }
+        .mobile-menu a.gold:hover { background: rgba(212, 168, 83, 0.2); }
         .mobile-menu.open { display: flex; }
 
         @media (max-width: 768px) {
@@ -1490,6 +1502,7 @@
             </ul>
             <div class="nav-cta">
                 <a href="index_docs.html" class="btn btn-ghost">Documentation</a>
+                <a href="https://artifact-virtual.gitbook.io/gold-standard/" class="btn btn-gold" target="_blank">Active Development</a>
                 <a href="https://github.com/amuzetnoM/gold_standard" class="btn btn-primary">GitHub &#8594;</a>
             </div>
             <button class="nav-toggle" aria-label="Toggle menu">&#9776;</button>
@@ -1498,6 +1511,7 @@
         <div class="mobile-menu">
             <a href="index.html" class="active">Home</a>
             <a href="index_docs.html">Documentation</a>
+            <a href="https://artifact-virtual.gitbook.io/gold-standard/" target="_blank" class="gold">Active Development</a>
             <a href="odyssey.html">Deployment</a>
             <a href="guide.html">Guide</a>
             <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
@@ -2641,18 +2655,18 @@ Max Drawdown: -2.1%
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            time += 0.008;
+            time += 0.005;
 
-            // Smooth rotation based on time + mouse influence
-            targetRotationY = time + mouseX * 0.3;
-            targetRotationX = Math.sin(time * 0.5) * 0.15 + mouseY * 0.2;
+            // Gentle oscillation + mouse influence (not continuous spin)
+            targetRotationY = Math.sin(time * 0.3) * 0.4 + mouseX * 0.3;
+            targetRotationX = Math.sin(time * 0.2) * 0.1 + mouseY * 0.15;
 
-            // Smooth interpolation
-            ingot.rotation.y += (targetRotationY - ingot.rotation.y) * 0.05;
-            ingot.rotation.x += (targetRotationX - ingot.rotation.x) * 0.05;
+            // Very smooth interpolation
+            ingot.rotation.y += (targetRotationY - ingot.rotation.y) * 0.02;
+            ingot.rotation.x += (targetRotationX - ingot.rotation.x) * 0.02;
 
-            // Subtle floating effect (very subtle, not bobbing)
-            ingot.position.y = Math.sin(time * 0.7) * 0.08;
+            // Subtle floating effect
+            ingot.position.y = Math.sin(time * 0.4) * 0.03;
 
             // Animate sparkle lights
             sparkle1.intensity = 0.4 + Math.sin(time * 2) * 0.2;
