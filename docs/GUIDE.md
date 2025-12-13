@@ -1,8 +1,8 @@
 # Gold Standard Technical Booklet
 
-> Educational Guide and Technical Reference — v3.3
+> Educational Guide and Technical Reference — v3.3.1 | Stable: v3.2.0
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.3 introduces document lifecycle management for controlling Notion visibility, building on v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.3.1 includes container robustness fixes and VM deployment improvements, building on v3.3's document lifecycle management, v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
 
 ---
 
