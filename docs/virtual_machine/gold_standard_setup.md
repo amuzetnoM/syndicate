@@ -2,7 +2,7 @@
 
 The system is designed to run autonomously, with features for intelligent scheduling, multi-provider LLM fallback, and rich integration with Notion for report publishing.
 
-## 2. Application Setup
+## 1. Application Setup
 
 The application is built with Python and relies on a virtual environment for dependency management.
 
@@ -33,11 +33,11 @@ The application is configured through a `.env` file in the project's root direct
 - `NOTION_DATABASE_ID`: The ID of the Notion database to publish reports to.
 - `IMGBB_API_KEY`: For hosting chart images.
 
-## 3. Systemd Automations
+## 2. Systemd Automations
 
 The project uses `systemd` services and timers to automate its operations.
 
-### 3.1. `gold-standard-compose.service`
+### 2.1. `gold-standard-compose.service`
 
 This service manages the Docker Compose stack for the project.
 
@@ -51,7 +51,7 @@ This service manages the Docker Compose stack for the project.
     - Starts on system boot (`WantedBy=multi-user.target`).
     - Restarts automatically on failure after a 5-second delay.
 
-### 3.2. `gold-standard-daily.service` & `gold-standard-daily.timer`
+### 2.2. `gold-standard-daily.service` & `gold-standard-daily.timer`
 
 This service and timer pair are responsible for the daily analysis runs.
 
@@ -70,7 +70,7 @@ This service and timer pair are responsible for the daily analysis runs.
         - The job is started with a random delay of up to 30 minutes to avoid resource contention.
         - If a scheduled run is missed (e.g., due to the system being powered off), it will be triggered as soon as the system is back online (`Persistent=true`).
 
-### 3.3. `gold-standard-weekly-cleanup.service` & `gold-standard-weekly-cleanup.timer`
+### 2.3. `gold-standard-weekly-cleanup.service` & `gold-standard-weekly-cleanup.timer`
 
 This service and timer pair handle the weekly cleanup tasks.
 
@@ -84,7 +84,7 @@ This service and timer pair handle the weekly cleanup tasks.
     - **Description**: "Run Gold Standard Weekly Cleanup at 1am on Sunday"
     - **Schedule**: Runs weekly (`OnCalendar=weekly`).
 
-## 4. Docker and Data Storage
+## 3. Docker and Data Storage
 
 The project uses Docker Compose to manage its services, including the main application and a monitoring stack.
 
