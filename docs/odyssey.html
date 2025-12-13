@@ -77,22 +77,22 @@
         .btn-gold { background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%); color: #000; }
         .btn-gold:hover { opacity: 0.9; }
 
-        /* Hero */
-        .hero { padding: 10rem 2rem 6rem; max-width: 1400px; margin: 0 auto; }
+        /* Hero - Compact subpage style */
+        .hero { padding: 7rem 2rem 3rem; max-width: 1200px; margin: 0 auto; }
         .hero-badge {
             display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.375rem 0.875rem; background: var(--accent-gold-dim);
+            padding: 0.25rem 0.75rem; background: var(--accent-gold-dim);
             border: 1px solid rgba(212, 168, 83, 0.2); border-radius: 100px;
-            font-size: 0.8rem; color: var(--accent-gold); margin-bottom: 1.5rem;
+            font-size: 0.75rem; color: var(--accent-gold); margin-bottom: 1rem;
         }
         .hero h1 {
-            font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700;
-            letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1.5rem; max-width: 800px;
+            font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 600;
+            letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 1rem; max-width: 700px;
         }
         .hero h1 span { color: var(--accent-gold); }
-        .hero-desc { font-size: 1.25rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 2.5rem; line-height: 1.7; }
-        .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .hero-actions .btn { padding: 0.875rem 1.5rem; font-size: 0.95rem; }
+        .hero-desc { font-size: 1rem; color: var(--text-secondary); max-width: 600px; margin-bottom: 1.75rem; line-height: 1.6; }
+        .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .hero-actions .btn { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
 
         /* Stats */
         .stats-bar { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
@@ -198,18 +198,15 @@
 
     <header class="hero">
         <div class="hero-badge">
-            <span>⚡</span> Production Ready
+            <span>🚀</span> Deployment
         </div>
-        <h1>Odyssey <span>Deployment</span> Infrastructure</h1>
+        <h1><span>Odyssey</span> Infrastructure</h1>
         <p class="hero-desc">
-            A specialized containerized virtual machine designed for artifact virtualization
-            and production-grade Gold Standard deployments. Built on Debian with Docker orchestration,
-            optimized for performance and security.
+            Production-grade VM for Gold Standard. Debian 12, Docker orchestration, 500GB storage.
         </p>
         <div class="hero-actions">
             <a href="odyssey_sys.html" class="btn btn-gold">View Full Specs →</a>
-            <a href="index_docs.html" class="btn btn-outline">Documentation</a>
-            <a href="index.html" class="btn btn-outline">Back to Home</a>
+            <a href="index.html" class="btn btn-outline">← Back to Gold Standard</a>
         </div>
     </header>
 
