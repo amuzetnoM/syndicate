@@ -847,12 +847,16 @@ def _run_post_analysis_tasks():
                     content = filepath.read_text(encoding="utf-8")
 
                     # Check if document is ready for sync (has proper frontmatter status)
+                    # Documents without frontmatter or with status != published/complete should NOT sync
                     try:
                         if not is_ready_for_sync(content):
                             skipped_status += 1
                             continue
-                    except Exception:
-                        pass  # If frontmatter check fails, try to sync anyway
+                    except Exception as e:
+                        # If frontmatter check fails, skip this file - don't sync unready documents
+                        logger.debug(f"Frontmatter check failed for {filepath.name}: {e}")
+                        skipped_status += 1
+                        continue
 
                     # Check type-aware schedule
                     doc_type = "journal" if "Journal_" in filepath.name else "reports"

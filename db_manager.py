@@ -603,13 +603,18 @@ class DatabaseManager:
 
     def is_file_synced(self, file_path: str) -> bool:
         """Check if a file has been synced to Notion and hasn't changed."""
+        # Normalize path to absolute resolved form for consistent dedup
+        from pathlib import Path
+
+        normalized_path = str(Path(file_path).resolve())
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
                 SELECT file_hash FROM notion_sync WHERE file_path = ?
             """,
-                (file_path,),
+                (normalized_path,),
             )
             row = cursor.fetchone()
 
@@ -617,14 +622,19 @@ class DatabaseManager:
                 return False
 
             # Check if file has changed
-            current_hash = self.get_file_hash(file_path)
+            current_hash = self.get_file_hash(normalized_path)
             return row["file_hash"] == current_hash
 
     def record_notion_sync(self, file_path: str, page_id: str, url: str, doc_type: str = None) -> bool:
         """Record that a file has been synced to Notion."""
+        # Normalize path to absolute resolved form for consistent dedup
+        from pathlib import Path
+
+        normalized_path = str(Path(file_path).resolve())
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            file_hash = self.get_file_hash(file_path)
+            file_hash = self.get_file_hash(normalized_path)
             now = datetime.now().isoformat()
 
             cursor.execute(
@@ -645,13 +655,18 @@ class DatabaseManager:
 
     def get_notion_page_for_file(self, file_path: str) -> Optional[Dict]:
         """Get Notion page info for a synced file."""
+        # Normalize path to absolute resolved form for consistent lookup
+        from pathlib import Path
+
+        normalized_path = str(Path(file_path).resolve())
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
                 SELECT * FROM notion_sync WHERE file_path = ?
             """,
-                (file_path,),
+                (normalized_path,),
             )
             row = cursor.fetchone()
             return dict(row) if row else None
@@ -668,9 +683,14 @@ class DatabaseManager:
 
     def clear_sync_for_file(self, file_path: str) -> bool:
         """Clear sync record for a file (forces re-sync)."""
+        # Normalize path to absolute resolved form for consistent lookup
+        from pathlib import Path
+
+        normalized_path = str(Path(file_path).resolve())
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM notion_sync WHERE file_path = ?", (file_path,))
+            cursor.execute("DELETE FROM notion_sync WHERE file_path = ?", (normalized_path,))
             return cursor.rowcount > 0
 
     def clear_all_sync_records(self) -> int:
