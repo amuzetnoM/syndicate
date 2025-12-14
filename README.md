@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.4.0* | *stable: 3.3.1* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
+*version 3.5.0* | *stable: 3.4.0* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -270,6 +270,11 @@ Enter choice (0-4):
 | `python run.py --no-ai` | Run without Gemini API |
 | `python run.py --lifecycle list` | List documents by lifecycle status |
 | `python run.py --lifecycle publish --file <path>` | Mark document as published |
+| `python run.py --show-toggles` | Show feature toggle states |
+| `python run.py --toggle notion --disable` | Disable Notion publishing |
+| `python run.py --toggle tasks --enable` | Enable task execution |
+| `python scripts/pipeline_audit.py` | Run pipeline diagnostics |
+| `python scripts/pipeline_audit.py --cleanup --execute` | Clean orphan DB records |
 | `python run.py --help` | Show all options |
 
 ### GUI Dashboard

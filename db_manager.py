@@ -478,22 +478,57 @@ class DatabaseManager:
             return None
 
     def register_document(self, file_path: str, doc_type: str, status: str = "draft", content_hash: str = None) -> bool:
-        """Register a new document in the lifecycle system."""
+        """
+        Register a new document in the lifecycle system.
+
+        Uses UPSERT to prevent duplicate drafts - if document already exists,
+        updates the content_hash and updated_at but preserves the original status
+        (unless explicitly upgrading from draft to a higher status).
+        """
+        # Normalize path to prevent duplicates from relative vs absolute paths
+        from pathlib import Path
+
+        file_path = str(Path(file_path).resolve())
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
-            try:
+
+            # Check if document already exists
+            cursor.execute("SELECT status, content_hash FROM document_lifecycle WHERE file_path = ?", (file_path,))
+            existing = cursor.fetchone()
+
+            if existing:
+                existing_status = existing[0]
+                existing_hash = existing[1]
+
+                # Don't downgrade status (published -> draft)
+                status_order = {"draft": 0, "in_progress": 1, "review": 2, "published": 3, "archived": 4}
+                if status_order.get(status, 0) <= status_order.get(existing_status, 0):
+                    status = existing_status  # Keep higher status
+
+                # Only update if content changed or status upgraded
+                if content_hash != existing_hash or status != existing_status:
+                    cursor.execute(
+                        """
+                        UPDATE document_lifecycle
+                        SET doc_type = ?, status = ?, content_hash = ?, updated_at = ?, version = version + 1
+                        WHERE file_path = ?
+                        """,
+                        (doc_type, status, content_hash, now, file_path),
+                    )
+                return True
+            else:
+                # New document
                 cursor.execute(
                     """
                     INSERT INTO document_lifecycle
                     (file_path, doc_type, status, content_hash, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?)
-                """,
+                    """,
                     (file_path, doc_type, status, content_hash, now, now),
                 )
                 return True
-            except Exception:
-                return False
 
     def update_document_status(self, file_path: str, status: str, notion_page_id: str = None) -> bool:
         """
@@ -1605,6 +1640,49 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("SELECT key, value FROM system_config")
             return {row["key"]: row["value"] for row in cursor.fetchall()}
+
+    # ==========================================
+    # FEATURE TOGGLES
+    # ==========================================
+
+    def is_notion_publishing_enabled(self) -> bool:
+        """Check if Notion publishing is enabled (default: True)."""
+        value = self.get_config("notion_publishing_enabled", "true")
+        return value.lower() in ("true", "1", "yes", "on")
+
+    def set_notion_publishing_enabled(self, enabled: bool) -> bool:
+        """Enable or disable Notion publishing without changing other config."""
+        return self.set_config(
+            "notion_publishing_enabled",
+            "true" if enabled else "false",
+            "Toggle to temporarily disable Notion publishing",
+        )
+
+    def is_task_execution_enabled(self) -> bool:
+        """Check if task execution is enabled (default: True)."""
+        value = self.get_config("task_execution_enabled", "true")
+        return value.lower() in ("true", "1", "yes", "on")
+
+    def set_task_execution_enabled(self, enabled: bool) -> bool:
+        """Enable or disable task execution without changing other config."""
+        return self.set_config(
+            "task_execution_enabled",
+            "true" if enabled else "false",
+            "Toggle to temporarily disable task execution",
+        )
+
+    def is_insights_extraction_enabled(self) -> bool:
+        """Check if insights extraction is enabled (default: True)."""
+        value = self.get_config("insights_extraction_enabled", "true")
+        return value.lower() in ("true", "1", "yes", "on")
+
+    def set_insights_extraction_enabled(self, enabled: bool) -> bool:
+        """Enable or disable insights extraction without changing other config."""
+        return self.set_config(
+            "insights_extraction_enabled",
+            "true" if enabled else "false",
+            "Toggle to temporarily disable insights extraction",
+        )
 
     # ==========================================
     # EXECUTION STATE MACHINE

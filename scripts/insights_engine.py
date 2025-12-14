@@ -622,8 +622,15 @@ Report content:
 
 Respond in JSON format:
 [
-  {{"action_type": "research|data_fetch|news_scan|calculation|monitoring", "title": "short title", "description": "what to do and why", "priority": "critical|high|medium|low"}}
+  {{"action_type": "research", "title": "short title", "description": "what to do and why", "priority": "high"}}
 ]
+
+IMPORTANT: action_type must be exactly ONE of these values (pick the most appropriate):
+- "research" - Deep analysis or investigation tasks
+- "data_fetch" - Retrieve specific data or prices
+- "news_scan" - Monitor news or announcements
+- "calculation" - Perform calculations or analysis
+- "monitoring" - Set up ongoing monitoring
 
 Extract 3-5 most important actionable tasks. Focus on specific, executable tasks."""
 
@@ -636,17 +643,31 @@ Extract 3-5 most important actionable tasks. Focus on specific, executable tasks
             if json_match:
                 tasks = json.loads(json_match.group())
 
+                # Valid action types
+                VALID_ACTION_TYPES = {"research", "data_fetch", "news_scan", "calculation", "monitoring", "code_task"}
+
                 actions = []
                 for task in tasks[:5]:  # Limit to 5
                     description = task.get("description", "")
                     title = task.get("title", "AI-extracted task")
+
+                    # Normalize and validate action_type
+                    raw_action_type = task.get("action_type", "research")
+                    # Handle compound types like "research|monitoring" - take first valid one
+                    if "|" in raw_action_type:
+                        parts = raw_action_type.split("|")
+                        action_type = next((p.strip() for p in parts if p.strip() in VALID_ACTION_TYPES), "research")
+                    else:
+                        action_type = (
+                            raw_action_type.strip() if raw_action_type.strip() in VALID_ACTION_TYPES else "research"
+                        )
 
                     # Extract scheduled date from AI response
                     scheduled_for = self._extract_scheduled_date(description, title)
 
                     action = ActionInsight(
                         action_id=self._generate_action_id(),
-                        action_type=task.get("action_type", "research"),
+                        action_type=action_type,
                         title=title,
                         description=description,
                         priority=task.get("priority", "medium"),

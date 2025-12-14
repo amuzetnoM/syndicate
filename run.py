@@ -499,7 +499,9 @@ def _run_post_analysis_tasks():
             logger.info(f"[DAEMON] Using LLM provider: {model.name}")
 
         # 1. Extract insights from today's reports (DAILY)
-        if db.should_run_task("insights_extraction"):
+        if not db.is_insights_extraction_enabled():
+            print("[DAEMON] ⏸️  Insights extraction DISABLED via toggle")
+        elif db.should_run_task("insights_extraction"):
             print("[DAEMON] Extracting insights from reports...")
             extractor = InsightsExtractor(config, logger, model)
             reports_dir = Path(config.OUTPUT_DIR) / "reports"
@@ -538,7 +540,9 @@ def _run_post_analysis_tasks():
 
         # 2. Execute READY tasks with atomic claim/release pattern
         # Tasks execute when: scheduled_for <= now OR scheduled_for IS NULL
-        if model:
+        if not db.is_task_execution_enabled():
+            print("[DAEMON] ⏸️  Task execution DISABLED via toggle")
+        elif model:
             print("[DAEMON] Checking for ready-to-execute tasks...")
 
             # Get system health first
@@ -749,151 +753,154 @@ def _run_post_analysis_tasks():
         # - weekly reports: WEEKLY
         # - monthly reports: MONTHLY
         # - yearly reports: YEARLY
-        print("[DAEMON] Publishing to Notion...")
-        try:
-            from scripts.frontmatter import is_ready_for_sync
-            from scripts.notion_publisher import NotionPublisher
+        if not db.is_notion_publishing_enabled():
+            print("[DAEMON] ⏸️  Notion publishing DISABLED via toggle")
+        else:
+            print("[DAEMON] Publishing to Notion...")
+            try:
+                from scripts.frontmatter import is_ready_for_sync
+                from scripts.notion_publisher import NotionPublisher
 
-            publisher = NotionPublisher()
-            output_path = Path(config.OUTPUT_DIR)
-            reports_path = output_path / "reports"
-            research_path = output_path / "research"
+                publisher = NotionPublisher()
+                output_path = Path(config.OUTPUT_DIR)
+                reports_path = output_path / "reports"
+                research_path = output_path / "research"
 
-            today = date.today()
-            iso_cal = today.isocalendar()
+                today = date.today()
+                iso_cal = today.isocalendar()
 
-            # Track results
-            published = 0
-            skipped_schedule = 0
-            skipped_status = 0
-            failed = 0
+                # Track results
+                published = 0
+                skipped_schedule = 0
+                skipped_status = 0
+                failed = 0
 
-            # Define document type schedules
-            def should_sync_doc(filepath: Path, doc_type: str) -> bool:
-                """Check if document should be synced based on type-aware schedule."""
-                filename = filepath.name.lower()
+                # Define document type schedules
+                def should_sync_doc(filepath: Path, doc_type: str) -> bool:
+                    """Check if document should be synced based on type-aware schedule."""
+                    filename = filepath.name.lower()
 
-                # EXCLUDED from Notion sync - internal task outputs
-                excluded_patterns = [
-                    "monitor_",
-                    "data_fetch_",
-                    "calc_",
-                    "code_",
-                    "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
-                    "act-",  # Action task files
-                    "file_index",  # Index files
-                ]
-                if any(p in filename for p in excluded_patterns):
-                    return False
+                    # EXCLUDED from Notion sync - internal task outputs
+                    excluded_patterns = [
+                        "monitor_",
+                        "data_fetch_",
+                        "calc_",
+                        "code_",
+                        "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
+                        "act-",  # Action task files
+                        "file_index",  # Index files
+                    ]
+                    if any(p in filename for p in excluded_patterns):
+                        return False
 
-                # Daily documents - always sync if ready
-                daily_patterns = [
-                    "journal_",
-                    "premarket_",
-                    "pre_market_",
-                    "research_",
-                    "news_scan_",
-                    "catalyst",
-                    "economic_",
-                    "calendar_",
-                ]
-                if any(p in filename for p in daily_patterns):
+                    # Daily documents - always sync if ready
+                    daily_patterns = [
+                        "journal_",
+                        "premarket_",
+                        "pre_market_",
+                        "research_",
+                        "news_scan_",
+                        "catalyst",
+                        "economic_",
+                        "calendar_",
+                    ]
+                    if any(p in filename for p in daily_patterns):
+                        return True
+
+                    # Weekly reports - only on weekends or if not synced this week
+                    if "weekly_" in filename or "rundown_" in filename:
+                        sync_key = f"notion_sync_weekly_{today.year}_{iso_cal[1]}"
+                        if db.should_run_task(sync_key):
+                            db.mark_task_run(sync_key)
+                            return True
+                        return False
+
+                    # Monthly reports - only once per month
+                    if "monthly_" in filename:
+                        sync_key = f"notion_sync_monthly_{today.year}_{today.month:02d}"
+                        if db.should_run_task(sync_key):
+                            db.mark_task_run(sync_key)
+                            return True
+                        return False
+
+                    # Yearly reports - only once per year
+                    if "yearly_" in filename or "1y_" in filename:
+                        sync_key = f"notion_sync_yearly_{today.year}"
+                        if db.should_run_task(sync_key):
+                            db.mark_task_run(sync_key)
+                            return True
+                        return False
+
+                    # Default: sync daily documents
                     return True
 
-                # Weekly reports - only on weekends or if not synced this week
-                if "weekly_" in filename or "rundown_" in filename:
-                    sync_key = f"notion_sync_weekly_{today.year}_{iso_cal[1]}"
-                    if db.should_run_task(sync_key):
-                        db.mark_task_run(sync_key)
-                        return True
-                    return False
+                # Collect all markdown files
+                all_md_files = []
+                for search_path in [output_path, reports_path, research_path]:
+                    if search_path.exists():
+                        all_md_files.extend(search_path.glob("*.md"))
+                        all_md_files.extend(search_path.glob("**/*.md"))
 
-                # Monthly reports - only once per month
-                if "monthly_" in filename:
-                    sync_key = f"notion_sync_monthly_{today.year}_{today.month:02d}"
-                    if db.should_run_task(sync_key):
-                        db.mark_task_run(sync_key)
-                        return True
-                    return False
+                # Deduplicate
+                seen = set()
+                md_files = []
+                for f in all_md_files:
+                    if f not in seen and "FILE_INDEX" not in f.name and "/archive/" not in str(f).replace("\\", "/"):
+                        seen.add(f)
+                        md_files.append(f)
 
-                # Yearly reports - only once per year
-                if "yearly_" in filename or "1y_" in filename:
-                    sync_key = f"notion_sync_yearly_{today.year}"
-                    if db.should_run_task(sync_key):
-                        db.mark_task_run(sync_key)
-                        return True
-                    return False
-
-                # Default: sync daily documents
-                return True
-
-            # Collect all markdown files
-            all_md_files = []
-            for search_path in [output_path, reports_path, research_path]:
-                if search_path.exists():
-                    all_md_files.extend(search_path.glob("*.md"))
-                    all_md_files.extend(search_path.glob("**/*.md"))
-
-            # Deduplicate
-            seen = set()
-            md_files = []
-            for f in all_md_files:
-                if f not in seen and "FILE_INDEX" not in f.name and "/archive/" not in str(f).replace("\\", "/"):
-                    seen.add(f)
-                    md_files.append(f)
-
-            for filepath in md_files:
-                try:
-                    content = filepath.read_text(encoding="utf-8")
-
-                    # Check if document is ready for sync (has proper frontmatter status)
-                    # Documents without frontmatter or with status != published/complete should NOT sync
+                for filepath in md_files:
                     try:
-                        if not is_ready_for_sync(content):
+                        content = filepath.read_text(encoding="utf-8")
+
+                        # Check if document is ready for sync (has proper frontmatter status)
+                        # Documents without frontmatter or with status != published/complete should NOT sync
+                        try:
+                            if not is_ready_for_sync(content):
+                                skipped_status += 1
+                                continue
+                        except Exception as e:
+                            # If frontmatter check fails, skip this file - don't sync unready documents
+                            logger.debug(f"Frontmatter check failed for {filepath.name}: {e}")
                             skipped_status += 1
                             continue
+
+                        # Check type-aware schedule
+                        doc_type = "journal" if "Journal_" in filepath.name else "reports"
+                        if not should_sync_doc(filepath, doc_type):
+                            skipped_schedule += 1
+                            continue
+
+                        # Sync the file
+                        result = publisher.sync_file(str(filepath), force=False)
+                        if result.get("skipped"):
+                            # File unchanged - this is fine
+                            pass
+                        else:
+                            published += 1
+                            print(f"  ✓ {filepath.name} → {result.get('type', 'notes')}")
+
                     except Exception as e:
-                        # If frontmatter check fails, skip this file - don't sync unready documents
-                        logger.debug(f"Frontmatter check failed for {filepath.name}: {e}")
-                        skipped_status += 1
-                        continue
+                        failed += 1
+                        logger.debug(f"Failed to sync {filepath.name}: {e}")
 
-                    # Check type-aware schedule
-                    doc_type = "journal" if "Journal_" in filepath.name else "reports"
-                    if not should_sync_doc(filepath, doc_type):
-                        skipped_schedule += 1
-                        continue
+                # Summary
+                if published > 0:
+                    print(f"[DAEMON] Published {published} documents to Notion")
+                if skipped_schedule > 0:
+                    print(f"[DAEMON] Skipped {skipped_schedule} docs (not scheduled yet)")
+                if skipped_status > 0:
+                    print(f"[DAEMON] Skipped {skipped_status} docs (not ready - draft/not AI processed)")
+                if failed > 0:
+                    print(f"[DAEMON] Failed to publish {failed} documents")
 
-                    # Sync the file
-                    result = publisher.sync_file(str(filepath), force=False)
-                    if result.get("skipped"):
-                        # File unchanged - this is fine
-                        pass
-                    else:
-                        published += 1
-                        print(f"  ✓ {filepath.name} → {result.get('type', 'notes')}")
-
-                except Exception as e:
-                    failed += 1
-                    logger.debug(f"Failed to sync {filepath.name}: {e}")
-
-            # Summary
-            if published > 0:
-                print(f"[DAEMON] Published {published} documents to Notion")
-            if skipped_schedule > 0:
-                print(f"[DAEMON] Skipped {skipped_schedule} docs (not scheduled yet)")
-            if skipped_status > 0:
-                print(f"[DAEMON] Skipped {skipped_status} docs (not ready - draft/not AI processed)")
-            if failed > 0:
-                print(f"[DAEMON] Failed to publish {failed} documents")
-
-        except ImportError:
-            print("[DAEMON] Notion publisher not available, skipping")
-        except ValueError as e:
-            # Missing API keys
-            print(f"[DAEMON] Notion not configured: {e}")
-        except Exception as notion_err:
-            print(f"[DAEMON] Notion publishing error: {notion_err}")
+            except ImportError:
+                print("[DAEMON] Notion publisher not available, skipping")
+            except ValueError as e:
+                # Missing API keys
+                print(f"[DAEMON] Notion not configured: {e}")
+            except Exception as notion_err:
+                print(f"[DAEMON] Notion publishing error: {notion_err}")
 
     except ImportError as e:
         print(f"[DAEMON] Post-analysis skipped (missing module): {e}")
@@ -1131,6 +1138,16 @@ Examples:
     )
     parser.add_argument("--interval-min", type=int, default=1, help="Minutes between daemon runs (default: 1)")
 
+    # Feature toggles
+    parser.add_argument(
+        "--toggle",
+        choices=["notion", "tasks", "insights"],
+        help="Toggle a feature on/off (use with --enable or --disable)",
+    )
+    parser.add_argument("--enable", action="store_true", help="Enable the specified feature")
+    parser.add_argument("--disable", action="store_true", help="Disable the specified feature")
+    parser.add_argument("--show-toggles", action="store_true", help="Show current feature toggle states")
+
     # Document lifecycle management
     parser.add_argument(
         "--lifecycle",
@@ -1157,6 +1174,45 @@ Examples:
     if args.status:
         print_banner()
         print_status()
+        return
+
+    # Feature toggle management
+    if args.show_toggles:
+        from db_manager import get_db
+
+        db = get_db()
+        print("\n┌─────────────────────────────────────────────────────────────┐")
+        print("│                     FEATURE TOGGLES                          │")
+        print("├─────────────────────────────────────────────────────────────┤")
+        notion_status = "✅ ENABLED" if db.is_notion_publishing_enabled() else "⏸️  DISABLED"
+        tasks_status = "✅ ENABLED" if db.is_task_execution_enabled() else "⏸️  DISABLED"
+        insights_status = "✅ ENABLED" if db.is_insights_extraction_enabled() else "⏸️  DISABLED"
+        print(f"│  Notion Publishing:    {notion_status:<20}             │")
+        print(f"│  Task Execution:       {tasks_status:<20}             │")
+        print(f"│  Insights Extraction:  {insights_status:<20}             │")
+        print("├─────────────────────────────────────────────────────────────┤")
+        print("│  Toggle: python run.py --toggle notion --disable           │")
+        print("│          python run.py --toggle notion --enable            │")
+        print("└─────────────────────────────────────────────────────────────┘")
+        return
+
+    if args.toggle:
+        from db_manager import get_db
+
+        db = get_db()
+        if not args.enable and not args.disable:
+            print("Error: --toggle requires --enable or --disable")
+            return
+        enabled = args.enable
+        if args.toggle == "notion":
+            db.set_notion_publishing_enabled(enabled)
+            print(f"Notion publishing {'ENABLED' if enabled else 'DISABLED'}")
+        elif args.toggle == "tasks":
+            db.set_task_execution_enabled(enabled)
+            print(f"Task execution {'ENABLED' if enabled else 'DISABLED'}")
+        elif args.toggle == "insights":
+            db.set_insights_extraction_enabled(enabled)
+            print(f"Insights extraction {'ENABLED' if enabled else 'DISABLED'}")
         return
 
     # Single run mode (--once) - execute once and exit cleanly

@@ -62,7 +62,7 @@ NOTION_TYPES = [
     "charts",
     "economic",
     "institutional",
-    "premarket",
+    "Pre-Market",
     "analysis",
 ]
 
@@ -73,9 +73,9 @@ TYPE_PATTERNS = [
     (r"^journal_", "journal"),
     (r"^daily_", "journal"),
     # Pre-market plans
-    (r"^premarket_", "premarket"),
-    (r"^pre_market_", "premarket"),
-    (r"^pre-market", "premarket"),
+    (r"^premarket_", "Pre-Market"),
+    (r"^pre_market_", "Pre-Market"),
+    (r"^pre-market", "Pre-Market"),
     # Periodic reports
     (r"^weekly_", "reports"),
     (r"^monthly_", "reports"),

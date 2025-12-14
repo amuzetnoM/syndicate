@@ -565,7 +565,7 @@
             <div class="guide-header">
                 <h1>Technical Guide</h1>
                 <p class="subtitle">In-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system.</p>
-                <div class="version">Version 3.4.0</div>
+                <div class="version">Version 3.5.0</div>
             </div>
 
             <!-- Table of Contents -->
@@ -1155,6 +1155,34 @@ status: draft
 generated: 2025-12-05T10:30:00
 tags: [gold, xauusd, technical-analysis]
 ---</code></pre>
+
+                <h3>Feature Toggles (v3.5)</h3>
+                <p>Control pipeline behavior at runtime without code changes:</p>
+
+                <pre><code># Show current toggle states
+python run.py --show-toggles
+
+# Disable Notion publishing (useful for testing)
+python run.py --toggle notion --disable
+
+# Re-enable
+python run.py --toggle notion --enable
+
+# Available toggles: notion, tasks, insights</code></pre>
+
+                <p>Toggles are stored in the database and persist across restarts.</p>
+
+                <h3>Pipeline Audit Tool (v3.5)</h3>
+                <p>Comprehensive diagnostics for pipeline health:</p>
+
+                <pre><code># Run full audit
+python scripts/pipeline_audit.py
+
+# Clean orphan records (dry run)
+python scripts/pipeline_audit.py --cleanup
+
+# Actually execute cleanup
+python scripts/pipeline_audit.py --cleanup --execute</code></pre>
             </section>
 
             <section id="insights">

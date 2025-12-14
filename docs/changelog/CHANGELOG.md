@@ -1,6 +1,6 @@
 # ACTIVE DEVELOPMENT
 
-[![Version](https://img.shields.io/badge/version-3.4.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
@@ -11,10 +11,65 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+### HIGHLIGHTS
+
+##### Version [3.5.0] Released
+
+> 2025-12-14
+
+#### Added
+- **Feature Toggles System**
+  - Runtime toggles for Notion publishing, task execution, and insights extraction
+  - `--toggle notion --disable/--enable` CLI commands
+  - `--show-toggles` to display current toggle states
+  - Stored in `system_config` table for persistence across restarts
+  - Methods: `is_notion_publishing_enabled()`, `set_notion_publishing_enabled()`, etc.
+
+- **Pipeline Audit Tool** (`scripts/pipeline_audit.py`)
+  - Comprehensive diagnostic for entire pipeline health
+  - Audits: database integrity, frontmatter, insights, task execution, Notion sync, schedules
+  - `--cleanup` flag to remove orphan records (files deleted but DB entries remain)
+  - `--execute` flag to actually perform cleanup (dry-run by default)
+
+- **Draft Deduplication**
+  - Enhanced `register_document()` with UPSERT logic
+  - Prevents duplicate draft entries for same file path
+  - Status downgrade protection (published → draft blocked)
+  - Version increment tracking on content changes
+
+#### Fixed
+- **Publishing Duplicates** (ROOT CAUSE)
+  - Path normalization bug caused same file to be stored as both relative and absolute paths
+  - All sync functions now use `Path.resolve()` for consistent absolute paths
+  - Affects: `is_file_synced()`, `record_notion_sync()`, `get_notion_page_for_file()`, `clear_sync_for_file()`
+
+- **Silent Error Bypass in Daemon**
+  - Bare `except: pass` was syncing unready documents to Notion
+  - Now properly skips and logs files with frontmatter parse errors
+
+- **Invalid Action Types from AI**
+  - AI prompt was generating compound types like "research|monitoring"
+  - Fixed prompt to explicitly list valid action types
+  - Added `VALID_ACTION_TYPES` validation and normalization in `insights_engine.py`
+
+#### Changed
+- **Pre-Market Type Naming**
+  - Updated from `premarket` to `Pre-Market` for consistency with Notion
+  - Affects: `frontmatter.py`, `notion_publisher.py` type patterns and mappings
+
+- **Notion Sync Path Handling**
+  - `sync_file()` now uses `Path.resolve()` for deduplication consistency
+
+#### Maintenance
+- Cleaned 61 orphan database records (45 notion_sync + 16 document_lifecycle)
+- Applied frontmatter to files missing YAML headers
+
+---
+
+
 ## Engineering Roadmap
 
-
-[![Target](https://img.shields.io/badge/target-v3.4.0-blue.svg)]()
+[![Target](https://img.shields.io/badge/target-v3.6.0-blue.svg)]()
 [![Priority](https://img.shields.io/badge/priority-production_hardening-critical.svg)]()
 
 We are actively researching and implementing the next generation of Gold Standard's infrastructure. The following initiatives represent our current engineering focus, driven by real-world production insights gathered from VM deployments and continuous operation cycles. Each area has been identified through systematic analysis of operational patterns, failure modes, and scalability requirements.

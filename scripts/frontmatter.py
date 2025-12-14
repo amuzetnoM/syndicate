@@ -30,7 +30,7 @@ FILE_TYPE_PATTERNS = {
         r"^journal_.*\.md$",
         r"^daily_.*\.md$",
     ],
-    "premarket": [
+    "Pre-Market": [
         r"^premarket_.*\.md$",
         r"^pre_market_.*\.md$",
         r"^pre-market.*\.md$",
@@ -128,7 +128,7 @@ KEYWORD_TAG_PATTERNS = [
 
 # Default tags added per document type
 TYPE_DEFAULT_TAGS = {
-    "premarket": ["Insights", "Strategy"],
+    "Pre-Market": ["Insights", "Strategy"],
     "journal": ["Daily"],
     "analysis": ["Technical"],
     "research": ["Deep-Dive"],
