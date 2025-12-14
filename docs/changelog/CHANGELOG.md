@@ -13,9 +13,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### HIGHLIGHTS
 
-##### Version [3.5.0] Released
+> Version 3.5.0 Release (2025-12-14)
 
-> 2025-12-14
+
+Summary: Feature Toggles, Pipeline Audit, and Draft Deduplication — focused on operational control and Notion sync reliability.
+
+Key highlights:
+- **Feature Toggles:** Runtime controls for Notion publishing, task execution, and insights; persisted in `system_config` with CLI helpers such as `--toggle` and `--show-toggles`.
+- **Pipeline Audit Tool:** `scripts/pipeline_audit.py` provides comprehensive diagnostics and safe cleanup (`--cleanup`/`--execute`) for orphaned database records and pipeline health.
+- **Draft Deduplication:** UPSERT-backed `register_document()` prevents duplicate drafts, enforces publish-only sync, and tracks version changes on content updates.
+- **Reliability fixes:** Important fixes include path normalization for Notion syncs, improved frontmatter error handling, and AI action type validation.
+
+See the "Added", "Fixed", and "Changed" sections below for full details.
 
 #### Added
 - **Feature Toggles System**
