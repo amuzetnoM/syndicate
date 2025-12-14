@@ -602,7 +602,7 @@ class NotionPublisher:
         Returns:
             Dict with page_id, url, type, tags, and 'skipped' flag
         """
-        path = Path(filepath)
+        path = Path(filepath).resolve()  # CRITICAL: Always use absolute resolved path for consistent dedup
 
         if not path.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
