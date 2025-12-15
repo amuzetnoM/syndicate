@@ -1,0 +1,18 @@
+[Unit]
+Description=Gold Standard Daily Analysis Trigger
+After=network-online.target docker.service
+Requires=gold-standard-compose.service
+
+[Service]
+Type=simple
+User=goldstandard
+WorkingDirectory=/mnt/newdisk/gold_standard/gold_standard_config
+EnvironmentFile=-/mnt/newdisk/gold_standard/gold_standard_config/.env
+ExecStart=/usr/bin/flock -n /tmp/gold_standard.lock /bin/bash -lc '/mnt/newdisk/gold_standard/gold_standard_config/venv312/bin/python /mnt/newdisk/gold_standard/gold_standard_config/run.py --daily'
+StandardOutput=append:/var/log/gold_standard/daily.log
+StandardError=append:/var/log/gold_standard/daily.err
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
