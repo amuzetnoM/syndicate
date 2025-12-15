@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Gold Standard Daily Analysis at 05:00 (randomized delay up to 30m)
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target

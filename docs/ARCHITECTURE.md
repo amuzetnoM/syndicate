@@ -1,4 +1,4 @@
-# Gold Standard — System Architecture (Enhanced)
+# Gold Standard — System Architecture
 
 ## Purpose
 This document summarizes the system architecture, design rationale, and operational conventions for Gold Standard. It is an actionable reference for contributors, maintainers, and operators — covering module responsibilities, data flow, persistence, concurrency, testing, and deployment.
