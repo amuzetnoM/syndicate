@@ -1,0 +1,19 @@
+# Digest Bot Requirements
+# Gold Standard Daily Summarizer Dependencies
+
+# Core
+click>=8.1.0
+python-dotenv>=1.0.0
+
+# LLM Providers (install based on your choice)
+# Default: llama.cpp
+llama-cpp-python>=0.2.0
+
+# Optional: Ollama (uses HTTP, no extra deps)
+# requests>=2.31.0  # Usually already installed
+
+# Discord Bot (for Discord integration)
+discord.py>=2.3.0
+
+# Optional: Enhanced logging
+# rich>=13.0.0
