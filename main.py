@@ -92,7 +92,14 @@ except Exception:
                 return None
 
     ta = _FallbackTA()
-import google.generativeai as genai
+# Optional: Google Gemini (GenAI) - import lazily and handle missing package gracefully
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except Exception:
+    genai = None
+    GENAI_AVAILABLE = False
+
 import mplfinance as mpf
 import yfinance as yf
 from colorama import init
@@ -113,6 +120,8 @@ class GeminiProvider(LLMProvider):
     """Google Gemini API provider."""
 
     def __init__(self, model_name: str = "models/gemini-pro-latest"):
+        if not GENAI_AVAILABLE:
+            raise RuntimeError("Gemini provider not available: google.generativeai package not installed or configured")
         self.model = genai.GenerativeModel(model_name)
         self.name = "Gemini"
 

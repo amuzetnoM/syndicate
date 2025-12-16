@@ -295,9 +295,16 @@ def generate_frontmatter(
     tags: Optional[List[str]] = None,
     title: Optional[str] = None,
     custom_fields: Optional[Dict[str, Any]] = None,
-    status: str = "draft",
+    status: Optional[str] = None,
     ai_processed: bool = False,
 ) -> str:
+    """
+    Generate YAML frontmatter for a markdown file.
+
+    Policy: When `status` is not provided, prefer a conservative default:
+      - If `ai_processed` is True -> set status to 'in_progress'
+      - Otherwise -> set status to 'draft'
+    """
     """
     Generate YAML frontmatter for a markdown file.
 
@@ -321,6 +328,10 @@ def generate_frontmatter(
     # Auto-extract tags if not provided
     if tags is None:
         tags = extract_tags_from_content(content)
+
+    # Determine conservative default status when not explicitly provided
+    if status is None:
+        status = "in_progress" if ai_processed else "draft"
 
     # Add type-specific default tags
     if doc_type in TYPE_DEFAULT_TAGS:
@@ -518,19 +529,16 @@ def is_ready_for_sync(content: str) -> bool:
     """
     Check if document is ready for Notion sync.
 
-    A document is ready for sync if:
-    - status is 'published' or 'complete', OR
-    - status is 'in_progress' AND ai_processed is True
+    Conservative policy:
+    - Only documents with status 'published' or 'complete' are eligible for sync.
+
+    This avoids accidental publication of drafts or in-progress AI outputs. Promotion
+    to 'published' should be an explicit action (manual review or a trusted automation).
     """
     frontmatter, _ = parse_frontmatter(content)
     status = frontmatter.get("status", "draft")
-    ai_processed = frontmatter.get("ai_processed", False)
 
-    if status in ("published", "complete"):
-        return True
-    if status == "in_progress" and ai_processed:
-        return True
-    return False
+    return status in ("published", "complete")
 
 
 def is_draft(content: str) -> bool:

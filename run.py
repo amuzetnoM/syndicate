@@ -542,8 +542,14 @@ def _run_post_analysis_tasks():
         # Tasks execute when: scheduled_for <= now OR scheduled_for IS NULL
         if not db.is_task_execution_enabled():
             print("[DAEMON] ⏸️  Task execution DISABLED via toggle")
-        elif model:
-            print("[DAEMON] Checking for ready-to-execute tasks...")
+        elif db.is_task_execution_enabled():
+            # Allow task execution even if no AI provider is available. Some tasks
+            # don't require an LLM (data fetches, monitoring, calculations) and
+            # should still run. Individual handlers should check self.model as needed.
+            if model is None:
+                print("[DAEMON] Checking for ready-to-execute tasks (no AI provider; AI tasks will be skipped)...")
+            else:
+                print("[DAEMON] Checking for ready-to-execute tasks...")
 
             # Get system health first
             try:
@@ -718,12 +724,14 @@ def _run_post_analysis_tasks():
                     ai_processed = any(marker in content for marker in ai_markers)
 
                     # Also check for NO AI markers
-                    no_ai_markers = ["[NO AI MODE]", "AI disabled", "no AI", "skeleton report", "[PENDING AI"]
+                    # Note: include closing bracket for '[PENDING AI]' to avoid accidental matches
+                    no_ai_markers = ["[NO AI MODE]", "AI disabled", "no AI", "skeleton report", "[PENDING AI]"]
                     if any(marker.lower() in content.lower() for marker in no_ai_markers):
                         ai_processed = False
 
-                    # Set status: published if AI processed (ready for Notion), draft if not
-                    status = "published" if ai_processed else "draft"
+                    # Set status conservatively: mark AI-processed docs as 'in_progress' (not auto-published).
+                    # This prevents accidental publication of drafts; publishing requires explicit promotion.
+                    status = "in_progress" if ai_processed else "draft"
 
                     # Add frontmatter based on filename with proper status
                     updated = add_frontmatter(content, md_file.name, status=status, ai_processed=ai_processed)
