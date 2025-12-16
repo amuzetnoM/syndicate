@@ -19,6 +19,7 @@ Provides intelligent redundancy control, date-wise organization, and task manage
 
 import sqlite3
 from contextlib import contextmanager
+import logging
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -1292,6 +1293,7 @@ class DatabaseManager:
     def save_action_insights(self, actions: list) -> int:
         """Save multiple action insights (batch operation)."""
         saved = 0
+        logger = logging.getLogger("DatabaseManager")
         for action in actions:
             try:
                 # Support both dataclass and dict
@@ -1310,10 +1312,37 @@ class DatabaseManager:
                         metadata=str(action.metadata) if action.metadata else None,
                     )
                 else:
-                    self.save_action_insight(**action)
+                    # Filter dict keys to only those accepted by save_action_insight to avoid
+                    # TypeError when external dicts include extra fields.
+                    allowed = {
+                        "action_id",
+                        "action_type",
+                        "title",
+                        "description",
+                        "priority",
+                        "status",
+                        "source_report",
+                        "source_context",
+                        "deadline",
+                        "scheduled_for",
+                        "result",
+                        "created_at",
+                        "completed_at",
+                        "retry_count",
+                        "last_error",
+                        "metadata",
+                    }
+                    filtered = {k: v for k, v in action.items() if k in allowed}
+                    # Normalize metadata to string for DB binding
+                    if filtered.get("metadata") is not None and not isinstance(filtered.get("metadata"), str):
+                        filtered["metadata"] = str(filtered["metadata"])
+                    self.save_action_insight(**filtered)
                 saved += 1
-            except Exception:
+            except Exception as exc:  # pragma: no cover - defensive logging
+                # Log the exception so callers can diagnose failures
+                logger.exception("Failed to save action insight: %s", getattr(action, "action_id", action))
                 continue
+
         return saved
 
     def save_action_insight(
@@ -1324,6 +1353,11 @@ class DatabaseManager:
         description: str = None,
         priority: str = "medium",
         status: str = "pending",
+        result: str = None,
+        created_at: str = None,
+        completed_at: str = None,
+        retry_count: int = 0,
+        last_error: str = None,
         source_report: str = None,
         source_context: str = None,
         deadline: str = None,
@@ -1341,16 +1375,23 @@ class DatabaseManager:
             cursor = conn.cursor()
             now = datetime.now().isoformat()
 
+            # Use provided created_at if present, otherwise use now
+            created = created_at or now
+
             cursor.execute(
                 """
                 INSERT INTO action_insights
                 (action_id, action_type, title, description, priority, status,
-                 source_report, source_context, deadline, scheduled_for, created_at, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source_report, source_context, deadline, scheduled_for, result, created_at, completed_at, retry_count, last_error, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(action_id) DO UPDATE SET
                     status = excluded.status,
                     description = excluded.description,
-                    scheduled_for = excluded.scheduled_for
+                    scheduled_for = excluded.scheduled_for,
+                    result = excluded.result,
+                    retry_count = excluded.retry_count,
+                    last_error = excluded.last_error,
+                    metadata = COALESCE(excluded.metadata, action_insights.metadata)
             """,
                 (
                     action_id,
@@ -1363,7 +1404,11 @@ class DatabaseManager:
                     source_context,
                     deadline,
                     scheduled_for,
-                    now,
+                    result,
+                    created,
+                    completed_at,
+                    retry_count,
+                    last_error,
                     metadata,
                 ),
             )

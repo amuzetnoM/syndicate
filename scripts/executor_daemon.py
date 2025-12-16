@@ -374,7 +374,10 @@ class ExecutorDaemon:
                 title=action_dict["title"],
                 description=action_dict.get("description", ""),
                 priority=action_dict.get("priority", "medium"),
-                status="in_progress",
+                # Start as 'pending' so the TaskExecutor can pick it up and mark it
+                # in-progress itself. Previously this was set to 'in_progress'
+                # which caused the executor to find zero pending tasks.
+                status="pending",
                 source_report=action_dict.get("source_report", ""),
                 source_context=action_dict.get("source_context", ""),
                 deadline=action_dict.get("deadline"),

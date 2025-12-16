@@ -2,6 +2,11 @@
 """Check LLM providers (Ollama then local) and run a quick generation test."""
 import os
 import logging
+import sys
+from pathlib import Path
+
+# Ensure project root is importable
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from main import Config, FallbackLLMProvider, setup_logging
 

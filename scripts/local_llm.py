@@ -581,7 +581,8 @@ class OllamaLLM:
         try:
             import requests
 
-            resp = requests.get(f"{self._host}/api/tags", timeout=5)
+            timeout = int(os.environ.get("OLLAMA_TIMEOUT_S", "10"))
+            resp = requests.get(f"{self._host}/api/tags", timeout=timeout)
             if resp.status_code == 200:
                 self._available = True
                 models = resp.json().get("models", [])
@@ -656,6 +657,7 @@ class OllamaLLM:
         try:
             import requests
 
+            timeout = int(os.environ.get("OLLAMA_TIMEOUT_S", "600"))
             resp = requests.post(
                 f"{self._host}/api/generate",
                 json={
@@ -667,7 +669,7 @@ class OllamaLLM:
                     },
                     "stream": False,
                 },
-                timeout=120,
+                timeout=timeout,
             )
             resp.raise_for_status()
             return resp.json()["response"]
@@ -701,6 +703,7 @@ class OllamaLLM:
             import requests
 
             start = time.time()
+            timeout = int(os.environ.get("OLLAMA_TIMEOUT_S", "600"))
             resp = requests.post(
                 f"{self._host}/api/chat",
                 json={
@@ -712,7 +715,7 @@ class OllamaLLM:
                     },
                     "stream": False,
                 },
-                timeout=120,
+                timeout=timeout,
             )
             resp.raise_for_status()
             data = resp.json()
