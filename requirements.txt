@@ -52,6 +52,7 @@ colorama>=0.4.6               # Cross-platform colored terminal output
 filelock>=3.0.0               # File-based locking for concurrent access
 python-dotenv>=1.0.0          # Environment variable management from .env files
 tqdm>=4.66.0                  # Progress bars for downloads
+prometheus_client>=0.14.1     # Prometheus metrics client
 
 # -----------------------------------------------------------------------------
 # Testing (included for CI/CD compatibility)
