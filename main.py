@@ -504,9 +504,10 @@ class FallbackLLMProvider(LLMProvider):
                     prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
                     resp_text = getattr(result, "text", str(result))
                     db.set_llm_cache(prompt_hash, prompt, resp_text)
-                    # Log usage placeholder (tokens/cost may be provider-specific)
+                    # Extract tokens/cost if provider reports them
                     provider_name = getattr(self._current, "name", "unknown")
-                    db.log_llm_usage(provider_name, tokens_used=0, cost=0.0)
+                    tokens_used, cost = _extract_usage_from_response(result)
+                    db.log_llm_usage(provider_name, tokens_used=tokens_used, cost=cost)
                 except Exception:
                     pass
 
@@ -544,6 +545,37 @@ def create_llm_provider(config: "Config", logger: logging.Logger) -> Optional[LL
 
     logger.warning("[LLM] No AI provider available")
     return None
+
+
+def _extract_usage_from_response(resp: Any) -> tuple[int, float]:
+    """Attempt to extract tokens_used and cost from provider response object/dict.
+
+    Returns (tokens_used, cost) with defaults (0, 0.0).
+    """
+    tokens = 0
+    cost = 0.0
+    try:
+        # If response is an object with .metadata or .usage
+        if hasattr(resp, "metadata") and isinstance(resp.metadata, dict):
+            meta = resp.metadata
+            tokens = int(meta.get("tokens", meta.get("tokenCount", 0)) or 0)
+            cost = float(meta.get("cost", 0.0) or 0.0)
+        elif isinstance(resp, dict):
+            meta = resp.get("usage") or resp.get("metadata") or {}
+            if isinstance(meta, dict):
+                tokens = int(meta.get("total_tokens", meta.get("tokens", 0)) or 0)
+                cost = float(meta.get("cost", 0.0) or 0.0)
+        else:
+            # Some providers return a plain object with attributes
+            if hasattr(resp, "usage"):
+                usage = getattr(resp, "usage")
+                if isinstance(usage, dict):
+                    tokens = int(usage.get("total_tokens", 0) or 0)
+            if hasattr(resp, "token_usage"):
+                tokens = int(getattr(resp, "token_usage") or 0)
+    except Exception:
+        pass
+    return tokens, cost
 
 
 # ==========================================
@@ -779,8 +811,7 @@ class Cortex:
     def __init__(self, config: Config, logger: logging.Logger):
         self.config = config
         self.logger = logger
-        # Cortex persistence will prefer DB-backed single-row storage
-        self.lock = filelock.FileLock(config.LOCK_FILE, timeout=10)
+        # Legacy filelock removed; use DB-backed cortex_memory exclusively with file fallback migration
         self.memory = self._load_memory()
 
     def _load_memory(self) -> Dict[str, Any]:
@@ -816,6 +847,19 @@ class Cortex:
             if mem:
                 self.logger.info("Loaded cortex memory from database (cortex_memory table)")
                 return {**default_memory, **mem}
+
+            # If DB has no cortex_memory yet, try migrating legacy memory file into DB
+            if os.path.exists(self.config.MEMORY_FILE):
+                try:
+                    with open(self.config.MEMORY_FILE, "r", encoding="utf-8") as f:
+                        file_mem = json.load(f)
+                    db.set_cortex_memory(file_mem)
+                    self.logger.info("Migrated legacy memory file into DB cortex_memory and will use DB going forward")
+                    # Optionally keep file as backup; do not require filelock
+                    return {**default_memory, **file_mem}
+                except Exception as e:
+                    self.logger.warning(f"Failed to migrate memory file to DB: {e}")
+
         except Exception:
             # DB unavailable - fall back to file-based memory as legacy behavior
             self.logger.debug("DB unavailable for cortex memory; using file fallback")

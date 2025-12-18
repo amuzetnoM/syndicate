@@ -374,6 +374,25 @@ class TaskExecutor:
                     except Exception:
                         pass
 
+                # Persist status and execution log to DB if available
+                try:
+                    from db_manager import get_db
+
+                    db = get_db()
+                    # Map success/failure to DB status
+                    status = "completed" if result.success else "failed"
+                    db.update_action_status(action.action_id, status, str(result.result_data) if result.result_data else result.error_message)
+                    db.log_task_execution(
+                        action.action_id,
+                        success=result.success,
+                        result_data=str(result.result_data) if result.result_data else None,
+                        execution_time_ms=result.execution_time_ms,
+                        error_message=result.error_message,
+                        artifacts=";".join(result.artifacts) if result.artifacts else None,
+                    )
+                except Exception:
+                    pass
+
         self._log_summary(results)
         return results
 

@@ -551,6 +551,58 @@ class ExecutorDaemon:
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
         self._heartbeat_thread.start()
 
+    def _start_http_health(self, host: str = "127.0.0.1", port: int = 8001):
+        """Start a simple Flask HTTP health endpoint in a background thread (best-effort)."""
+        try:
+            from flask import Flask, jsonify
+
+            app = Flask(__name__)
+
+            @app.route("/health")
+            def health():
+                return jsonify(self.health_check())
+
+            def run_app():
+                try:
+                    app.run(host=host, port=port, debug=False, use_reloader=False)
+                except Exception as e:
+                    self.logger.debug(f"Health server error: {e}")
+
+            t = threading.Thread(target=run_app, daemon=True)
+            t.start()
+            self.logger.info(f"HTTP health endpoint available at http://{host}:{port}/health")
+        except Exception:
+            self.logger.debug("Flask not available or failed to start health endpoint; skipping HTTP health server")
+
+    def _attempt_leader_election(self, ttl_seconds: int = 120) -> bool:
+        """Try to become the leader by writing to system_config if empty or stale."""
+        try:
+            db = self._get_db()
+            key = "executor_leader"
+            cur = db.get_config(key, None)
+            now_iso = datetime.now().isoformat()
+            if not cur:
+                db.set_config(key, f"{self.worker_id}|{now_iso}", "Current executor leader")
+                self.logger.info(f"Became executor leader: {self.worker_id}")
+                return True
+            else:
+                parts = cur.split("|")
+                if len(parts) >= 2:
+                    leader_ts = parts[1]
+                    try:
+                        leader_dt = datetime.fromisoformat(leader_ts)
+                        if (datetime.now() - leader_dt).total_seconds() > ttl_seconds:
+                            # Steal leadership
+                            db.set_config(key, f"{self.worker_id}|{now_iso}", "Current executor leader")
+                            self.logger.info(f"Stole executor leadership: {self.worker_id}")
+                            return True
+                    except Exception:
+                        db.set_config(key, f"{self.worker_id}|{now_iso}", "Current executor leader")
+                        return True
+        except Exception as e:
+            self.logger.debug(f"Leader election error: {e}")
+        return False
+
     # ══════════════════════════════════════════════════════════════════════════
     # MAIN LOOPS
     # ══════════════════════════════════════════════════════════════════════════
@@ -613,13 +665,27 @@ class ExecutorDaemon:
         # Start heartbeat
         self._start_heartbeat()
 
+        # Start HTTP health endpoint (best-effort)
+        self._start_http_health()
+
+        # Attempt to become leader; only leader performs work (supports HA)
+        self._is_leader = self._attempt_leader_election()
+        if not getattr(self, "_is_leader", False):
+            self.logger.info("Not leader on startup; running as standby and will attempt periodic election")
+
         last_orphan_check = time.time()
 
         while not self._shutdown_requested:
             try:
-                # Poll and execute
+                # Leader only: poll and execute
                 self.stats["last_poll_at"] = datetime.now().isoformat()
-                self.poll_and_execute()
+                if getattr(self, "_is_leader", False):
+                    self.poll_and_execute()
+                else:
+                    # Periodically attempt to become leader
+                    if self._attempt_leader_election():
+                        self._is_leader = True
+                        self.logger.info("Promoted to leader; resuming task execution")
 
                 # Periodic orphan recovery
                 if time.time() - last_orphan_check > ORPHAN_CHECK_INTERVAL_SECONDS:
