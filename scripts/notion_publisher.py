@@ -21,7 +21,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -611,6 +611,56 @@ class NotionPublisher:
 
         content = path.read_text(encoding="utf-8")
         filename = path.name
+
+        # Normalize path and compute file hash for DB checks
+        normalized_path = str(path)
+        file_hash = None
+        if DB_AVAILABLE:
+            try:
+                db = get_db()
+                file_hash = db.get_file_hash(normalized_path)
+                # Check document lifecycle to avoid duplicate publishes
+                doc = db.get_document_status(normalized_path)
+                if doc:
+                    status = doc.get("status")
+                    # If already published and hash matches, skip
+                    if status == "published" and doc.get("content_hash") == file_hash and not force:
+                        return {
+                            "page_id": doc.get("notion_page_id", ""),
+                            "url": "",
+                            "type": doc.get("doc_type", doc_type or "notes"),
+                            "tags": [],
+                            "skipped": True,
+                            "reason": "already_published",
+                        }
+
+                    # If another process recently marked it in_progress, skip to avoid racing publishes
+                    if status == "in_progress" and not force:
+                        try:
+                            updated_at = doc.get("updated_at")
+                            if updated_at:
+                                updated_dt = datetime.fromisoformat(updated_at)
+                                if (datetime.now() - updated_dt).total_seconds() < 900:  # 15 minutes
+                                    return {
+                                        "page_id": "",
+                                        "url": "",
+                                        "type": doc.get("doc_type", doc_type or "notes"),
+                                        "tags": [],
+                                        "skipped": True,
+                                        "reason": "publish_in_progress",
+                                    }
+                        except Exception:
+                            # If parsing fails, continue to attempt claim
+                            pass
+
+                # Attempt to claim the document by registering/upserting as in_progress
+                try:
+                    db.register_document(normalized_path, doc_type or "notes", status="in_progress", content_hash=file_hash)
+                except Exception:
+                    pass
+            except Exception:
+                # DB checks are best-effort; continue if DB unavailable
+                pass
 
         # Check document lifecycle status - only sync ready documents
         # Ready = published OR (in_progress AND ai_processed)
