@@ -115,6 +115,7 @@ env.bak/
 venv.bak/
 .virtualenv/
 Pipfile.lock
+.env
 
 # -----------------------------------------------------------------------------
 # Spyder Project
