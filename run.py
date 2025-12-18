@@ -34,8 +34,9 @@ sys.path.insert(0, PROJECT_ROOT)
 # Task execution configuration
 MAX_RETRIES = 3  # Max retries before marking task as failed
 
-# Executor daemon mode - set to True to use detached executor
-USE_DETACHED_EXECUTOR = os.environ.get("GOST_DETACHED_EXECUTOR", "0") == "1"
+# Executor daemon mode - default to enabled when not explicitly disabled.
+# Use GOST_DETACHED_EXECUTOR=0 to force inline executor for testing.
+USE_DETACHED_EXECUTOR = os.environ.get("GOST_DETACHED_EXECUTOR", "1") != "0"
 
 
 def spawn_executor_daemon() -> bool:
@@ -390,6 +391,13 @@ def run_daemon(no_ai: bool = False, interval_hours: int = 0, interval_minutes: i
 
         insights_available = True
         print("[DAEMON] Insights & Task systems loaded")
+        # If configured, attempt to spawn the detached executor daemon for robust task execution
+        if USE_DETACHED_EXECUTOR:
+            spawned = spawn_executor_daemon()
+            if spawned:
+                print("[DAEMON] Detached executor active or spawned successfully")
+            else:
+                print("[DAEMON] Detached executor not available; will run inline")
     except ImportError as e:
         insights_available = False
         print(f"[DAEMON] Insights systems not available: {e}")

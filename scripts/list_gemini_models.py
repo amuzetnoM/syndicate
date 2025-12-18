@@ -13,7 +13,21 @@
 import json
 import sys
 
-import google.generativeai as genai
+# Try to import old google.generativeai, fallback to compat shim or new google.genai
+try:
+    import google.generativeai as genai  # type: ignore
+    _GENAI_TYPE = "old"
+except Exception:
+    try:
+        from scripts import genai_compat as genai  # type: ignore
+        _GENAI_TYPE = "compat"
+    except Exception:
+        try:
+            import google.genai as genai_new  # type: ignore
+            _GENAI_TYPE = "new"
+        except Exception:
+            print("No Google GenAI client available. Install google-genai or provide a compat shim.")
+            sys.exit(1)
 
 # Usage: python scripts/list_gemini_models.py <api_key>
 if len(sys.argv) < 2:
@@ -22,8 +36,13 @@ if len(sys.argv) < 2:
 
 api_key = sys.argv[1]
 try:
-    genai.configure(api_key=api_key)
-    models = genai.list_models()
+    if _GENAI_TYPE in ("old", "compat"):
+        genai.configure(api_key=api_key)
+        models = genai.list_models() if hasattr(genai, "list_models") else []
+    else:
+        client = genai_new.Client(api_key=api_key)
+        models = client.models.list()
+
     output = []
     for m in models:
         # Some model objects are more complex; print name and any supported methods

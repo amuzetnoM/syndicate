@@ -56,6 +56,22 @@ if os.getenv("GEMINI_TEST") != "1" and os.getenv("GEMINI_FORCE_TEST") != "1":
 from main import Config, Strategist, setup_logging  # noqa: E402
 
 
+def _import_genai():
+    try:
+        import google.generativeai as genai  # type: ignore
+        return genai
+    except Exception:
+        try:
+            from scripts import genai_compat as genai  # type: ignore
+            return genai
+        except Exception:
+            try:
+                import google.genai as genai_new  # type: ignore
+                return genai_new
+            except Exception:
+                raise
+
+
 class TestGeminiConfiguration:
     """Tests for Gemini API configuration and validation."""
 
@@ -84,23 +100,23 @@ class TestGeminiImport:
     def test_genai_import_available(self):
         """Test that google.generativeai can be imported."""
         try:
-            import google.generativeai as genai
-        except ImportError:
+            genai = _import_genai()
+        except Exception:
             pytest.fail(
-                "google-generativeai package not installed. Install it and ensure GEMINI_TEST=1 to run integration tests"
+                "google-generativeai package not installed or compat shim not available. Install google-genai or provide compat shim and ensure GEMINI_TEST=1 to run integration tests"
             )
         assert genai is not None
 
     def test_genai_has_configure_method(self):
         """Test that genai has the configure method."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
         assert hasattr(genai, "configure")
         assert callable(genai.configure)
 
     def test_genai_has_generative_model_class(self):
         """Test that genai has GenerativeModel class."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
         assert hasattr(genai, "GenerativeModel")
 
@@ -318,50 +334,80 @@ class TestGeminiLiveConnection:
 
     def test_live_api_configuration(self, api_key):
         """Test that Gemini API can be configured with real key."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
         try:
-            genai.configure(api_key=api_key)
+            # genai may be the new client module or a compat shim
+            if hasattr(genai, 'configure'):
+                genai.configure(api_key=api_key)
+            else:
+                # new google.genai: create client instance
+                genai.Client(api_key=api_key)
         except Exception as e:
             pytest.fail(f"Failed to configure Gemini API: {e}")
 
     def test_live_model_initialization(self, api_key):
         """Test that GenerativeModel can be instantiated."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
-        genai.configure(api_key=api_key)
-        cfg = Config()
-
-        try:
-            model = genai.GenerativeModel(cfg.GEMINI_MODEL)
-            assert model is not None
-        except Exception as e:
-            pytest.fail(f"Failed to create GenerativeModel: {e}")
+        # Configure then instantiate model
+        if hasattr(genai, 'configure'):
+            genai.configure(api_key=api_key)
+            try:
+                model = genai.GenerativeModel(cfg.GEMINI_MODEL)
+            except Exception as e:
+                pytest.fail(f"Failed to create GenerativeModel: {e}")
+        else:
+            # new google.genai client
+            client = genai.Client(api_key=api_key)
+            try:
+                model = client.models.create(model=cfg.GEMINI_MODEL)
+                assert model is not None
+            except Exception as e:
+                pytest.fail(f"Failed to create GenerativeModel via new client: {e}")
 
     def test_live_simple_generation(self, api_key):
         """Test a simple content generation to verify API connectivity."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
-        genai.configure(api_key=api_key)
         cfg = Config()
-        model = genai.GenerativeModel(cfg.GEMINI_MODEL)
-
-        try:
-            response = model.generate_content("Say 'API test successful' in exactly those words.")
-            assert response is not None
-            assert hasattr(response, "text")
-            assert len(response.text) > 0
-        except Exception as e:
-            pytest.fail(f"Failed to generate content: {e}")
+        if hasattr(genai, 'configure'):
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(cfg.GEMINI_MODEL)
+            try:
+                response = model.generate_content("Say 'API test successful' in exactly those words.")
+                assert response is not None
+                assert hasattr(response, "text")
+                assert len(response.text) > 0
+            except Exception as e:
+                pytest.fail(f"Failed to generate content: {e}")
+        else:
+            client = genai.Client(api_key=api_key)
+            try:
+                resp = client.models.generate_content(model=cfg.GEMINI_MODEL, input="Say 'API test successful' in exactly those words.")
+                # Try to extract text from response
+                text = getattr(resp, 'text', None)
+                if not text and hasattr(resp, 'output'):
+                    try:
+                        text = resp.output[0].content
+                    except Exception:
+                        pass
+                assert text and len(text) > 0
+            except Exception as e:
+                pytest.fail(f"Failed to generate content with new client: {e}")
 
     def test_live_strategist_analysis(self, api_key):
         """Test full Strategist analysis with live API."""
-        import google.generativeai as genai
-
-        genai.configure(api_key=api_key)
+        genai = _import_genai()
         cfg = Config()
         logger = setup_logging(cfg)
-        model = genai.GenerativeModel(cfg.GEMINI_MODEL)
+        # Configure and instantiate model depending on client type
+        if hasattr(genai, 'configure'):
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(cfg.GEMINI_MODEL)
+        else:
+            client = genai.Client(api_key=api_key)
+            model = client.models.create(model=cfg.GEMINI_MODEL)
 
         strategist = Strategist(
             config=cfg,
@@ -399,10 +445,13 @@ class TestGeminiErrorHandling:
 
     def test_invalid_api_key_handling(self):
         """Test handling of invalid API key."""
-        import google.generativeai as genai
+        genai = _import_genai()
 
         # Configure with obviously invalid key
-        genai.configure(api_key="invalid-key-12345")
+        if hasattr(genai, 'configure'):
+            genai.configure(api_key="invalid-key-12345")
+        else:
+            genai.Client(api_key="invalid-key-12345")
         cfg = Config()
 
         try:

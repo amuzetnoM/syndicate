@@ -25,13 +25,18 @@ from typing import Dict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-try:
-    import google.generativeai as genai
-    from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-    load_dotenv()
-except ImportError:
-    genai = None
+load_dotenv()
+
+# Try old google.generativeai, then compat shim, else leave genai as None
+try:
+    import google.generativeai as genai  # type: ignore
+except Exception:
+    try:
+        from scripts import genai_compat as genai  # type: ignore
+    except Exception:
+        genai = None
 
 
 # ==========================================

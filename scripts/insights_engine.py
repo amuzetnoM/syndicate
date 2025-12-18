@@ -28,6 +28,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+import threading
 
 # Project paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -307,11 +308,13 @@ class InsightsExtractor:
         self.entity_cache: Dict[str, EntityInsight] = {}
         self.action_queue: List[ActionInsight] = []
         self._action_counter = 0
+        self._lock = threading.Lock()
 
     def _generate_action_id(self) -> str:
         """Generate unique action ID."""
-        self._action_counter += 1
-        return f"ACT-{date.today().strftime('%Y%m%d')}-{self._action_counter:04d}"
+        with self._lock:
+            self._action_counter += 1
+            return f"ACT-{date.today().strftime('%Y%m%d')}-{self._action_counter:04d}"
 
     def extract_entities(self, report_content: str, report_name: str) -> List[EntityInsight]:
         """Extract named entities from report content."""
@@ -424,7 +427,8 @@ class InsightsExtractor:
         # Deduplicate similar actions
         actions = self._deduplicate_actions(actions)
 
-        self.action_queue.extend(actions)
+        with self._lock:
+            self.action_queue.extend(actions)
         self.logger.info(f"[INSIGHTS] Extracted {len(actions)} actions from {report_name}")
         return actions
 
@@ -728,24 +732,26 @@ Extract 3-5 most important actionable tasks. Focus on specific, executable tasks
 
     def mark_action_complete(self, action_id: str, result: str = None) -> bool:
         """Mark an action as completed."""
-        for action in self.action_queue:
-            if action.action_id == action_id:
-                action.status = "completed"
-                action.completed_at = datetime.now().isoformat()
-                action.result = result
-                self.logger.info(f"[INSIGHTS] Action completed: {action_id}")
-                return True
+        with self._lock:
+            for action in self.action_queue:
+                if action.action_id == action_id:
+                    action.status = "completed"
+                    action.completed_at = datetime.now().isoformat()
+                    action.result = result
+                    self.logger.info(f"[INSIGHTS] Action completed: {action_id}")
+                    return True
         return False
 
     def mark_action_failed(self, action_id: str, reason: str = None) -> bool:
         """Mark an action as failed."""
-        for action in self.action_queue:
-            if action.action_id == action_id:
-                action.status = "failed"
-                action.completed_at = datetime.now().isoformat()
-                action.result = f"FAILED: {reason}" if reason else "FAILED"
-                self.logger.warning(f"[INSIGHTS] Action failed: {action_id} - {reason}")
-                return True
+        with self._lock:
+            for action in self.action_queue:
+                if action.action_id == action_id:
+                    action.status = "failed"
+                    action.completed_at = datetime.now().isoformat()
+                    action.result = f"FAILED: {reason}" if reason else "FAILED"
+                    self.logger.warning(f"[INSIGHTS] Action failed: {action_id} - {reason}")
+                    return True
         return False
 
     def to_dict(self) -> Dict[str, Any]:

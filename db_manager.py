@@ -108,6 +108,28 @@ class DatabaseManager:
         """Initialize database schema."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            # Performance and concurrency tuning for SQLite
+            try:
+                cursor.execute("PRAGMA journal_mode = WAL;")
+            except Exception:
+                pass
+            try:
+                cursor.execute("PRAGMA synchronous = NORMAL;")
+            except Exception:
+                pass
+            try:
+                cursor.execute("PRAGMA temp_store = MEMORY;")
+            except Exception:
+                pass
+            try:
+                # Larger cache (negative value -> KB * -1 pages depending on SQLite build)
+                cursor.execute("PRAGMA cache_size = -20000;")
+            except Exception:
+                pass
+            try:
+                cursor.execute("PRAGMA busy_timeout = 5000;")
+            except Exception:
+                pass
 
             # Journals table - one per day
             cursor.execute("""
@@ -1600,6 +1622,8 @@ class DatabaseManager:
         action_id: str,
         success: bool,
         result_data: str = None,
+        # Backwards-compat alias for older callers that used 'result' keyword
+        result: str = None,
         execution_time_ms: float = 0,
         error_message: str = None,
         artifacts: str = None,
@@ -1608,13 +1632,16 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # Support legacy callers that pass `result` kwarg
+            final_result = result_data if result_data is not None else result
+
             cursor.execute(
                 """
                 INSERT INTO task_execution_log
                 (action_id, success, result_data, execution_time_ms, error_message, artifacts)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
-                (action_id, 1 if success else 0, result_data, execution_time_ms, error_message, artifacts),
+                (action_id, 1 if success else 0, final_result, execution_time_ms, error_message, artifacts),
             )
 
             return True

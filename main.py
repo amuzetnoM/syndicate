@@ -12,6 +12,8 @@
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 import argparse
+import shutil
+from colorama import Fore, Style, init as colorama_init
 import datetime
 import json
 import logging
@@ -28,12 +30,12 @@ import filelock
 import pandas as pd
 import schedule
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 try:
     import pandas_ta as ta
 except Exception:
-    # Fallback implementations for environments where pandas_ta or its optional
-    # dependencies (like numba) are unavailable (e.g., Python 3.14).
+    # dependencies (like numba) are unavailable; provide a lightweight fallback TA
     import pandas as _pd
 
     class _FallbackTA:
@@ -92,13 +94,22 @@ except Exception:
                 return None
 
     ta = _FallbackTA()
+
+    ta = _FallbackTA()
 # Optional: Google Gemini (GenAI) - import lazily and handle missing package gracefully
+GENAI_AVAILABLE = False
+genai = None
 try:
-    import google.generativeai as genai
+    import google.generativeai as genai  # type: ignore
     GENAI_AVAILABLE = True
 except Exception:
-    genai = None
-    GENAI_AVAILABLE = False
+    try:
+        # Use local compat shim that maps the new google.genai client to the old API
+        from scripts import genai_compat as genai  # type: ignore
+        GENAI_AVAILABLE = True
+    except Exception:
+        genai = None
+        GENAI_AVAILABLE = False
 
 try:
     import mplfinance as mpf
@@ -617,12 +628,53 @@ def setup_logging(config: Config) -> logging.Logger:
     if logger.handlers:
         return logger
 
-    # Console handler with colors
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    console_format = logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    console_handler.setFormatter(console_format)
-    logger.addHandler(console_handler)
+    # Console handler with colors and right-aligned timestamp
+    try:
+        from colorama import Fore, Style, init as _colorama_init
+        _colorama_init(autoreset=True)
+
+        class RightTimeColoredFormatter(logging.Formatter):
+            LEVEL_COLORS = {
+                "DEBUG": Fore.CYAN,
+                "INFO": Fore.GREEN,
+                "WARNING": Fore.YELLOW,
+                "ERROR": Fore.RED,
+                "CRITICAL": Fore.MAGENTA,
+            }
+
+            def __init__(self):
+                super().__init__(fmt="%(levelname)-8s | %(message)s")
+
+            def format(self, record: logging.LogRecord) -> str:
+                level = record.levelname
+                color = self.LEVEL_COLORS.get(level, "")
+                base = super().format(record)
+                try:
+                    cols = shutil.get_terminal_size((80, 20)).columns
+                except Exception:
+                    cols = 80
+
+                timestr = self.formatTime(record, datefmt="%Y-%m-%d %H:%M:%S")
+                pad = max(2, cols - len(self._strip_ansi(base)) - len(timestr))
+                return f"{color}{base}{Style.RESET_ALL}{' ' * pad}{Fore.WHITE}{timestr}{Style.RESET_ALL}"
+
+            def _strip_ansi(self, s: str) -> str:
+                import re
+
+                ansi = re.compile(r"\x1b\[[0-9;]*m")
+                return ansi.sub("", s)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(RightTimeColoredFormatter())
+        logger.addHandler(console_handler)
+    except Exception:
+        # Fallback to plain formatter if colorama missing
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_format = logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        console_handler.setFormatter(console_format)
+        logger.addHandler(console_handler)
 
     # File handler for detailed logs (rotating)
     log_file = os.path.join(config.OUTPUT_DIR, "gold_standard.log")
@@ -714,26 +766,43 @@ class Cortex:
             "key_levels": {"support": [], "resistance": [], "stop_loss": None, "take_profit": []},
         }
 
+        # Prefer storing memory in the central database for atomic updates and concurrency.
+        try:
+            from db_manager import get_db
+
+            db = get_db()
+            mem_json = db.get_config("cortex_memory", None)
+            if mem_json:
+                try:
+                    loaded = json.loads(mem_json)
+                    self.logger.info("Loaded cortex memory from database (system_config:cortex_memory)")
+                    return {**default_memory, **loaded}
+                except Exception:
+                    self.logger.warning("Failed to parse cortex memory from DB; falling back to file/template")
+
+        except Exception:
+            # DB unavailable - fall back to file-based memory as legacy behavior
+            pass
+
         try:
             template_path = os.path.join(self.config.BASE_DIR, "cortex_memory.template.json")
-            with self.lock:
-                if not os.path.exists(self.config.MEMORY_FILE) and os.path.exists(template_path):
-                    with open(template_path, "r", encoding="utf-8") as t:
-                        template_content = t.read()
-                    with open(self.config.MEMORY_FILE, "w", encoding="utf-8") as f:
-                        f.write(template_content)
-                    # Log creation
-                    self.logger.info(f"Initialized new memory file from template: {self.config.MEMORY_FILE}")
+            if not os.path.exists(self.config.MEMORY_FILE) and os.path.exists(template_path):
+                with open(template_path, "r", encoding="utf-8") as t:
+                    template_content = t.read()
+                with open(self.config.MEMORY_FILE, "w", encoding="utf-8") as f:
+                    f.write(template_content)
+                # Log creation
+                self.logger.info(f"Initialized new memory file from template: {self.config.MEMORY_FILE}")
 
-                if os.path.exists(self.config.MEMORY_FILE):
-                    with open(self.config.MEMORY_FILE, "r", encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        self.logger.info(f"Successfully loaded memory from {self.config.MEMORY_FILE}")
-                        return {**default_memory, **loaded}
-                else:
-                    self.logger.warning(
-                        f"Memory file not found at {self.config.MEMORY_FILE}. Starting with default memory."
-                    )
+            if os.path.exists(self.config.MEMORY_FILE):
+                with open(self.config.MEMORY_FILE, "r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+                    self.logger.info(f"Successfully loaded memory from {self.config.MEMORY_FILE}")
+                    return {**default_memory, **loaded}
+            else:
+                self.logger.warning(
+                    f"Memory file not found at {self.config.MEMORY_FILE}. Starting with default memory."
+                )
         except filelock.Timeout:
             self.logger.error(
                 f"Could not acquire memory file lock for {self.config.MEMORY_FILE} (timeout). Another process might be holding it.",
@@ -751,19 +820,29 @@ class Cortex:
 
     def _save_memory(self) -> bool:
         """Persist memory to JSON file."""
+        # Prefer saving memory to DB for atomic writes
         try:
-            with self.lock:
+            from db_manager import get_db
+
+            db = get_db()
+            db.set_config("cortex_memory", json.dumps(self.memory), "Persistent cortex memory JSON")
+            self.logger.info("Successfully saved cortex memory to database (system_config:cortex_memory)")
+            # Also write a file fallback asynchronously (best-effort)
+            try:
                 with open(self.config.MEMORY_FILE, "w", encoding="utf-8") as f:
                     json.dump(self.memory, f, indent=4)
-            self.logger.info(f"Successfully saved memory to {self.config.MEMORY_FILE}")
+            except Exception:
+                pass
             return True
-        except filelock.Timeout:
-            self.logger.error(
-                f"Could not acquire memory file lock for writing to {self.config.MEMORY_FILE} (timeout). Another process might be holding it.",
-                exc_info=True,
-            )
-        except Exception as e:
-            self.logger.error(f"Unexpected error saving memory to {self.config.MEMORY_FILE}: {e}", exc_info=True)
+        except Exception:
+            # DB not available - fallback to file-based save
+            try:
+                with open(self.config.MEMORY_FILE, "w", encoding="utf-8") as f:
+                    json.dump(self.memory, f, indent=4)
+                self.logger.info(f"Successfully saved memory to {self.config.MEMORY_FILE} (file fallback)")
+                return True
+            except Exception as e:
+                self.logger.error(f"Unexpected error saving memory to {self.config.MEMORY_FILE}: {e}", exc_info=True)
         return False
 
     def update_memory(
@@ -1087,61 +1166,71 @@ class QuantEngine:
         # Clean up old charts
         self._cleanup_old_charts()
 
-        # Fetch data for each asset
-        for key, conf in ASSETS.items():
-            conf = ASSETS[key]
-            try:
-                df = self._fetch(conf["p"], conf["b"])
-                if df is None or df.empty:
-                    self.logger.warning(f"No data available for {key}")
+        # Fetch data for each asset in parallel to reduce wall time
+        workers = min(6, max(2, len(ASSETS)))
+        futures = {}
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for key, conf in ASSETS.items():
+                conf = ASSETS[key]
+                futures[ex.submit(self._fetch, conf["p"], conf["b"]) ] = (key, conf)
+
+            for fut in futures:
+                key, conf = futures[fut]
+                try:
+                    df = fut.result()
+                    if df is None or df.empty:
+                        self.logger.warning(f"No data available for {key}")
+                        continue
+
+                    latest = df.iloc[-1]
+                    previous = df.iloc[-2] if len(df) > 1 else latest
+
+                    # Safely extract values with validation
+                    close_price = self._safe_float(latest.get("Close"))
+                    prev_close = self._safe_float(previous.get("Close"))
+                    rsi = self._safe_float(latest.get("RSI"))
+                    adx = self._safe_float(latest.get("ADX_14"))
+                    atr = self._safe_float(latest.get("ATR"))
+                    sma200 = self._safe_float(latest.get("SMA_200"))
+
+                    if close_price is None:
+                        self.logger.warning(f"Invalid close price for {key}")
+                        continue
+
+                    # Calculate change percentage
+                    change_pct = 0.0
+                    if prev_close and prev_close != 0:
+                        change_pct = ((close_price - prev_close) / prev_close) * 100
+
+                    # Determine market regime based on ADX
+                    regime = "UNKNOWN"
+                    if adx is not None:
+                        regime = "TRENDING" if adx > self.config.ADX_TREND_THRESHOLD else "CHOPPY/RANGING"
+
+                    snapshot[key] = {
+                        "price": round(close_price, 2),
+                        "change": round(change_pct, 2),
+                        "rsi": round(rsi, 2) if rsi is not None else None,
+                        "adx": round(adx, 2) if adx is not None else None,
+                        "atr": round(atr, 2) if atr is not None else None,
+                        "regime": regime,
+                        "sma200": round(sma200, 2) if sma200 is not None else None,
+                    }
+
+                    # Fetch news headlines
+                    self._fetch_news(key, conf["p"])
+
+                    # Generate chart (cached - skip if up-to-date)
+                    try:
+                        self._chart(key, df)
+                    except Exception as c_err:
+                        self.logger.debug(f"Chart generation skipped/failed for {key}: {c_err}")
+
+                    self.logger.debug(f"Processed {key}: ${close_price:.2f} ({change_pct:+.2f}%)")
+
+                except Exception as e:
+                    self.logger.error(f"Error processing {key}: {e}", exc_info=True)
                     continue
-
-                latest = df.iloc[-1]
-                previous = df.iloc[-2] if len(df) > 1 else latest
-
-                # Safely extract values with validation
-                close_price = self._safe_float(latest.get("Close"))
-                prev_close = self._safe_float(previous.get("Close"))
-                rsi = self._safe_float(latest.get("RSI"))
-                adx = self._safe_float(latest.get("ADX_14"))
-                atr = self._safe_float(latest.get("ATR"))
-                sma200 = self._safe_float(latest.get("SMA_200"))
-
-                if close_price is None:
-                    self.logger.warning(f"Invalid close price for {key}")
-                    continue
-
-                # Calculate change percentage
-                change_pct = 0.0
-                if prev_close and prev_close != 0:
-                    change_pct = ((close_price - prev_close) / prev_close) * 100
-
-                # Determine market regime based on ADX
-                regime = "UNKNOWN"
-                if adx is not None:
-                    regime = "TRENDING" if adx > self.config.ADX_TREND_THRESHOLD else "CHOPPY/RANGING"
-
-                snapshot[key] = {
-                    "price": round(close_price, 2),
-                    "change": round(change_pct, 2),
-                    "rsi": round(rsi, 2) if rsi is not None else None,
-                    "adx": round(adx, 2) if adx is not None else None,
-                    "atr": round(atr, 2) if atr is not None else None,
-                    "regime": regime,
-                    "sma200": round(sma200, 2) if sma200 is not None else None,
-                }
-
-                # Fetch news headlines
-                self._fetch_news(key, conf["p"])
-
-                # Generate chart
-                self._chart(key, df)
-
-                self.logger.debug(f"Processed {key}: ${close_price:.2f} ({change_pct:+.2f}%)")
-
-            except Exception as e:
-                self.logger.error(f"Error processing {key}: {e}", exc_info=True)
-                continue
 
         if not snapshot:
             self.logger.error("Failed to fetch any market data")
@@ -1350,6 +1439,31 @@ class QuantEngine:
     def _chart(self, name: str, df: pd.DataFrame) -> None:
         """Generate candlestick chart with technical overlays."""
         try:
+            # Quick cache check: skip generating chart if an up-to-date chart exists
+            try:
+                chart_path = os.path.join(self.config.CHARTS_DIR, f"{name}.png")
+                # Determine latest data timestamp from dataframe index
+                last_index = df.index[-1]
+                try:
+                    last_ts = float(getattr(last_index, "timestamp", lambda: None)())
+                except Exception:
+                    # Pandas timestamp fallback
+                    try:
+                        last_ts = float(pd.to_datetime(last_index).astype(int) / 1e9)
+                    except Exception:
+                        last_ts = None
+
+                if last_ts and os.path.exists(chart_path):
+                    try:
+                        mtime = os.path.getmtime(chart_path)
+                        if mtime >= last_ts:
+                            self.logger.info(f"Chart up-to-date, skipping generation: {chart_path}")
+                            return
+                    except Exception:
+                        pass
+            except Exception:
+                # If any of the cache checks fail, proceed to generate chart
+                pass
             # Prepare additional plots
             # Prefer columns if precomputed by _fetch; else compute safely
             def safe_sma(series, length):

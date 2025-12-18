@@ -432,7 +432,7 @@ class ExecutorDaemon:
                 db.log_task_execution(
                     action_id,
                     success=True,
-                    result=str(results[0].result_data),
+                    result_data=str(results[0].result_data),
                     execution_time_ms=execution_time_ms,
                     artifacts=str(results[0].artifacts) if results[0].artifacts else None,
                 )
