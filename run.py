@@ -474,13 +474,11 @@ def _daemon_cycle(no_ai: bool = False, run_tasks: bool = True):
         _run_post_analysis_tasks()
 
 
-def _run_post_analysis_tasks():
+def _run_post_analysis_tasks(force_inline: bool = False, wait_for_completion: bool = False, max_wait_seconds: int = 300, poll_interval: int = 2, wait_forever: bool = False):
     """
     Run insights extraction, task execution, file organization, and Notion publishing.
-    Uses intelligent scheduling to prevent duplicate work:
-    - Insights extraction: runs daily
-    - Task execution: runs weekly
-    - Notion sync: runs daily (but skips unchanged files)
+    - force_inline: if True, do not spawn detached executor and run tasks inline
+    - wait_for_completion: if True, wait (with timeout) for all ready tasks to be executed and publishing to complete
     """
     try:
         from pathlib import Path
@@ -506,45 +504,129 @@ def _run_post_analysis_tasks():
         if model:
             logger.info(f"[DAEMON] Using LLM provider: {model.name}")
 
+        def run_inline_tasks_once():
+            """Execute ready actions inline and return (success_count, fail_count, notion_count)"""
+            try:
+                extractor = InsightsExtractor(config, logger, model)
+            except Exception:
+                # InsightsExtractor may not be available - fall back to a minimal executor
+                extractor = None
+
+            ready_actions = db.get_ready_actions(limit=None)
+            if not ready_actions:
+                return 0, 0, 0
+
+            claimed_actions = []
+            from scripts.insights_engine import ActionInsight
+
+            for action_dict in ready_actions:
+                action_id = action_dict["action_id"]
+                if db.claim_action(action_id, worker_id="daemon-inline"):
+                    action = ActionInsight(
+                        action_id=action_id,
+                        action_type=action_dict["action_type"],
+                        title=action_dict["title"],
+                        description=action_dict.get("description", ""),
+                        priority=action_dict.get("priority", "medium"),
+                        status="pending",
+                        source_report=action_dict.get("source_report", ""),
+                        source_context=action_dict.get("source_context", ""),
+                        deadline=action_dict.get("deadline"),
+                        scheduled_for=action_dict.get("scheduled_for"),
+                        retry_count=action_dict.get("retry_count", 0),
+                        last_error=action_dict.get("last_error"),
+                    )
+                    if extractor:
+                        extractor.action_queue.append(action)
+                    claimed_actions.append(action_id)
+
+            if not claimed_actions:
+                return 0, 0, 0
+
+            executor = TaskExecutor(config, logger, model, extractor)
+            results = executor.execute_all_pending(max_tasks=None)
+
+            success_count = 0
+            fail_count = 0
+            for result in results:
+                db.log_task_execution(
+                    result.action_id,
+                    result.success,
+                    str(result.result_data),
+                    result.execution_time_ms,
+                    result.error_message,
+                    str(result.artifacts) if result.artifacts else None,
+                )
+
+                if result.success:
+                    db.update_action_status(result.action_id, "completed", str(result.result_data))
+                    success_count += 1
+                else:
+                    retry_count = db.increment_retry_count(result.action_id, result.error_message)
+                    lmax = int(os.getenv("LLM_MAX_RETRIES", str(MAX_RETRIES)))
+                    if lmax >= 0 and retry_count >= lmax:
+                        db.update_action_status(result.action_id, "failed", f"Max retries exceeded: {result.error_message}")
+                        fail_count += 1
+                    else:
+                        db.release_action(result.action_id, reason=f"retry_{retry_count}")
+
+            notion_count = executor.stats.get("notion_published", 0)
+            return success_count, fail_count, notion_count
+
         # 1. Extract insights from today's reports (DAILY)
-        if not db.is_insights_extraction_enabled():
-            print("[DAEMON] ⏸️  Insights extraction DISABLED via toggle")
-        elif db.should_run_task("insights_extraction"):
+        def run_insights_once(ignore_schedule: bool = False) -> int:
+            """Run insights extraction and persist actions. Returns number of actions created."""
+            if not db.is_insights_extraction_enabled():
+                print("[DAEMON] ⏸️  Insights extraction DISABLED via toggle")
+                return 0
+
+            if not ignore_schedule and not db.should_run_task("insights_extraction"):
+                print("[DAEMON] Insights extraction already done today, skipping")
+                return 0
+
             print("[DAEMON] Extracting insights from reports...")
-            extractor = InsightsExtractor(config, logger, model)
-            reports_dir = Path(config.OUTPUT_DIR) / "reports"
-            entities, actions = extractor.process_all_reports(reports_dir)
+            try:
+                extractor = InsightsExtractor(config, logger, model)
+                reports_dir = Path(config.OUTPUT_DIR) / "reports"
+                entities, actions = extractor.process_all_reports(reports_dir)
 
-            # Save insights to database
-            for entity in entities:
-                db.save_entity_insight(
-                    entity.entity_name,
-                    entity.entity_type,
-                    entity.context,
-                    entity.relevance_score,
-                    entity.source_report,
-                    str(entity.metadata),
-                )
+                # Save insights to database
+                for entity in entities:
+                    db.save_entity_insight(
+                        entity.entity_name,
+                        entity.entity_type,
+                        entity.context,
+                        entity.relevance_score,
+                        entity.source_report,
+                        str(entity.metadata),
+                    )
 
-            for action in actions:
-                db.save_action_insight(
-                    action.action_id,
-                    action.action_type,
-                    action.title,
-                    action.description,
-                    action.priority,
-                    action.status,
-                    action.source_report,
-                    action.source_context,
-                    action.deadline,
-                    getattr(action, "scheduled_for", None),
-                    str(action.metadata),
-                )
+                for action in actions:
+                    db.save_action_insight(
+                        action.action_id,
+                        action.action_type,
+                        action.title,
+                        action.description,
+                        action.priority,
+                        action.status,
+                        action.source_report,
+                        action.source_context,
+                        action.deadline,
+                        getattr(action, "scheduled_for", None),
+                        str(action.metadata),
+                    )
 
-            print(f"[DAEMON] Extracted {len(entities)} entities, {len(actions)} actions")
-            db.mark_task_run("insights_extraction")
-        else:
-            print("[DAEMON] Insights extraction already done today, skipping")
+                print(f"[DAEMON] Extracted {len(entities)} entities, {len(actions)} actions")
+                # Mark the daily task run if not forced-ignoring schedule
+                if not ignore_schedule:
+                    db.mark_task_run("insights_extraction")
+                return len(actions)
+            except Exception as e:
+                logger.debug(f"Insights extraction failed: {e}")
+                return 0
+
+        # Initial run (obey schedule)
+        initial_actions = run_insights_once(ignore_schedule=False)
 
         # 2. Execute READY tasks with atomic claim/release pattern
         # Tasks execute when: scheduled_for <= now OR scheduled_for IS NULL
@@ -574,105 +656,92 @@ def _run_post_analysis_tasks():
             except Exception as e:
                 print(f"[DAEMON] Health check failed: {e}")
 
-            # Check if we should use detached executor daemon
-            if USE_DETACHED_EXECUTOR:
+            # Decide whether to run inline or spawn detached executor
+            use_detached = USE_DETACHED_EXECUTOR and not force_inline
+            if use_detached:
                 print("[DAEMON] Using detached executor daemon mode...")
                 if spawn_executor_daemon():
                     print("[DAEMON] Task execution delegated to executor daemon")
                     # Skip inline execution when executor daemon is handling tasks
-                    ready_actions = []
+                    pass
                 else:
                     print("[DAEMON] Falling back to inline execution...")
-                    ready_actions = db.get_ready_actions(limit=None)
-            else:
-                # Legacy inline execution mode
-                print("[DAEMON] ⚠️  Using inline executor (deprecated for production)")
-                print("[DAEMON] ℹ️  Set GOST_DETACHED_EXECUTOR=1 or use executor_daemon.py")
-                ready_actions = db.get_ready_actions(limit=None)
+                    sc, fc, nc = run_inline_tasks_once()
+                    print(f"[DAEMON] ✅ Completed: {sc} | ❌ Failed: {fc} | 📤 Published: {nc}")
+                    # Run initial publishing pass
+                    p_pub, p_skip_sched, p_skip_status = run_publishing_once()
+                    if p_pub > 0:
+                        print(f"[DAEMON] Published {p_pub} documents to Notion (initial)")
+                        # If requested, wait (bounded) or wait_forever to re-run execution+publishing until no ready tasks or new insights
+                    if wait_forever:
+                        print("[DAEMON] Wait-forever requested: will block until no tasks, no in-progress work, no new insights, and no new publications (indefinitely)")
+                        while True:
+                            health = db.get_system_health()
+                            ready_now = health.get("tasks", {}).get("ready_now", 0)
+                            in_progress = health.get("tasks", {}).get("in_progress", 0) or health.get("tasks", {}).get("stuck_in_progress", 0)
 
-            # Get actions that are ready to execute NOW
-            if ready_actions:
-                print(f"[DAEMON] Executing {len(ready_actions)} ready tasks...")
+                            # If tasks exist, execute them
+                            if ready_now > 0:
+                                sc2, fc2, nc2 = run_inline_tasks_once()
+                                print(f"[DAEMON] ✅ Completed (forever-wait): {sc2} | ❌ Failed: {fc2} | 📤 Published: {nc2}")
 
-                # Create executor
-                extractor = InsightsExtractor(config, logger, model)
+                            # Re-run publishing to pick up newly-created docs
+                            p_pub2, _, _ = run_publishing_once()
+                            if p_pub2 > 0:
+                                print(f"[DAEMON] Published {p_pub2} new documents during wait loop")
 
-                # Load ready actions with atomic claiming
-                from scripts.insights_engine import ActionInsight
+                            # Re-run insights extraction (force) to detect new actions produced by recent published docs or changes
+                            new_actions = run_insights_once(ignore_schedule=True)
+                            if new_actions > 0:
+                                print(f"[DAEMON] Insights extraction produced {new_actions} new actions (forever-wait) -- continuing loop")
 
-                claimed_actions = []
+                            # Refresh health
+                            health = db.get_system_health()
+                            ready_now = health.get("tasks", {}).get("ready_now", 0)
+                            in_progress = health.get("tasks", {}).get("in_progress", 0) or health.get("tasks", {}).get("stuck_in_progress", 0)
 
-                for action_dict in ready_actions:
-                    action_id = action_dict["action_id"]
+                            if ready_now == 0 and in_progress == 0 and p_pub2 == 0 and new_actions == 0:
+                                print("[DAEMON] No ready/in-progress tasks, no new insights, and no new publications; finishing wait-forever loop")
+                                break
 
-                    # Atomic claim - prevents duplicate execution
-                    if db.claim_action(action_id, worker_id="daemon"):
-                        action = ActionInsight(
-                            action_id=action_id,
-                            action_type=action_dict["action_type"],
-                            title=action_dict["title"],
-                            description=action_dict.get("description", ""),
-                            priority=action_dict.get("priority", "medium"),
-                            status="pending",  # Must be 'pending' for executor to find it
-                            source_report=action_dict.get("source_report", ""),
-                            source_context=action_dict.get("source_context", ""),
-                            deadline=action_dict.get("deadline"),
-                            scheduled_for=action_dict.get("scheduled_for"),
-                            retry_count=action_dict.get("retry_count", 0),
-                            last_error=action_dict.get("last_error"),
-                        )
-                        extractor.action_queue.append(action)
-                        claimed_actions.append(action_id)
-                    else:
-                        print(f"[DAEMON] Skipped {action_id} (already claimed)")
+                            time.sleep(poll_interval)
 
-                if not claimed_actions:
-                    print("[DAEMON] All ready tasks already claimed by another process")
-                else:
-                    print(f"[DAEMON] Claimed {len(claimed_actions)} tasks for execution")
+                    elif wait_for_completion:
+                        start_ts = time.time()
+                        while time.time() - start_ts < max_wait_seconds:
+                            health = db.get_system_health()
+                            ready_now = health.get("tasks", {}).get("ready_now", 0)
+                            in_progress = health.get("tasks", {}).get("in_progress", 0) or health.get("tasks", {}).get("stuck_in_progress", 0)
 
-                    # Execute ALL claimed tasks - will retry on quota errors
-                    executor = TaskExecutor(config, logger, model, extractor)
-                    results = executor.execute_all_pending(max_tasks=None)
+                            if ready_now == 0 and in_progress == 0:
+                                print("[DAEMON] No ready or in-progress tasks remain; finishing wait loop")
+                                break
 
-                    # Log execution results and update database
-                    success_count = 0
-                    fail_count = 0
+                            print(f"[DAEMON] Waiting for tasks to finish: ready={ready_now}, in_progress={in_progress} (timeout in {int(max_wait_seconds - (time.time() - start_ts))}s)")
 
-                    for result in results:
-                        db.log_task_execution(
-                            result.action_id,
-                            result.success,
-                            str(result.result_data),
-                            result.execution_time_ms,
-                            result.error_message,
-                            str(result.artifacts) if result.artifacts else None,
-                        )
+                            # If there are ready tasks, execute them inline (deterministic)
+                            if ready_now > 0:
+                                sc2, fc2, nc2 = run_inline_tasks_once()
+                                print(f"[DAEMON] ✅ Completed (wait-loop): {sc2} | ❌ Failed: {fc2} | 📤 Published: {nc2}")
 
-                        # Update action status in database
-                        if result.success:
-                            db.update_action_status(result.action_id, "completed", str(result.result_data))
-                            success_count += 1
+                            # Re-run publishing to pick up newly-created docs
+                            p_pub2, _, _ = run_publishing_once()
+                            if p_pub2 > 0:
+                                print(f"[DAEMON] Published {p_pub2} new documents during wait loop")
+
+                            time.sleep(poll_interval)
+
                         else:
-                            # Increment retry count on failure
-                            retry_count = db.increment_retry_count(result.action_id, result.error_message)
-                            # Use environment-configurable LLM_MAX_RETRIES (-1 == unlimited)
-                            lmax = int(os.getenv("LLM_MAX_RETRIES", str(MAX_RETRIES)))
-                            if lmax >= 0 and retry_count >= lmax:
-                                db.update_action_status(
-                                    result.action_id, "failed", f"Max retries exceeded: {result.error_message}"
-                                )
-                                fail_count += 1
-                            else:
-                                # Release back to pending for retry (no scheduling here - daemon will stagger)
-                                db.release_action(result.action_id, reason=f"retry_{retry_count}")
-
-                    notion_count = executor.stats.get("notion_published", 0)
-                    print(
-                        f"[DAEMON] ✅ Completed: {success_count} | ❌ Failed: {fail_count} | 📤 Published: {notion_count}"
-                    )
+                            print(f"[DAEMON] Wait-for-completion timed out after {max_wait_seconds}s; some tasks may remain")
             else:
-                print("[DAEMON] No tasks ready to execute")
+                if force_inline:
+                    print("[DAEMON] Forcing inline task execution for deterministic single-run behavior")
+                else:
+                    print("[DAEMON] ⚠️  Using inline executor (deprecated for production)")
+                    print("[DAEMON] ℹ️  Set GOST_DETACHED_EXECUTOR=1 or use executor_daemon.py")
+                sc, fc, nc = run_inline_tasks_once()
+                print(f"[DAEMON] ✅ Completed: {sc} | ❌ Failed: {fc} | 📤 Published: {nc}")
+
 
             # Show scheduled tasks info
             scheduled = db.get_scheduled_actions()
@@ -771,160 +840,166 @@ def _run_post_analysis_tasks():
         # - weekly reports: WEEKLY
         # - monthly reports: MONTHLY
         # - yearly reports: YEARLY
-        if not db.is_notion_publishing_enabled():
-            print("[DAEMON] ⏸️  Notion publishing DISABLED via toggle")
-        else:
-            print("[DAEMON] Publishing to Notion...")
-            try:
-                from scripts.frontmatter import is_ready_for_sync
-                from scripts.notion_publisher import NotionPublisher
-
-                publisher = NotionPublisher()
-                output_path = Path(config.OUTPUT_DIR)
-                reports_path = output_path / "reports"
-                research_path = output_path / "research"
-
-                today = date.today()
-                iso_cal = today.isocalendar()
-
-                # Track results
-                published = 0
-                skipped_schedule = 0
-                skipped_status = 0
-                failed = 0
-
-                # Define document type schedules
-                def should_sync_doc(filepath: Path, doc_type: str) -> bool:
-                    """Check if document should be synced based on type-aware schedule."""
-                    filename = filepath.name.lower()
-
-                    # EXCLUDED from Notion sync - internal task outputs
-                    excluded_patterns = [
-                        "monitor_",
-                        "data_fetch_",
-                        "calc_",
-                        "code_",
-                        "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
-                        "act-",  # Action task files
-                        "file_index",  # Index files
-                    ]
-                    if any(p in filename for p in excluded_patterns):
-                        return False
-
-                    # Daily documents - always sync if ready
-                    daily_patterns = [
-                        "journal_",
-                        "premarket_",
-                        "pre_market_",
-                        "research_",
-                        "news_scan_",
-                        "catalyst",
-                        "economic_",
-                        "calendar_",
-                    ]
-                    if any(p in filename for p in daily_patterns):
-                        return True
-
-                    # Weekly reports - only on weekends or if not synced this week
-                    if "weekly_" in filename or "rundown_" in filename:
-                        sync_key = f"notion_sync_weekly_{today.year}_{iso_cal[1]}"
-                        if db.should_run_task(sync_key):
-                            db.mark_task_run(sync_key)
-                            return True
-                        return False
-
-                    # Monthly reports - only once per month
-                    if "monthly_" in filename:
-                        sync_key = f"notion_sync_monthly_{today.year}_{today.month:02d}"
-                        if db.should_run_task(sync_key):
-                            db.mark_task_run(sync_key)
-                            return True
-                        return False
-
-                    # Yearly reports - only once per year
-                    if "yearly_" in filename or "1y_" in filename:
-                        sync_key = f"notion_sync_yearly_{today.year}"
-                        if db.should_run_task(sync_key):
-                            db.mark_task_run(sync_key)
-                            return True
-                        return False
-
-                    # Default: sync daily documents
-                    return True
-
-                # Collect all markdown files
-                all_md_files = []
-                for search_path in [output_path, reports_path, research_path]:
-                    if search_path.exists():
-                        all_md_files.extend(search_path.glob("*.md"))
-                        all_md_files.extend(search_path.glob("**/*.md"))
-
-                # Deduplicate
-                seen = set()
-                md_files = []
-                for f in all_md_files:
-                    if f not in seen and "FILE_INDEX" not in f.name and "/archive/" not in str(f).replace("\\", "/"):
-                        seen.add(f)
-                        md_files.append(f)
-
-                for filepath in md_files:
+        def run_publishing_once():
+                    if not db.is_notion_publishing_enabled():
+                        print("[DAEMON] ⏸️  Notion publishing DISABLED via toggle")
+                        return 0, 0, 0
+                    print("[DAEMON] Publishing to Notion...")
                     try:
-                        content = filepath.read_text(encoding="utf-8")
+                        from scripts.frontmatter import is_ready_for_sync
+                        from scripts.notion_publisher import NotionPublisher
 
-                        # Check if document is ready for sync (has proper frontmatter status)
-                        # Documents without frontmatter or with status != published/complete should NOT sync
-                        try:
-                            if not is_ready_for_sync(content):
-                                skipped_status += 1
-                                continue
-                        except Exception as e:
-                            # If frontmatter check fails, skip this file - don't sync unready documents
-                            logger.debug(f"Frontmatter check failed for {filepath.name}: {e}")
-                            skipped_status += 1
-                            continue
+                        publisher = NotionPublisher()
+                        output_path = Path(config.OUTPUT_DIR)
+                        reports_path = output_path / "reports"
+                        research_path = output_path / "research"
 
-                        # Check type-aware schedule
-                        doc_type = "journal" if "Journal_" in filepath.name else "reports"
-                        if not should_sync_doc(filepath, doc_type):
-                            skipped_schedule += 1
-                            continue
+                        today = date.today()
+                        iso_cal = today.isocalendar()
 
-                        # Sync the file
-                        result = publisher.sync_file(str(filepath), force=False)
-                        if result.get("skipped"):
-                            # File unchanged - this is fine
-                            pass
-                        else:
-                            published += 1
-                            print(f"  ✓ {filepath.name} → {result.get('type', 'notes')}")
+                        # Track results
+                        published = 0
+                        skipped_schedule = 0
+                        skipped_status = 0
+                        failed = 0
 
-                    except Exception as e:
-                        failed += 1
-                        logger.debug(f"Failed to sync {filepath.name}: {e}")
+                        # Define document type schedules
+                        def should_sync_doc(filepath: Path, doc_type: str) -> bool:
+                            """Check if document should be synced based on type-aware schedule."""
+                            filename = filepath.name.lower()
 
-                # Summary
-                if published > 0:
-                    print(f"[DAEMON] Published {published} documents to Notion")
-                if skipped_schedule > 0:
-                    print(f"[DAEMON] Skipped {skipped_schedule} docs (not scheduled yet)")
-                if skipped_status > 0:
-                    print(f"[DAEMON] Skipped {skipped_status} docs (not ready - draft/not AI processed)")
-                if failed > 0:
-                    print(f"[DAEMON] Failed to publish {failed} documents")
+                            # EXCLUDED from Notion sync - internal task outputs
+                            excluded_patterns = [
+                                "monitor_",
+                                "data_fetch_",
+                                "calc_",
+                                "code_",
+                                "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
+                                "act-",  # Action task files
+                                "file_index",  # Index files
+                            ]
+                            if any(p in filename for p in excluded_patterns):
+                                return False
 
-            except ImportError:
-                print("[DAEMON] Notion publisher not available, skipping")
-            except ValueError as e:
-                # Missing API keys
-                print(f"[DAEMON] Notion not configured: {e}")
-            except Exception as notion_err:
-                print(f"[DAEMON] Notion publishing error: {notion_err}")
+                            # Daily documents - always sync if ready
+                            daily_patterns = [
+                                "journal_",
+                                "premarket_",
+                                "pre_market_",
+                                "research_",
+                                "news_scan_",
+                                "catalyst",
+                                "economic_",
+                                "calendar_",
+                            ]
+                            if any(p in filename for p in daily_patterns):
+                                return True
 
+                            # Weekly reports - only on weekends or if not synced this week
+                            if "weekly_" in filename or "rundown_" in filename:
+                                sync_key = f"notion_sync_weekly_{today.year}_{iso_cal[1]}"
+                                if db.should_run_task(sync_key):
+                                    db.mark_task_run(sync_key)
+                                    return True
+                                return False
+
+                            # Monthly reports - only once per month
+                            if "monthly_" in filename:
+                                sync_key = f"notion_sync_monthly_{today.year}_{today.month:02d}"
+                                if db.should_run_task(sync_key):
+                                    db.mark_task_run(sync_key)
+                                    return True
+                                return False
+
+                            # Yearly reports - only once per year
+                            if "yearly_" in filename or "1y_" in filename:
+                                sync_key = f"notion_sync_yearly_{today.year}"
+                                if db.should_run_task(sync_key):
+                                    db.mark_task_run(sync_key)
+                                    return True
+                                return False
+
+                            # Default: sync daily documents
+                            return True
+
+                        # Collect all markdown files
+                        all_md_files = []
+                        for search_path in [output_path, reports_path, research_path]:
+                            if search_path.exists():
+                                all_md_files.extend(search_path.glob("*.md"))
+                                all_md_files.extend(search_path.glob("**/*.md"))
+
+                        # Deduplicate
+                        seen = set()
+                        md_files = []
+                        for f in all_md_files:
+                            if f not in seen and "FILE_INDEX" not in f.name and "/archive/" not in str(f).replace("\\", "/"):
+                                seen.add(f)
+                                md_files.append(f)
+
+                        for filepath in md_files:
+                            try:
+                                content = filepath.read_text(encoding="utf-8")
+
+                                # Check if document is ready for sync (has proper frontmatter status)
+                                # Documents without frontmatter or with status != published/complete should NOT sync
+                                try:
+                                    if not is_ready_for_sync(content):
+                                        skipped_status += 1
+                                        continue
+                                except Exception as e:
+                                    # If frontmatter check fails, skip this file - don't sync unready documents
+                                    logger.debug(f"Frontmatter check failed for {filepath.name}: {e}")
+                                    skipped_status += 1
+                                    continue
+
+                                # Check type-aware schedule
+                                doc_type = "journal" if "Journal_" in filepath.name else "reports"
+                                if not should_sync_doc(filepath, doc_type):
+                                    skipped_schedule += 1
+                                    continue
+
+                                # Sync the file
+                                result = publisher.sync_file(str(filepath), force=False)
+                                if result.get("skipped"):
+                                    # File unchanged - this is fine
+                                    pass
+                                else:
+                                    published += 1
+                                    print(f"  ✓ {filepath.name} → {result.get('type', 'notes')}")
+
+                            except Exception as e:
+                                failed += 1
+                                logger.debug(f"Failed to sync {filepath.name}: {e}")
+
+                        # Summary
+                        if published > 0:
+                            print(f"[DAEMON] Published {published} documents to Notion")
+                        if skipped_schedule > 0:
+                            print(f"[DAEMON] Skipped {skipped_schedule} docs (not scheduled yet)")
+                        if skipped_status > 0:
+                            print(f"[DAEMON] Skipped {skipped_status} docs (not ready - draft/not AI processed)")
+                        if failed > 0:
+                            print(f"[DAEMON] Failed to publish {failed} documents")
+
+                        return published, skipped_schedule, skipped_status
+
+                    except ImportError:
+                        print("[DAEMON] Notion publisher not available, skipping")
+                        return 0, 0, 0
+                    except ValueError as e:
+                        # Missing API keys
+                        print(f"[DAEMON] Notion not configured: {e}")
+                        return 0, 0, 0
+                    except Exception as notion_err:
+                        print(f"[DAEMON] Notion publishing error: {notion_err}")
+                        return 0, 0, 0
+
+        # End of post-analysis try block
     except ImportError as e:
         print(f"[DAEMON] Post-analysis skipped (missing module): {e}")
     except Exception as e:
         print(f"[DAEMON] Post-analysis error: {e}")
-
 
 def interactive_mode(no_ai: bool = False):
     """Simplified interactive menu."""
@@ -1152,6 +1227,8 @@ Examples:
     parser.add_argument("--no-ai", action="store_true", help="Disable AI-generated content (Gemini)")
     parser.add_argument("--interactive", "-i", action="store_true", help="Force interactive mode")
     parser.add_argument("--once", action="store_true", help="Run once and exit (no daemon)")
+    parser.add_argument("--wait", action="store_true", help="Wait (bounded by timeout) for post-analysis tasks to complete before exit")
+    parser.add_argument("--wait-forever", action="store_true", help="Wait indefinitely until no tasks, no new insights, and all documents are published to Notion before exiting")
     parser.add_argument(
         "--interval", type=int, default=0, help="Hours between daemon runs (legacy, default: 0 = use minutes)"
     )
@@ -1239,8 +1316,14 @@ Examples:
         print_banner()
         print("[ONCE] Running single analysis cycle...")
         run_all(no_ai=args.no_ai, force=args.force)
-        # Run post-analysis tasks
-        _run_post_analysis_tasks()
+        # Default behavior: wait-forever unless user explicitly disables
+        wait_forever_flag = args.wait_forever or (not args.wait and not args.wait_forever)
+        # Run post-analysis tasks (force inline if waiting and optionally wait or wait-forever)
+        _run_post_analysis_tasks(
+            force_inline=(args.wait or wait_forever_flag),
+            wait_for_completion=args.wait,
+            wait_forever=wait_forever_flag,
+        )
         print("[ONCE] Single run complete. Exiting.")
         return
 
@@ -1289,7 +1372,7 @@ Examples:
     if args.once:
         print_banner()
         run_all(no_ai=args.no_ai, force=args.force)
-        _run_post_analysis_tasks()  # Execute post-analysis tasks for a single run
+        _run_post_analysis_tasks(force_inline=args.wait, wait_for_completion=args.wait)  # Execute post-analysis tasks for a single run
         return
     # Default: Autonomous daemon mode
     print_banner()

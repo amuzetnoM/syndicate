@@ -57,11 +57,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 try:
     # Ensure environment variables from repo `.env` are available to the daemon
-    from dotenv import load_dotenv
+    from gold_standard.utils.env_loader import load_env
 
-    load_dotenv(str(PROJECT_ROOT / ".env"))
+    load_env(PROJECT_ROOT / ".env")
 except Exception:
-    # Best-effort: continue if dotenv isn't installed or .env missing
+    # Best-effort: continue if loader isn't available
     pass
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -549,6 +549,15 @@ class ExecutorDaemon:
                 db = self._get_db()
                 db.set_config(f"executor_heartbeat_{self.worker_id}", datetime.now().isoformat())
                 db.set_config(f"executor_stats_{self.worker_id}", json.dumps(self.stats))
+                # Update Prometheus metrics if available
+                try:
+                    from gold_standard.metrics import METRICS
+
+                    # set heartbeat timestamp and leadership gauge
+                    METRICS["executor_heartbeat_timestamp"].labels(worker_id=self.worker_id).set(time.time())
+                    METRICS["executor_is_leader"].labels(worker_id=self.worker_id).set(1 if getattr(self, "_is_leader", False) else 0)
+                except Exception:
+                    pass
             except Exception as e:
                 self.logger.debug(f"Heartbeat error: {e}")
 
@@ -669,6 +678,14 @@ class ExecutorDaemon:
 
         # Recover orphans on startup
         self.recover_orphans()
+
+        # Start Prometheus metrics server if available (best-effort)
+        try:
+            from gold_standard.metrics import start_metrics_server
+
+            start_metrics_server()
+        except Exception:
+            pass
 
         # Start heartbeat
         self._start_heartbeat()

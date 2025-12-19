@@ -1717,22 +1717,52 @@ class DatabaseManager:
         artifacts: str = None,
     ) -> bool:
         """Log task execution result."""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
+        # Support legacy callers that pass `result` kwarg
+        final_result = result_data if result_data is not None else result
 
-            # Support legacy callers that pass `result` kwarg
-            final_result = result_data if result_data is not None else result
+        # Retry transient I/O/DB errors (Errno 5 / sqlite3 OperationalError)
+        import time
+        import sqlite3
 
-            cursor.execute(
-                """
-                INSERT INTO task_execution_log
-                (action_id, success, result_data, execution_time_ms, error_message, artifacts)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """,
-                (action_id, 1 if success else 0, final_result, execution_time_ms, error_message, artifacts),
-            )
+        retries = 0
+        max_retries = 5
+        backoff = 0.5
 
-            return True
+        while True:
+            try:
+                with self._get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO task_execution_log
+                        (action_id, success, result_data, execution_time_ms, error_message, artifacts)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                        (action_id, 1 if success else 0, final_result, execution_time_ms, error_message, artifacts),
+                    )
+                return True
+            except (OSError, IOError, sqlite3.OperationalError) as e:
+                retries += 1
+                # Increment prometheus retry counter if available
+                try:
+                    from gold_standard.metrics import METRICS
+
+                    METRICS["db_log_retries_total"].inc()
+                except Exception:
+                    pass
+                if retries > max_retries:
+                    # Final failure - increment error counter if present
+                    try:
+                        from gold_standard.metrics import METRICS
+
+                        METRICS["db_log_errors_total"].inc()
+                    except Exception:
+                        pass
+                    logging.getLogger(__name__).error(f"Failed to log task execution after {max_retries} retries: {e}")
+                    raise
+                logging.getLogger(__name__).warning(f"Transient DB error logging task (attempt {retries}/{max_retries}): {e}; retrying in {backoff}s")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 5.0)
 
     def get_execution_history(self, action_id: str = None, days: int = 7) -> List[Dict]:
         """Get task execution history."""

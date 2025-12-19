@@ -230,6 +230,11 @@ python run.py --run
 python run.py --daily
 ```
 
+Notes:
+
+- `--once` now blocks until post-analysis tasks (insights extraction, task execution, file organization, and publishing) finish by default. Use `--wait` to wait for completion for a bounded time or `--wait-forever` to block indefinitely until all post-run tasks are complete. This makes single-run mode deterministic for CI and manual debugging.
+- The CLI will attempt to automatically re-execute under the project's virtual environment (searching `venv312`, `venv`, and `.venv`) if available. To ensure detached executor processes have the same environment and secrets, ensure `.env` is present and contains `NOTION_API_KEY` and `NOTION_DATABASE_ID` when using Notion publishing.
+
 #### Interactive Menu Mode
 
 ```powershell

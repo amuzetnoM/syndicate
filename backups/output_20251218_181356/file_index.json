@@ -1,0 +1,106 @@
+{
+  "files": {
+    "/home/adam/worxpace/gold_standard/output/reports/journals/Journal_2025-12-18.md": {
+      "original_name": "Journal_2025-12-18.md",
+      "category": "journals",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.544845",
+      "size_bytes": 304
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/analysis/3M_2025-12-18.md": {
+      "original_name": "3m_2025-12-18.md",
+      "category": "analysis",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.552170",
+      "size_bytes": 3235
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/monthly/Monthly_2025-12.md": {
+      "original_name": "monthly_yearly_report_2025-12-18.md",
+      "category": "monthly",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.553950",
+      "size_bytes": 6629
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/analysis/1Y_2025-12-18.md": {
+      "original_name": "1y_2025-12-18.md",
+      "category": "analysis",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.555192",
+      "size_bytes": 3321
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/institutional/InstMatrix_2025-12-18.md": {
+      "original_name": "inst_matrix_2025-12-18.md",
+      "category": "institutional",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.556467",
+      "size_bytes": 3442
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/premarket/PreMarket_2025-12-18.md": {
+      "original_name": "premarket_2025-12-18.md",
+      "category": "premarket",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.557525",
+      "size_bytes": 953
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/catalysts/Catalysts_2025-12-18.md": {
+      "original_name": "catalysts_2025-12-18.md",
+      "category": "catalysts",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.558409",
+      "size_bytes": 4793
+    },
+    "/home/adam/worxpace/gold_standard/output/reports/economic/EconCalendar_2025-12-18.md": {
+      "original_name": "economic_calendar_2025-12-18.md",
+      "category": "economic",
+      "date": "2025-12-18",
+      "organized_at": "2025-12-18T16:39:44.559612",
+      "size_bytes": 8791
+    }
+  },
+  "categories": {
+    "journals": [
+      "/home/adam/worxpace/gold_standard/output/reports/journals/Journal_2025-12-18.md"
+    ],
+    "premarket": [
+      "/home/adam/worxpace/gold_standard/output/reports/premarket/PreMarket_2025-12-18.md"
+    ],
+    "weekly": [],
+    "monthly": [
+      "/home/adam/worxpace/gold_standard/output/reports/monthly/Monthly_2025-12.md"
+    ],
+    "yearly": [],
+    "catalysts": [
+      "/home/adam/worxpace/gold_standard/output/reports/catalysts/Catalysts_2025-12-18.md"
+    ],
+    "institutional": [
+      "/home/adam/worxpace/gold_standard/output/reports/institutional/InstMatrix_2025-12-18.md"
+    ],
+    "analysis": [
+      "/home/adam/worxpace/gold_standard/output/reports/analysis/3M_2025-12-18.md",
+      "/home/adam/worxpace/gold_standard/output/reports/analysis/1Y_2025-12-18.md"
+    ],
+    "economic": [
+      "/home/adam/worxpace/gold_standard/output/reports/economic/EconCalendar_2025-12-18.md"
+    ],
+    "research": [],
+    "charts": []
+  },
+  "last_updated": "2025-12-18T16:39:44.569478",
+  "statistics": {
+    "total_files": 8,
+    "total_archived": 0,
+    "by_category": {
+      "journals": 1,
+      "premarket": 1,
+      "weekly": 0,
+      "monthly": 1,
+      "yearly": 0,
+      "catalysts": 1,
+      "institutional": 1,
+      "analysis": 2,
+      "economic": 1,
+      "research": 0,
+      "charts": 0
+    }
+  }
+}

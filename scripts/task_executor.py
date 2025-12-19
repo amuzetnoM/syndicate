@@ -57,6 +57,14 @@ try:
 except ImportError:
     yf = None
 
+# Ensure .env is loaded so Notion/API keys are available to inline task executor
+try:
+    from gold_standard.utils.env_loader import load_env
+
+    load_env(PROJECT_ROOT / ".env")
+except Exception:
+    pass
+
 
 # ==========================================
 # RETRY CONFIGURATION

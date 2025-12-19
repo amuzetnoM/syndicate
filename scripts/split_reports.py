@@ -28,7 +28,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Load environment variables from .env file
 from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    from gold_standard.utils.env_loader import load_env
+
+    load_env(PROJECT_ROOT / ".env")
+except Exception:
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except Exception:
+        pass
 
 import pandas as pd
 

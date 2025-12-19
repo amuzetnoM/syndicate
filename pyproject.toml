@@ -51,6 +51,7 @@ dependencies = [
     "colorama>=0.4.6",
     "filelock>=3.0.0",
     "python-dotenv>=1.0.0",
+    "prometheus-client>=0.16.0",
 ]
 
 [project.optional-dependencies]

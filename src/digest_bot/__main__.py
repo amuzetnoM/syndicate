@@ -275,9 +275,7 @@ def run_digest_pipeline(
     # Report generation stats
     if result.metadata:
         meta = result.metadata
-        Console.success(
-            f"Generated: {meta.get('tokens_used', '?')} tokens in " f"{meta.get('generation_time', 0):.2f}s"
-        )
+        Console.success(f"Generated: {meta.get('tokens_used', '?')} tokens in {meta.get('generation_time', 0):.2f}s")
         Console.info(f"Provider: {meta.get('provider', '?')} / {meta.get('model', '?')}")
 
     Console.divider()
@@ -486,7 +484,22 @@ def check(
         Console.info(f"Ollama host: {config.llm.ollama_host}")
         Console.info(f"Model: {config.llm.ollama_model}")
 
-        # TODO: Check Ollama API
+        # Check Ollama server health and models
+        try:
+            from .llm.ollama import OllamaProvider
+
+            oll = OllamaProvider(host=config.llm.ollama_host, model=config.llm.ollama_model)
+            if oll.health_check():
+                Console.success("Ollama server: reachable")
+                models = oll.list_models()
+                if models:
+                    Console.info(f"Available models: {', '.join(models[:5])}")
+                else:
+                    Console.info("No models reported by Ollama (server may be starting or no models pulled)")
+            else:
+                Console.warning("Ollama server: unreachable or not responding")
+        except Exception as e:
+            Console.error(f"Ollama check failed: {e}")
 
     Console.divider()
 
@@ -544,7 +557,7 @@ def history(limit: int) -> None:
         mtime = datetime.fromtimestamp(stat.st_mtime)
         size_kb = stat.st_size / 1024
 
-        Console.info(f"{path.stem}  " f"{mtime.strftime('%Y-%m-%d %H:%M')}  " f"{size_kb:.1f} KB")
+        Console.info(f"{path.stem}  {mtime.strftime('%Y-%m-%d %H:%M')}  {size_kb:.1f} KB")
 
     print()
     Console.info(f"Showing {len(digests)} of {limit} max")

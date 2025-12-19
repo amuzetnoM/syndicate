@@ -37,9 +37,18 @@ except ImportError:
     NOTION_AVAILABLE = False
     print("notion-client not installed. Run: pip install notion-client")
 
-from dotenv import load_dotenv
+try:
+    from gold_standard.utils.env_loader import load_env
 
-load_dotenv()
+    load_env(PROJECT_ROOT / ".env")
+except Exception:
+    # Fallback to python-dotenv if available
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except Exception:
+        pass
 import hashlib
 from filelock import FileLock
 
@@ -566,6 +575,14 @@ class NotionPublisher:
         try:
             if tags:
                 properties["Tags"] = {"multi_select": [{"name": t} for t in tags]}
+        except Exception:
+            pass
+
+        # Map frontmatter lifecycle status to Notion 'Status' select property when present
+        try:
+            status = meta.get("status")
+            if status:
+                properties["Status"] = {"select": {"name": str(status)}}
         except Exception:
             pass
 

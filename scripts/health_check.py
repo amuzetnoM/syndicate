@@ -47,7 +47,17 @@ def check_packages():
 def check_notion():
     from dotenv import load_dotenv
 
-    load_dotenv()
+    try:
+        from gold_standard.utils.env_loader import load_env
+
+        load_env(PROJECT_ROOT / ".env")
+    except Exception:
+        try:
+            from dotenv import load_dotenv
+
+            load_dotenv()
+        except Exception:
+            pass
     from os import getenv
 
     key = getenv("NOTION_API_KEY")

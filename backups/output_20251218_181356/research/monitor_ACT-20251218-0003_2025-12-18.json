@@ -1,0 +1,23 @@
+{
+  "action_id": "ACT-20251218-0003",
+  "created_at": "2025-12-18T16:39:40.611433",
+  "status": "active",
+  "levels_to_watch": [
+    {
+      "price": 4200.0,
+      "type": "price_level",
+      "triggered": false
+    },
+    {
+      "price": 2025.0,
+      "type": "price_level",
+      "triggered": false
+    },
+    {
+      "price": 4200.0,
+      "type": "price_level",
+      "triggered": false
+    }
+  ],
+  "conditions": []
+}

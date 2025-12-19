@@ -1,0 +1,20 @@
+{
+  "action_id": "ACT-20251218-0005",
+  "fetched_at": "2025-12-18T16:39:43.868081",
+  "data": {
+    "etf_data": {
+      "GLD": {
+        "price": 398.57,
+        "volume": 11567733,
+        "avg_volume": 15854246,
+        "total_assets": 140826689536
+      },
+      "SLV": {
+        "price": 59.32,
+        "volume": 46891658,
+        "avg_volume": 40617914,
+        "total_assets": 27047493632
+      }
+    }
+  }
+}

@@ -295,7 +295,7 @@ def run_build_and_push(dry_run: bool = True, tag: Optional[str] = None, push: bo
 
     # Optional: docker build & push
     # Do not push unless explicitly requested
-    # TODO: implement docker build/push with GHCR credentials
+    # Note: GHCR docker build/push is not implemented here; consider implementing a CI-based release workflow or add a dedicated helper to perform authenticated push
 
     return {"status": "done"}
 

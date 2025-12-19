@@ -13,6 +13,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### HIGHLIGHTS
 
+> Version 3.5.2 Patch (2025-12-19)
+
+Patch Summary: Runner finish & docs, ADX robustness, venv and Notion hardening, and CLI wait-mode improvements.
+
+Key fixes and improvements:
+- **ADX & Indicator Robustness:** Fixed ADX computation to handle multi-column OHLC inputs and misaligned indices; added safe fallbacks and unit tests (`tests/test_adx_robust.py`). Prevents ADX crashes from irregular data shapes.
+- **Deterministic Single-Run Wait Behavior:** Added `--wait` and `--wait-forever` flags and made wait-forever the default for `--once` (block until post-analysis tasks complete). Ensures a single-run waits until all insights/actions/publishing finish.
+- **VenV and Startup Hardening:** `run.py` re-executes itself under the project venv if available; `scripts/start_executor.sh` now sources the repository `.env` and prefers project venv for detached executor processes to ensure consistent runtime and available secrets.
+- **Publishing & Orchestration Helpers:** Added `publish_documents_once()` helper in `run.py` to centralize Notion sync logic and improve reliability and testability of post-analysis publishing.
+- **Documentation & Changelog Updates:** Added entries and updated README and setup guides to reflect venv usage, LLM provider checks, and Notion env requirements.
+- **Tests & E2E Validation:** Added unit tests and executed an end-to-end single-run (insights → tasks → organization → publish attempt). All unit tests pass locally.
+
 > Version 3.5.1 Patch (2025-12-18)
 
 Patch Summary: Production hardening, deterministic per-run chart generation, Notion daemon env-loading, and documentation updates.

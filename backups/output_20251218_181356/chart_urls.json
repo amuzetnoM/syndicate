@@ -1,0 +1,23 @@
+{
+  "charts": {
+    "SILVER.png": {
+      "url": "https://i.ibb.co/qYyhz0hV/SILVER.png",
+      "hash": "86a35001df7fdae17c3f38cf246c1b8a",
+      "uploaded": "2025-12-18T16:02:56.630391",
+      "ticker": "SILVER"
+    },
+    "VIX.png": {
+      "url": "https://i.ibb.co/pBVX8MKc/VIX.png",
+      "hash": "2bc53b5d679855a295b0a9e9282bcfdb",
+      "uploaded": "2025-12-18T16:02:58.621135",
+      "ticker": "VIX"
+    },
+    "GOLD.png": {
+      "url": "https://i.ibb.co/h1WBT2ZG/GOLD.png",
+      "hash": "7362efe1e26fc7477d9dfaa7f386b1ec",
+      "uploaded": "2025-12-18T16:03:00.414130",
+      "ticker": "GOLD"
+    }
+  },
+  "last_updated": "2025-12-18T16:03:00.414210"
+}

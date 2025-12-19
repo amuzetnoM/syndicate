@@ -110,9 +110,29 @@ from colorama import init
 
 # Load .env early so credentials in the repo are available for provider init
 try:
-    load_dotenv()
+    try:
+        from gold_standard.utils.env_loader import load_env
+
+        load_env()
+    except Exception:
+        load_dotenv()
 except Exception:
     pass
+
+# Helper for robust integer env parsing used across the module
+try:
+    # Prefer local helper if provided by `scripts/local_llm.py`
+    from scripts.local_llm import get_env_int as _get_env_int  # type: ignore
+except Exception:
+    def _get_env_int(key: str, default: int) -> int:
+        v = os.environ.get(key, "")
+        try:
+            return int(v) if v else default
+        except Exception:
+            import re
+
+            m = re.match(r"\s*([+-]?\d+)", v or "")
+            return int(m.group(1)) if m else default
 
 
 class LLMProvider:
@@ -301,46 +321,43 @@ class FallbackLLMProvider(LLMProvider):
         """Default: Gemini → Ollama → Local"""
         # 1. Gemini (primary)
         if config.GEMINI_API_KEY:
+            # Ensure config value takes precedence, but don't fail startup if assignment fails
             try:
-                # Ensure the GEMINI_API_KEY originates from the repo `Config` and
-                # prevent other environment values (e.g., GOOGLE_API_KEY) from taking precedence.
-                try:
-                    os.environ["GEMINI_API_KEY"] = config.GEMINI_API_KEY
-                except Exception:
-                    pass
-                # Remove competing GOOGLE_API_KEY if present to avoid library auto-selection
-                os.environ.pop("GOOGLE_API_KEY", None)
+                os.environ["GEMINI_API_KEY"] = config.GEMINI_API_KEY
+            except Exception:
+                pass
 
-                # Make sure the `genai` client is imported and available for configuration.
-                # Older code assumed a module-level `genai` would be present; ensure we
-                # import the official client or the compat shim before calling configure.
-                try:
-                    if globals().get("genai") is None:
+            # Remove competing environment keys that could cause library auto-selection
+            os.environ.pop("GOOGLE_API_KEY", None)
+
+            try:
+                # Import the official client or compat shim into module globals
+                if globals().get("genai") is None:
+                    try:
+                        import google.generativeai as genai_mod  # type: ignore
+                        globals()["genai"] = genai_mod
+                    except Exception:
                         try:
-                            import google.generativeai as genai_mod  # type: ignore
-                            globals()["genai"] = genai_mod
+                            from scripts import genai_compat as genai_compat  # type: ignore
+                            globals()["genai"] = genai_compat
                         except Exception:
-                            try:
-                                from scripts import genai_compat as genai_compat  # type: ignore
+                            # Neither client importable — propagate to fallback handling
+                            raise
 
-                                globals()["genai"] = genai_compat
-                            except Exception:
-                                # If neither client is importable, raise to fallback
-                                raise
-
-                    # Configure the client with the provided key
-                    globals()["genai"].configure(api_key=config.GEMINI_API_KEY)
-
-                    self._gemini = GeminiProvider(config.GEMINI_MODEL)
-                    self._providers.append(self._gemini)
-                    self._current = self._gemini
-                    self.name = "Gemini"
-                    logger.info(f"[LLM] ✓ Primary: Gemini ({config.GEMINI_MODEL})")
+                # Configure the client and instantiate provider
+                globals()["genai"].configure(api_key=config.GEMINI_API_KEY)
+                self._gemini = GeminiProvider(config.GEMINI_MODEL)
+                self._providers.append(self._gemini)
+                self._current = self._gemini
+                self.name = "Gemini"
+                logger.info(f"[LLM] ✓ Primary: Gemini ({config.GEMINI_MODEL})")
             except Exception as e:
                 logger.warning(f"[LLM] ✗ Gemini init failed: {e}")
-                # If strict-gemini mode enabled, do not fallback to local providers
+                # If strict-gemini mode enabled, do not fallback
                 if os.environ.get("LLM_STRICT_GEMINI", "0") == "1":
-                    logger.error("[LLM] STRICT GEMINI MODE: aborting due to Gemini init failure and no fallbacks allowed")
+                    logger.error(
+                        "[LLM] STRICT GEMINI MODE: aborting due to Gemini init failure and no fallbacks allowed"
+                    )
                     raise
         # 2. Ollama (fallback 1)
         self._try_init_ollama(config, logger)
@@ -650,21 +667,7 @@ class Config:
         default_factory=lambda: os.environ.get("PREFER_LOCAL_LLM", "").lower() in ("1", "true", "yes")
     )
     # LOCAL_LLM_GPU_LAYERS: Number of layers to offload to GPU (0=CPU, -1=all)
-    # Use robust parsing that tolerates commented or malformed env values.
-    try:
-        from scripts.local_llm import get_env_int as _get_env_int  # type: ignore
-    except Exception:
-        def _get_env_int(key: str, default: int) -> int:
-            v = os.environ.get(key, "")
-            try:
-                return int(v) if v else default
-            except Exception:
-                # Try to extract leading integer if present
-                import re
-
-                m = re.match(r"\s*([+-]?\d+)", v or "")
-                return int(m.group(1)) if m else default
-
+    # Use robust parsing that tolerates commented or malformed env values via module helper
     LOCAL_LLM_GPU_LAYERS: int = field(default_factory=lambda: _get_env_int("LOCAL_LLM_GPU_LAYERS", 0))
     # LOCAL_LLM_AUTO_DOWNLOAD: Auto-download a model if none found (1/true)
     LOCAL_LLM_AUTO_DOWNLOAD: bool = field(
@@ -1407,7 +1410,14 @@ class QuantEngine:
 
                 # Validate minimal columns exist
                 required_columns = ["Open", "High", "Low", "Close"]
-                if not all(col in df.columns for col in required_columns):
+                def _has_col(df, col):
+                    if col in df.columns:
+                        return True
+                    if isinstance(df.columns, pd.MultiIndex):
+                        return col in df.columns.get_level_values(0)
+                    return False
+
+                if not all(_has_col(df, col) for col in required_columns):
                     self.logger.warning(f"Missing required OHLC columns for {ticker}: {df.columns}")
                     continue
 
@@ -1497,8 +1507,17 @@ class QuantEngine:
                     # RSI
                     rsi_series = safe_indicator_series("RSI", ta.rsi, df["Close"], length=14)
                     if rsi_series is None:
-                        # fallback computation
-                        delta = df["Close"].diff()
+                        # fallback computation (coerce multi-column Close to single Series if needed)
+                        close_src = df["Close"]
+                        if isinstance(close_src, pd.DataFrame):
+                            # prefer column that contains 'Close' in its name, else first numeric column
+                            cols = [c for c in close_src.columns if "close" in str(c).lower()]
+                            if cols:
+                                close_src = close_src[cols[0]]
+                            else:
+                                close_src = close_src.iloc[:, 0]
+
+                        delta = close_src.diff()
                         up = delta.clip(lower=0)
                         down = -delta.clip(upper=0)
                         ma_up = up.rolling(window=14, min_periods=14).mean()
@@ -1512,8 +1531,15 @@ class QuantEngine:
                 try:
                     sma200 = safe_indicator_series("SMA_200", ta.sma, df["Close"], length=200)
                     if sma200 is None:
-                        # fallback SMA using pandas rolling mean
-                        sma200 = df["Close"].rolling(window=200, min_periods=1).mean()
+                        # fallback SMA using pandas rolling mean (coerce multi-column Close)
+                        close_src = df["Close"]
+                        if isinstance(close_src, pd.DataFrame):
+                            cols = [c for c in close_src.columns if "close" in str(c).lower()]
+                            if cols:
+                                close_src = close_src[cols[0]]
+                            else:
+                                close_src = close_src.iloc[:, 0]
+                        sma200 = close_src.rolling(window=200, min_periods=1).mean()
                 except Exception as e:
                     self.logger.warning(f"SMA_200 computation failed for {ticker}: {e}")
                     # fallback SMA using pandas rolling mean
@@ -1525,8 +1551,15 @@ class QuantEngine:
                 try:
                     sma50 = safe_indicator_series("SMA_50", ta.sma, df["Close"], length=50)
                     if sma50 is None:
-                        # fallback SMA using pandas rolling mean
-                        sma50 = df["Close"].rolling(window=50, min_periods=1).mean()
+                        # fallback SMA using pandas rolling mean (coerce multi-column Close)
+                        close_src = df["Close"]
+                        if isinstance(close_src, pd.DataFrame):
+                            cols = [c for c in close_src.columns if "close" in str(c).lower()]
+                            if cols:
+                                close_src = close_src[cols[0]]
+                            else:
+                                close_src = close_src.iloc[:, 0]
+                        sma50 = close_src.rolling(window=50, min_periods=1).mean()
                 except Exception as e:
                     self.logger.warning(f"SMA_50 computation failed for {ticker}: {e}")
                     # fallback SMA using pandas rolling mean
@@ -1549,7 +1582,8 @@ class QuantEngine:
                     self.logger.warning(f"ATR computation failed for {ticker}: {e}")
                     atr_series = None
 
-                # ADX returns DataFrame with multiple columns. Wrap safely.
+                # ADX returns DataFrame with multiple columns. Wrap safely and make it robust to
+                # irregular input shapes (DataFrame vs Series), missing indices, and divide-by-zero.
                 try:
                     adx_df = None
                     raw_adx = None
@@ -1557,29 +1591,56 @@ class QuantEngine:
                         raw_adx = ta.adx(df["High"], df["Low"], df["Close"], length=14)
                     except Exception:
                         raw_adx = None
-                    if raw_adx is not None:
-                        if isinstance(raw_adx, pd.DataFrame):
-                            adx_df = raw_adx
-                        else:
-                            # if series, no
-                            adx_df = None
+
+                    if isinstance(raw_adx, pd.DataFrame):
+                        adx_df = raw_adx
+
                     if adx_df is None:
-                        # fallback ADX
-                        prev_close = df["Close"].shift(1)
-                        tr1 = df["High"] - df["Low"]
-                        tr2 = (df["High"] - prev_close).abs()
-                        tr3 = (df["Low"] - prev_close).abs()
+                        # fallback ADX (robust version)
+                        # Coerce inputs to Series and align their indices
+                        high = df["High"]
+                        low = df["Low"]
+                        close = df["Close"]
+
+                        if isinstance(high, pd.DataFrame):
+                            high = high.iloc[:, 0]
+                        if isinstance(low, pd.DataFrame):
+                            low = low.iloc[:, 0]
+                        if isinstance(close, pd.DataFrame):
+                            close = close.iloc[:, 0]
+
+                        common_index = high.index.intersection(low.index).intersection(close.index)
+                        high = high.reindex(common_index)
+                        low = low.reindex(common_index)
+                        close = close.reindex(common_index)
+
+                        prev_close = close.shift(1)
+                        tr1 = high - low
+                        tr2 = (high - prev_close).abs()
+                        tr3 = (low - prev_close).abs()
                         tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
                         atr = tr.rolling(window=14, min_periods=14).mean()
-                        up_move = df["High"].diff()
-                        down_move = -df["Low"].diff()
+
+                        up_move = high.diff()
+                        down_move = -low.diff()
+
                         plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0.0)
                         minus_dm = (-down_move).where((down_move > up_move) & (down_move > 0), 0.0)
-                        plus_di = (plus_dm.rolling(window=14, min_periods=14).sum() / atr) * 100
-                        minus_di = (minus_dm.rolling(window=14, min_periods=14).sum() / atr) * 100
-                        dx = (plus_di - minus_di).abs() / (plus_di + minus_di) * 100
+
+                        # Align to ATR index and guard divide-by-zero
+                        plus_dm = plus_dm.reindex(atr.index)
+                        minus_dm = minus_dm.reindex(atr.index)
+
+                        atr_safe = atr.replace(0, pd.NA)
+
+                        plus_di = (plus_dm.rolling(window=14, min_periods=14).sum() / atr_safe) * 100
+                        minus_di = (minus_dm.rolling(window=14, min_periods=14).sum() / atr_safe) * 100
+
+                        denom = (plus_di + minus_di).replace({0: pd.NA})
+                        dx = (plus_di - minus_di).abs() / denom * 100
                         adx_ser = dx.rolling(window=14, min_periods=14).mean()
-                        adx_df = pd.DataFrame({"ADX_14": adx_ser, "DMP_14": plus_di, "DMN_14": minus_di})
+
+                        adx_df = pd.DataFrame({"ADX_14": adx_ser, "DMP_14": plus_di, "DMN_14": minus_di}, index=adx_ser.index)
                 except Exception as e:
                     self.logger.warning(f"ADX computation failed for {ticker}: {e}")
                     adx_df = None
@@ -1597,7 +1658,30 @@ class QuantEngine:
                     df = pd.concat([df, adx_df], axis=1)
 
                 # Only drop rows based on missing OHLC data — keep indicator NaNs to avoid dropping datasets
-                df_clean = df.dropna(subset=["Open", "High", "Low", "Close"])
+                # Support MultiIndex columns by normalizing required OHLC columns to single-level
+                subset_cols = []
+                for col in ["Open", "High", "Low", "Close"]:
+                    if col in df.columns:
+                        subset_cols.append(col)
+                    elif isinstance(df.columns, pd.MultiIndex) and col in df.columns.get_level_values(0):
+                        # pick first matching level-1 column and expose it as a single-level column
+                        for c in df.columns:
+                            if c[0] == col:
+                                try:
+                                    df[col] = df[c]
+                                except Exception:
+                                    # if df[c] is a DataFrame, pick first inner column
+                                    if isinstance(df[c], pd.DataFrame):
+                                        df[col] = df[c].iloc[:, 0]
+                                subset_cols.append(col)
+                                break
+
+                try:
+                    df_clean = df.dropna(subset=subset_cols)
+                except Exception:
+                    # conservative fallback: require presence of explicit columns only
+                    df_clean = df.dropna(subset=[c for c in ["Open", "High", "Low", "Close"] if c in df.columns])
+
                 if not df_clean.empty:
                     return df_clean
 
@@ -2128,6 +2212,14 @@ def execute(
             f.write("![Silver](charts/SILVER.png)\n\n")
             f.write("![VIX](charts/VIX.png)\n")
 
+        # Instrument charts/report generation for Prometheus if available
+        try:
+            from gold_standard.metrics import METRICS
+
+            METRICS["charts_generated_total"].inc()
+        except Exception:
+            pass
+
         logger.info(f"Report generated: {report_path}")
 
         # Save to database for organized storage
@@ -2206,6 +2298,8 @@ def main() -> None:
     # Parse CLI arguments
     parser = argparse.ArgumentParser(description="Gold Standard Quant Analysis")
     parser.add_argument("--once", action="store_true", help="Run one cycle and exit")
+    parser.add_argument("--wait", action="store_true", help="Wait (bounded by timeout) for post-analysis tasks to complete before exit")
+    parser.add_argument("--wait-forever", action="store_true", help="Wait indefinitely until no tasks, no new insights, and all documents are published to Notion before exiting")
     parser.add_argument("--dry-run", action="store_true", help="Run without writing memory/report")
     parser.add_argument("--no-ai", action="store_true", help="Do not call AI, produce a skeleton report")
     parser.add_argument("--force", "-f", action="store_true", help="Force regenerate charts and re-run expensive steps")
@@ -2228,6 +2322,16 @@ def main() -> None:
     # Adjust log level from CLI
     logger.setLevel(getattr(logging, args.log_level.upper(), logging.INFO))
 
+    # Start metrics server (Prometheus) if available
+    try:
+        from gold_standard.metrics import start_metrics_server, set_readiness
+
+        start_metrics_server()
+        # Mark readiness; modules may update later
+        set_readiness(True)
+        logger.info("Metrics server started (prometheus) on port %s", os.getenv("METRICS_PORT", "8000"))
+    except Exception:
+        logger.debug("Prometheus metrics server not available or failed to start")
     # Create an LLM provider unless --no-ai is set. Do not require Gemini API key
     model_obj = None
     if not args.no_ai:
@@ -2260,9 +2364,23 @@ def main() -> None:
     # Execute immediately
     execute(config, logger, model=model_obj, dry_run=args.dry_run, no_ai=args.no_ai, force=args.force)
 
-    # If --once, we exit now
+    # If --once, run post-analysis tasks (insights, task execution, Notion sync) then exit
     if args.once:
-        logger.info("Run-once mode specified -- exiting")
+        logger.info("Run-once mode specified -- running post-analysis tasks (insights, tasks, Notion sync)")
+        try:
+            # Import run module and invoke post-analysis handler (safe: run.main isn't executed on import)
+            import run as run_script  # noqa: E402
+
+            # Default wait-forever behavior unless explicit flags provided
+            wait_forever_flag = args.wait_forever or (not args.wait and not args.wait_forever)
+            run_script._run_post_analysis_tasks(
+                force_inline=(args.wait or wait_forever_flag),
+                wait_for_completion=args.wait,
+                wait_forever=wait_forever_flag,
+            )
+        except Exception as e:
+            logger.warning(f"Post-analysis tasks failed: {e}")
+        logger.info("Run-once mode complete -- exiting")
         return
 
     # Schedule recurring execution
