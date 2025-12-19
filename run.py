@@ -81,31 +81,28 @@ def ensure_venv():
         return  # Already in venv
 
     # Look for venv directories
-    venv_dirs = ["venv312", "venv", ".venv"]
+    venv_path = "/mnt/disk/.venv"
     venv_python = None
 
-    for venv_name in venv_dirs:
-        venv_path = os.path.join(PROJECT_ROOT, venv_name)
-        if os.path.isdir(venv_path):
-            # Windows vs Unix paths
-            if sys.platform == "win32":
-                candidate = os.path.join(venv_path, "Scripts", "python.exe")
-            else:
-                candidate = os.path.join(venv_path, "bin", "python")
+    if os.path.isdir(venv_path):
+        # Windows vs Unix paths
+        if sys.platform == "win32":
+            candidate = os.path.join(venv_path, "Scripts", "python.exe")
+        else:
+            candidate = os.path.join(venv_path, "bin", "python")
 
-            if os.path.isfile(candidate):
-                venv_python = candidate
-                break
+        if os.path.isfile(candidate):
+            venv_python = candidate
 
     if venv_python:
         print(
-            f"[VENV] Activating virtual environment: {os.path.basename(os.path.dirname(os.path.dirname(venv_python)))}"
+            f"[VENV] Activating virtual environment: {venv_path}"
         )
         # Re-execute with venv python
         os.execv(venv_python, [venv_python] + sys.argv)
     else:
-        print("[WARN] No virtual environment found. Running with system Python.")
-        print("       Consider creating venv312: python -m venv venv312")
+        print(f"[WARN] Virtual environment not found at {venv_path}. Running with system Python.")
+        print("       Please ensure the virtual environment is correctly set up.")
 
 
 # Ensure venv before importing project modules

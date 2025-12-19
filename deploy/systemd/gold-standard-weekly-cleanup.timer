@@ -1,9 +1,0 @@
-[Unit]
-Description=Run Gold Standard Weekly Cleanup (1:00 Sunday)
-
-[Timer]
-OnCalendar=Sun *-*-* 01:00:00
-Persistent=true
-
-[Install]
-WantedBy=timers.target

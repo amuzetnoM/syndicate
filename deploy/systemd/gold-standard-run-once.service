@@ -1,0 +1,12 @@
+[Unit]
+Description=Gold Standard Run Once Script
+
+[Service]
+Type=oneshot
+ExecStart=/opt/run_gold_standard_with_venv.sh
+WorkingDirectory=/mnt/disk/gold_standard
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
