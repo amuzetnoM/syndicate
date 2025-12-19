@@ -217,6 +217,21 @@ class NotionPublisher:
         self.config = config or NotionConfig.from_env()
         self.client = Client(auth=self.config.api_key)
 
+    def _get_database_properties(self) -> Dict[str, Any]:
+        """Return database properties dictionary (empty if unavailable).
+
+        This helps us build property payloads that match the Notion schema
+        and avoid 400 errors when property types mismatch.
+        """
+        try:
+            db = self.client.databases.retrieve(self.config.database_id)
+            props = db.get("properties", {}) or {}
+            return props
+        except Exception as e:
+            # Don't raise here; caller will fall back to safe behavior
+            print(f"[NotionPublisher] Could not retrieve database properties: {e}")
+            return {}
+
     def detect_type(self, filename: str) -> str:
         """Detect document type from filename."""
         name = Path(filename).name
@@ -558,40 +573,112 @@ class NotionPublisher:
         # Build properties - start with required title
         properties = {"title": {"title": [{"text": {"content": title}}]}}
 
-        # Add optional properties if they exist in the database
-        # Note: These will be silently ignored if properties don't exist
+        # Add optional properties - adapt to database schema when possible
+        db_props = self._get_database_properties()
+
+        # Type property: prefer select when DB has it
         try:
-            if doc_type:
+            if doc_type and "Type" in db_props and db_props["Type"].get("type") == "select":
                 properties["Type"] = {"select": {"name": doc_type}}
         except Exception:
             pass
 
+        # Date property: use date if DB has it
         try:
-            if doc_date:
+            if doc_date and "Date" in db_props and db_props["Date"].get("type") == "date":
                 properties["Date"] = {"date": {"start": doc_date}}
         except Exception:
             pass
 
+        # Tags property: prefer multi_select when DB has it
         try:
-            if tags:
+            if tags and "Tags" in db_props and db_props["Tags"].get("type") == "multi_select":
                 properties["Tags"] = {"multi_select": [{"name": t} for t in tags]}
         except Exception:
             pass
 
-        # Map frontmatter lifecycle status to Notion 'Status' select property when present
+        # Status property: adapt to either 'status' or 'select' (DB may have either)
         try:
             status = meta.get("status")
-            if status:
-                properties["Status"] = {"select": {"name": str(status)}}
+            if status and "Status" in db_props:
+                prop_type = db_props["Status"].get("type")
+                if prop_type == "status":
+                    properties["Status"] = {"status": {"name": str(status)}}
+                elif prop_type == "select":
+                    properties["Status"] = {"select": {"name": str(status)}}
+                else:
+                    # Unknown, skip setting Status to avoid a 400
+                    pass
+            elif status:
+                # DB property unavailable - try 'status' by default (will be retried on failure)
+                properties["Status"] = {"status": {"name": str(status)}}
         except Exception:
             pass
 
-        # Create page
-        response = self.client.pages.create(
-            parent={"database_id": self.config.database_id},
-            properties=properties,
-            children=blocks[:100],  # Notion limit per request
-        )
+        # Create page with robust retry logic and exponential backoff
+        attempts = 3
+        delay = 1
+        last_exc = None
+        for attempt in range(1, attempts + 1):
+            try:
+                response = self.client.pages.create(
+                    parent={"database_id": self.config.database_id},
+                    properties=properties,
+                    children=blocks[:100],  # Notion limit per request
+                )
+                last_exc = None
+                break
+            except Exception as e:
+                last_exc = e
+                # If it's a property-type error, attempt the Status/Minimal fallbacks before retrying
+                try:
+                    db_props = db_props if 'db_props' in locals() else self._get_database_properties()
+                    # If DB Status prop is select but we sent select, try status; if we sent status and DB wants select, try select
+                    if "Status" in properties and "Status" in db_props:
+                        prop_type = db_props["Status"].get("type")
+                        if prop_type == "status" and "select" in properties["Status"]:
+                            properties["Status"] = {"status": {"name": properties["Status"]["select"]["name"]}}
+                            response = self.client.pages.create(
+                                parent={"database_id": self.config.database_id},
+                                properties=properties,
+                                children=blocks[:100],
+                            )
+                            last_exc = None
+                            break
+                        elif prop_type == "select" and "status" in properties["Status"]:
+                            properties["Status"] = {"select": {"name": properties["Status"]["status"]["name"]}}
+                            response = self.client.pages.create(
+                                parent={"database_id": self.config.database_id},
+                                properties=properties,
+                                children=blocks[:100],
+                            )
+                            last_exc = None
+                            break
+                except Exception:
+                    # ignore fallback exceptions and continue to retry
+                    pass
+
+                # As a last resort, try a minimal create with title only
+                try:
+                    minimal_props = {"title": properties.get("title")}
+                    response = self.client.pages.create(
+                        parent={"database_id": self.config.database_id},
+                        properties=minimal_props,
+                        children=blocks[:100],
+                    )
+                    last_exc = None
+                    break
+                except Exception:
+                    pass
+
+                # Exponential backoff before next retry
+                import time
+
+                time.sleep(delay)
+                delay *= 2
+        if last_exc:
+            # Raise a combined error with context for debugging
+            raise Exception(f"Failed to publish to Notion after {attempts} attempts; last error: {last_exc!r}")
 
         # Track usage
         try:
