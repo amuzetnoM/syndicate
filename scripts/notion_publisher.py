@@ -24,6 +24,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List
+import logging
+import random
 
 # Add parent to path for imports
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -638,17 +640,63 @@ class NotionPublisher:
         except Exception:
             pass
 
-        # Date property: use date if DB has it
+        # Helper: normalize dates and map values to Notion property payloads
+        def _normalize_date(val: str) -> str:
+            if not val:
+                return None
+            # Accept ISO-like strings or common formats; prefer YYYY-MM-DD
+            try:
+                # Fast path: already ISO
+                if isinstance(val, str) and re.match(r"^\d{4}-\d{2}-\d{2}", val):
+                    return val.split("T")[0]
+                # Try fromisoformat
+                try:
+                    return datetime.fromisoformat(val).date().isoformat()
+                except Exception:
+                    pass
+                # Try known formats
+                for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y", "%Y/%m/%d"):
+                    try:
+                        return datetime.strptime(val, fmt).date().isoformat()
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            return None
+
+        def _map_relation(prop_value):
+            # Accept list of notion page ids or a single id
+            if not prop_value:
+                return []
+            if isinstance(prop_value, str):
+                return [{"id": prop_value}]
+            if isinstance(prop_value, list):
+                out = []
+                for v in prop_value:
+                    if isinstance(v, dict) and v.get("id"):
+                        out.append({"id": v["id"]})
+                    elif isinstance(v, str):
+                        out.append({"id": v})
+                return out
+            return []
+
+        # Date property: normalize and use date if DB has it
         try:
-            if doc_date and "Date" in db_props and db_props["Date"].get("type") == "date":
-                properties["Date"] = {"date": {"start": doc_date}}
+            nd = _normalize_date(doc_date)
+            if nd and "Date" in db_props and db_props["Date"].get("type") == "date":
+                properties["Date"] = {"date": {"start": nd}}
         except Exception:
             pass
 
-        # Tags property: prefer multi_select when DB has it
+        # Tags property: prefer multi_select when DB has it; ensure unique names
         try:
             if tags and "Tags" in db_props and db_props["Tags"].get("type") == "multi_select":
-                properties["Tags"] = {"multi_select": [{"name": t} for t in tags]}
+                uniq = []
+                for t in tags:
+                    tn = str(t).strip()
+                    if tn and tn not in uniq:
+                        uniq.append(tn)
+                properties["Tags"] = {"multi_select": [{"name": t} for t in uniq]}
         except Exception:
             pass
 
@@ -670,6 +718,15 @@ class NotionPublisher:
         except Exception:
             pass
 
+        # Relation properties: support basic relation mapping when frontmatter contains 'relations' or 'related'
+        try:
+            if "Relations" in db_props:
+                rel_meta = meta.get("relations") or meta.get("related") or meta.get("relations_ids")
+                if rel_meta:
+                    properties["Relations"] = {"relation": _map_relation(rel_meta)}
+        except Exception:
+            pass
+
         # Determine parent to use for page creation - prefer a specific data_source_id when available
         parent = {"database_id": self.config.database_id}
         try:
@@ -684,69 +741,74 @@ class NotionPublisher:
             # Leave parent as database_id on any error to preserve backwards compatibility
             parent = {"database_id": self.config.database_id}
 
-        # Create page with robust retry logic and exponential backoff
-        attempts = 3
-        delay = 1
+        # Create page with robust retry logic, exponential backoff, jitter and structured logging
+        attempts = 5
+        base_delay = 1
         last_exc = None
         for attempt in range(1, attempts + 1):
             try:
+                logging.info("Notion publish attempt %d/%d", attempt, attempts)
                 response = self.client.pages.create(
                     parent=parent,
                     properties=properties,
                     children=blocks[:100],  # Notion limit per request
                 )
                 last_exc = None
+                logging.info("Notion publish succeeded on attempt %d", attempt)
                 break
             except Exception as e:
                 last_exc = e
+                logging.exception("Notion publish attempt %d failed", attempt)
+
                 # If it's a property-type error, attempt the Status/Minimal fallbacks before retrying
                 try:
                     db_props = db_props if 'db_props' in locals() else self._get_database_properties()
-                    # If DB Status prop is select but we sent select, try status; if we sent status and DB wants select, try select
                     if "Status" in properties and "Status" in db_props:
                         prop_type = db_props["Status"].get("type")
+                        # Try the other type if mismatch appears
                         if prop_type == "status" and "select" in properties["Status"]:
                             properties["Status"] = {"status": {"name": properties["Status"]["select"]["name"]}}
-                            response = self.client.pages.create(
-                                parent=parent,
-                                properties=properties,
-                                children=blocks[:100],
-                            )
+                            logging.info("Retrying with Status as 'status' type")
+                            response = self.client.pages.create(parent=parent, properties=properties, children=blocks[:100])
                             last_exc = None
                             break
                         elif prop_type == "select" and "status" in properties["Status"]:
                             properties["Status"] = {"select": {"name": properties["Status"]["status"]["name"]}}
-                            response = self.client.pages.create(
-                                parent=parent,
-                                properties=properties,
-                                children=blocks[:100],
-                            )
+                            logging.info("Retrying with Status as 'select' type")
+                            response = self.client.pages.create(parent=parent, properties=properties, children=blocks[:100])
                             last_exc = None
                             break
                 except Exception:
-                    # ignore fallback exceptions and continue to retry
-                    pass
+                    logging.exception("Status fallback failed")
 
                 # As a last resort, try a minimal create with title only
                 try:
                     minimal_props = {"title": properties.get("title")}
-                    response = self.client.pages.create(
-                        parent=parent,
-                        properties=minimal_props,
-                        children=blocks[:100],
-                    )
+                    logging.info("Attempting minimal create (title-only)")
+                    response = self.client.pages.create(parent=parent, properties=minimal_props, children=blocks[:100])
                     last_exc = None
                     break
                 except Exception:
-                    pass
+                    logging.exception("Minimal create failed")
 
-                # Exponential backoff before next retry
+                # Backoff with jitter
                 import time
 
-                time.sleep(delay)
-                delay *= 2
+                jitter = random.uniform(0, 0.3 * base_delay)
+                sleep_time = base_delay + jitter
+                logging.info("Backing off for %.2fs before retrying", sleep_time)
+                time.sleep(sleep_time)
+                base_delay *= 2
+
         if last_exc:
-            # Raise a combined error with context for debugging
+            # Raise a combined error with context for debugging and send an alert
+            logging.exception("Final Notion publish failure after %d attempts", attempts)
+            try:
+                from scripts.notifier import send_discord
+
+                send_discord(f"Notion publish failed after {attempts} attempts: {last_exc}")
+            except Exception:
+                logging.exception("Failed to send failure alert")
             raise Exception(f"Failed to publish to Notion after {attempts} attempts; last error: {last_exc!r}")
 
         # Track usage
@@ -942,18 +1004,39 @@ class NotionPublisher:
         if end_date:
             filters.append({"property": "Date", "date": {"on_or_before": end_date}})
 
-        query = {
-            "database_id": self.config.database_id,
+        # Build query payload
+        query_payload = {
             "sorts": [{"property": "Date", "direction": "descending"}],
             "page_size": limit,
         }
 
         if filters:
-            query["filter"] = {"and": filters} if len(filters) > 1 else filters[0]
+            query_payload["filter"] = {"and": filters} if len(filters) > 1 else filters[0]
 
-        response = self.client.databases.query(**query)
+        # Prefer querying data_sources when available (Notion 2025-09-03)
+        ds_id = getattr(self, "_data_source_id", None)
+        if not ds_id:
+            # Attempt discovery (this will populate _data_source_id when possible)
+            _ = self._get_database_properties()
+            ds_id = getattr(self, "_data_source_id", None)
 
         results = []
+        if ds_id:
+            try:
+                # Use the data_sources query endpoint; use Notion-Version for compatibility
+                resp = self.client.request(
+                    "POST",
+                    f"/v1/data_sources/{ds_id}/query",
+                    json=query_payload,
+                    headers={"Notion-Version": "2025-09-03"},
+                )
+                response = resp
+            except Exception:
+                logging.exception("Data source query failed; falling back to databases.query")
+                response = self.client.databases.query(database_id=self.config.database_id, **query_payload)
+        else:
+            response = self.client.databases.query(database_id=self.config.database_id, **query_payload)
+
         for page in response["results"]:
             props = page["properties"]
             results.append(

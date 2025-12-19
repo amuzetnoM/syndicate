@@ -50,6 +50,12 @@
   - `git` present (2.39.5).
   - Installed: `python3-pip` (pip3), `docker.io` (Docker engine), `docker-compose-plugin` (Compose V2 plugin).
   - `ali` was added to the `docker` group and Docker service enabled.
+
+## Automation & healthchecks (new)
+- A daily healthcheck is installed and enabled via systemd timer: `gold-standard-healthcheck.timer` → `gold-standard-healthcheck.service`.
+- The runner script is `/opt/gold_standard_health_check.sh` (installed and executable) which calls `scripts/health_check.py` and performs a basic restart of the `gold-standard-run-once.service` on failure and triggers Discord alerts via `scripts/notifier.py` (if `DISCORD_WEBHOOK_URL` is set in `.env`).
+- You can run the healthcheck manually: `sudo /opt/gold_standard_health_check.sh` and inspect logs with `journalctl -u gold-standard-healthcheck.service -n 200 --no-pager`.
+- We added a smoke-test CI workflow (`.github/workflows/smoke.yml`): set `SMOKE_NOTION_API_KEY` and `SMOKE_NOTION_DATABASE_ID` in GitHub Secrets to enable weekly smoke publishes.
 - **Host tools**: `git`, `docker`, `docker-compose`, `python3`, and `gcc` are already installed and ready.
 
 ## Notion publishing status 📝
