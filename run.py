@@ -805,19 +805,20 @@ def _run_post_analysis_tasks(force_inline: bool = False, wait_for_completion: bo
                     if any(marker.lower() in content.lower() for marker in no_ai_markers):
                         ai_processed = False
 
-                    # Set status conservatively: mark AI-processed docs as 'in_progress' (not auto-published).
-                    # This prevents accidental publication of drafts; publishing requires explicit promotion.
-                    status = "in_progress" if ai_processed else "draft"
+                    # Previous conservative status decision (kept for DB default)
+                    determined_status = "in_progress" if ai_processed else "draft"
 
-                    # Add frontmatter based on filename with proper status
-                    updated = add_frontmatter(content, md_file.name, status=status, ai_processed=ai_processed)
+                    # Add frontmatter allowing generator to auto-promote when appropriate (e.g., Pre-Market/journal)
+                    updated = add_frontmatter(content, md_file.name, status=None, ai_processed=ai_processed)
                     md_file.write_text(updated, encoding="utf-8")
                     frontmatter_count += 1
 
-                    # Register in lifecycle database
+                    # Register in lifecycle database with actual status from the written file
                     try:
+                        from scripts.frontmatter import get_document_status
                         doc_type = "journal" if "Journal_" in md_file.name else "reports"
-                        db.register_document(str(md_file), doc_type, status=status)
+                        actual_status = get_document_status(updated)
+                        db.register_document(str(md_file), doc_type, status=actual_status)
                     except Exception:
                         pass  # DB registration is optional
 

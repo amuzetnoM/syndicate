@@ -333,6 +333,12 @@ def generate_frontmatter(
     if status is None:
         status = "in_progress" if ai_processed else "draft"
 
+    # Auto-publish policy: for certain daily doc types, auto-promote to 'published' when AI produced results
+    # Controlled via env var NOTION_AUTO_PUBLISH (default: true)
+    auto_publish = os.getenv("NOTION_AUTO_PUBLISH", "true").lower() in ("1", "true", "yes")
+    if ai_processed and auto_publish and doc_type in ("Pre-Market", "journal", "research"):
+        status = "published"
+
     # Add type-specific default tags
     if doc_type in TYPE_DEFAULT_TAGS:
         default_tags = TYPE_DEFAULT_TAGS[doc_type]
