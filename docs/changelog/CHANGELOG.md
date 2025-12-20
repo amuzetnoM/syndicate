@@ -7,19 +7,17 @@
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
 </p>
 
-### 🔬 Focus: Ingest Engine (Research) ⚡️
+### 🔬 Focus: Ingest Engine 
 
 - **Short:** An ingest engine prototype to collect and normalize streaming/real-time data from multiple providers (FRED, Rapid, MarketFlow, TradingEconomics, yfinance/mplfinance) and persist the latest outputs independently of the main analysis loop.
 - **Goal:** Produce canonical, timestamp-normalized time series and lightweight vectorized artifacts suitable for downstream ML/LLM research. This is an exploratory research component; production-grade model training is out-of-scope for Gold Standard core.
-
-
+- **Status:** Initial blueprint and plans drafted; development pending prioritization.
 ---
 
 # Changelog and Release History
 
 
-
-> Version 3.5.1 Patch (2025-12-18)
+## v[3.5.1] Patch [2025-12-18]
 
 Patch Summary: Production hardening, deterministic per-run chart generation, Notion daemon env-loading, and documentation updates.
 
@@ -30,23 +28,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-### HIGHLIGHTS
-
-> Version 3.5.2 Patch (2025-12-19)
-
-### Runner finish & ADX robustness — CLI & venv hardening
-
-Patch Summary: Runner finish & docs, ADX robustness, venv and Notion hardening, and CLI wait-mode improvements.
-
-Key fixes and improvements:
-- **ADX & Indicator Robustness:** Fixed ADX computation to handle multi-column OHLC inputs and misaligned indices; added safe fallbacks and unit tests (`tests/test_adx_robust.py`). Prevents ADX crashes from irregular data shapes.
-- **Deterministic Single-Run Wait Behavior:** Added `--wait` and `--wait-forever` flags and made wait-forever the default for `--once` (block until post-analysis tasks complete). Ensures a single-run waits until all insights/actions/publishing finish.
-- **VenV and Startup Hardening:** `run.py` re-executes itself under the project venv if available; `scripts/start_executor.sh` now sources the repository `.env` and prefers project venv for detached executor processes to ensure consistent runtime and available secrets.
-- **Publishing & Orchestration Helpers:** Added `publish_documents_once()` helper in `run.py` to centralize Notion sync logic and improve reliability and testability of post-analysis publishing.
-- **Documentation & Changelog Updates:** Added entries and updated README and setup guides to reflect venv usage, LLM provider checks, and Notion env requirements.
-- **Tests & E2E Validation:** Added unit tests and executed an end-to-end single-run (insights → tasks → organization → publish attempt). All unit tests pass locally.
-
-> Version 3.5.1 Patch (2025-12-18)
+## v[3.5.1] Patch [2025-12-18]
 
 Patch Summary: Production hardening, deterministic per-run chart generation, Notion daemon env-loading, and documentation updates.
 
@@ -58,7 +40,7 @@ Key fixes and improvements:
 - **Indicator & plotting hardening:** Continued improvements to indicator normalization (`safe_indicator_series`) and headless plotting defaults to ensure reliable offline runs.
 - **Docs & changelog:** Updated documentation and changelog to reflect the behavioral changes and recommended operator actions.
 
-> Version 3.5.0 Release (2025-12-14)
+## [v3.5.0] Release [(2025-12-14)]
 
 
 Summary: Feature Toggles, Pipeline Audit, and Draft Deduplication — focused on operational control and Notion sync reliability.
@@ -117,127 +99,6 @@ See the "Added", "Fixed", and "Changed" sections below for full details.
 #### Maintenance
 - Cleaned 61 orphan database records (45 notion_sync + 16 document_lifecycle)
 - Applied frontmatter to files missing YAML headers
-
----
-
-
-## Engineering Roadmap
-
-[![Target](https://img.shields.io/badge/target-v3.6.0-blue.svg)]()
-[![Priority](https://img.shields.io/badge/priority-production_hardening-critical.svg)]()
-
-We are actively researching and implementing the next generation of Gold Standard's infrastructure. The following initiatives represent our current engineering focus, driven by real-world production insights gathered from VM deployments and continuous operation cycles. Each area has been identified through systematic analysis of operational patterns, failure modes, and scalability requirements.
-
----
-
-## Focus
-
-### Observability Infrastructure Expansion
-
-**Current State:** The existing Prometheus and Grafana stack provides solid infrastructure metrics, but application-level visibility remains fragmented across multiple log files.
-
-**Active Research:**
-
-We are investigating unified observability patterns that consolidate application telemetry with infrastructure metrics. The goal is to establish a single-pane monitoring experience where operators can correlate application behavior with system performance in real-time.
-
-| Initiative | Phase | Objective |
-|------------|-------|-----------|
-| Log Aggregation Pipeline | `RESEARCH` | Route `run.log` and `cleanup.log` through Loki into Grafana dashboards with structured parsing |
-| Alert Rule Engineering | `DESIGN` | Develop Alertmanager configurations for container health, disk utilization, and API connectivity |
-| Quota Proximity Detection | `PROTOTYPE` | Instrument LLM providers to emit metrics when approaching rate limits |
-
-**Target Alerts Under Development:**
-- Container restart frequency anomaly detection
-- Disk space threshold warnings for persistent volumes
-- API endpoint health degradation (yfinance, Gemini, Notion, ImgBB)
-- LLM token consumption velocity tracking
-
----
-
-### Intelligent API Orchestration Layer
-
-**Current State:** The multi-provider LLM fallback chain (Gemini, Ollama, llama.cpp) operates on a fixed priority basis. Provider selection is reactive rather than adaptive.
-
-**Active Research:**
-
-We are exploring dynamic provider orchestration that learns from runtime performance characteristics. This involves tracking latency, success rates, and quota consumption across providers to make intelligent routing decisions.
-
-| Initiative | Phase | Objective |
-|------------|-------|-----------|
-| Adaptive Fallback Engine | `DESIGN` | Implement performance-weighted provider selection with automatic promotion and demotion |
-| Quota Ledger System | `RESEARCH` | Build internal tracking for API consumption across all external services |
-| Preemptive Rate Limiting | `PROTOTYPE` | Introduce smart delays based on quota burn rate to prevent limit exhaustion |
-
-**Design Principles:**
-- Operator notifications when fallback providers are engaged
-- Graceful degradation paths for free-tier constraint management
-- Provider health scoring with configurable thresholds
-
----
-
-### Configuration and Deployment Architecture
-
-**Current State:** Configuration is distributed between environment variables and hardcoded defaults. Deployment requires manual intervention for updates.
-
-**Active Research:**
-
-We are evaluating structured configuration management approaches that separate secrets from operational parameters. Additionally, we are designing CI/CD pipelines that enable zero-touch deployments from commit to production.
-
-| Initiative | Phase | Objective |
-|------------|-------|-----------|
-| Hierarchical Config System | `DESIGN` | Implement YAML/TOML configuration layers for TA thresholds, asset definitions, and model parameters |
-| Secrets Vault Integration | `RESEARCH` | Evaluate Docker secrets, HashiCorp Vault, and cloud-native secret managers for credential isolation |
-| Automated Deployment Pipeline | `PLANNING` | Build GitHub Actions workflows for image builds, registry pushes, and systemd orchestration |
-
-**Deployment Automation Targets:**
-- Triggered rebuilds on code changes
-- Automatic container registry synchronization
-- Remote systemd service management
-
----
-
-### Self-Healing and Resilience Patterns
-
-**Current State:** Health checks verify basic container operation but do not validate application-level functionality or external dependencies.
-
-**Active Research:**
-
-We are developing deep health check patterns that probe actual application readiness, including database connectivity, external API reachability, and internal subsystem status. Additionally, we are evaluating error aggregation platforms for systematic issue tracking.
-
-| Initiative | Phase | Objective |
-|------------|-------|-----------|
-| **Task Executor Daemon** | `✅ IMPLEMENTED` | Standalone worker with orphan recovery, graceful shutdown, and systemd integration |
-| Deep Health Probes | `PROTOTYPE` | Extend healthchecks to validate database, yfinance, and LLM provider connectivity |
-| Exception Telemetry | `RESEARCH` | Evaluate Sentry and Bugsnag for automatic error capture, categorization, and alerting |
-| Circuit Breaker Patterns | `DESIGN` | Implement failure isolation for external service dependencies |
-
----
-
-### Data Persistence and Integrity
-
-**Current State:** SQLite database and generated reports persist on the data volume, but backup and archival processes are manual.
-
-**Active Research:**
-
-We are designing automated backup strategies that protect critical data without impacting operational performance. Additionally, we are refining the file organization system to handle edge cases and provide configurable behavior.
-
-| Initiative | Phase | Objective |
-|------------|-------|-----------|
-| Scheduled Backup System | `DESIGN` | Implement daily incremental and weekly full SQLite backups to off-disk storage |
-| Archive Lifecycle Rules | `RESEARCH` | Define configurable policies for report retention, compression, and offsite replication |
-| File Organizer Hardening | `PROTOTYPE` | Enhance naming conventions, deduplication logic, and stale file detection |
-
-**Data Protection Strategy:**
-- Incremental backups during low-activity windows
-- Weekly full snapshots with integrity verification
-- Geographic replication for disaster recovery scenarios
-
----
-
-> **Engineering Philosophy:** These initiatives represent our commitment to evolving Gold Standard into a production-grade autonomous system. Each enhancement is validated against real operational requirements and designed for minimal manual intervention. Contributions and feedback on these research areas are welcome.
-
----
-## Chagelog and Release History
 
 ---
 

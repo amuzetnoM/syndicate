@@ -20,6 +20,8 @@ Core Components
   - `cogs.reporting` — create and send daily digest posts on demand, view last report, and schedule ad-hoc runs.
   - `cogs.sanitizer_alerts` — listen for sanitizer audit events and post compact summaries, allow triage commands.
   - `cogs.moderation` — role-restricted commands for operators: view flagged tasks, re-run, or mark as resolved.
+  - `cogs.pins` — utilities to pin and manage recent chart messages and enforce pin limits (auto-unpin older charts).
+  - `cogs.resources` — publish changelog, docs, and pinned command guide into `📚-resources`.
   - `cogs.llm_integration` — run short LLM queries with enforced ICU (inspection) and sanitized results.
 - Utilities:
   - `utils.metrics` — Prometheus gauges/counters integrated with `gold_standard/metrics` pipeline.

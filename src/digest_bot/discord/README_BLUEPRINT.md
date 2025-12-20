@@ -35,7 +35,7 @@ Admin:
 Files of interest
 -----------------
 - `bot_base.py`: orchestrator and lifecycle manager
-- `cogs/`: modular features (reporting, moderation, sanitizer alerts, digest_workflow)
+- `cogs/`: modular features (reporting, moderation, sanitizer alerts, digest_workflow, pins)
 - `utils.py`: shared helpers for metrics and notifier
 - `CODex.md`: command reference and examples (new)
 - `BLUEPRINT_ARCHITECTURE.md`: design doc
