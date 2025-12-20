@@ -81,6 +81,10 @@ secrets.env
 # Private LLM / Notion tokens
 .gemini/
 
+# Ingest bot local keys and data
+.ingest_keys
+data/ingest/
+
 # -----------------------------------------------------------------------------
 # PyBuilder
 # -----------------------------------------------------------------------------
