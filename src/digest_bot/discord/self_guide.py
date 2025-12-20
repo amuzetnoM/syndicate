@@ -93,6 +93,24 @@ class RoleSpec:
         )
 
     @classmethod
+    def operators(cls, name: str = "operators") -> "RoleSpec":
+        """Create the lightweight operators role used by command gating."""
+        return cls(
+            name=name,
+            color=0xF39C12,  # Orange
+            hoist=False,
+            mentionable=False,
+            permissions=[
+                "send_messages",
+                "embed_links",
+                "read_message_history",
+                "add_reactions",
+            ],
+            position_priority=45,
+            reason="Operators role for command execution and digest approvals",
+        )
+
+    @classmethod
     def analyst(cls, name: str = "Market Analyst") -> "RoleSpec":
         """Create analyst role spec."""
         return cls(
@@ -163,9 +181,11 @@ class ChannelSpec:
             position=1,
             slowmode=0,
             permission_overwrites={
-                "@everyone": {"send_messages": False},
-                "Digest Bot": {"send_messages": True, "embed_links": True},
+                "@everyone": {"view_channel": False, "send_messages": False},
+                "Digest Bot": {"send_messages": True, "embed_links": True, "mention_everyone": False},
                 "Market Analyst": {"send_messages": True, "embed_links": True},
+                "operators": {"send_messages": True, "embed_links": True, "read_message_history": True},
+                "Digest Subscriber": {"view_channel": True, "read_message_history": True},
             },
             reason="Main channel for automated digest delivery",
         )
@@ -228,7 +248,8 @@ class ChannelSpec:
             slowmode=0,
             permission_overwrites={
                 "@everyone": {"view_channel": False},
-                "Bot Admin": {"view_channel": True},
+                "Bot Admin": {"view_channel": True, "send_messages": True},
+                "operators": {"view_channel": True, "send_messages": False},
                 "Digest Bot": {"send_messages": True},
             },
             reason="Channel for bot operational logs",
@@ -289,6 +310,7 @@ class ServerBlueprint:
             roles=[
                 RoleSpec.admin("Bot Admin"),
                 RoleSpec.moderator("Digest Moderator"),
+                RoleSpec.operators("operators"),
                 RoleSpec.analyst("Market Analyst"),
                 RoleSpec.subscriber("Digest Subscriber"),
                 RoleSpec(
