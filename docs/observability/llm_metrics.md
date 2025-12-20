@@ -22,9 +22,14 @@ We added `deploy/prometheus/gold_standard_llm_rules.yml` with the following aler
 ## Operational Notes
 
 - The LLM sanitizer enforces canonical numeric values present in the prompt ("CANONICAL VALUES (DO NOT INVENT NUMBERS)") and replaces mismatched numeric mentions.
-- Corrections are auditable in the `llm_sanitizer_audit` table; when corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`, default `2`), the worker flags the task with status `flagged` for manual review.
-- We recommend routing `GoldStandardLLMWorkerDown` and `GoldStandardLLMQueueGrowing` to PagerDuty or other high priority channels; route `GoldStandardLLMSanitizerCorrections` to a Slack/Discord channel for on-call triage.
 
+- Config knobs:
+  - `LLM_SANITIZER_FLAG_THRESHOLD` (int, default=2): Number of corrections that cause a report to be flagged for manual review.
+  - `LLM_ASYNC_QUEUE` (bool): When set, pre-market and insights tasks are enqueued and processed by the worker.
+
+- Corrections are auditable in the `llm_sanitizer_audit` table; when corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`, default `2`), the worker flags the task with status `flagged` for manual review and writes `sanitizer_flagged: true` to the report frontmatter.
+
+- Alert routing recommendations: route `GoldStandardLLMWorkerDown` and `GoldStandardLLMQueueGrowing` to PagerDuty or other high priority channels; route `GoldStandardLLMSanitizerCorrections` to a Slack/Discord channel for on-call triage.
 ## Next steps
 
 - Add Alertmanager routing rules and a silence policy for known maintenance windows.
