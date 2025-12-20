@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 import os
+import discord
 from discord.ext import commands
 from discord import ButtonStyle
-from discord.ui import View, Button
+from discord.ui import View
 
 LOG = logging.getLogger("digest_bot.discord.digest_workflow")
 
@@ -14,7 +15,7 @@ class ApproveView(View):
         self.task_id = task_id
         self.author_id = author_id
 
-    @Button(label="Approve", style=ButtonStyle.green)
+    @discord.ui.button(label="Approve", style=ButtonStyle.green)
     async def approve(self, button, interaction):
         # Only operators may approve; ensure role check
         if "operators" not in [r.name for r in interaction.user.roles]:
@@ -44,7 +45,7 @@ class ApproveView(View):
         else:
             await interaction.response.send_message(f"Failed to approve task {self.task_id}", ephemeral=True)
 
-    @Button(label="Flag", style=ButtonStyle.grey)
+    @discord.ui.button(label="Flag", style=ButtonStyle.grey)
     async def flag(self, button, interaction):
         if "operators" not in [r.name for r in interaction.user.roles]:
             await interaction.response.send_message("You are not authorized to flag.", ephemeral=True)
@@ -54,7 +55,7 @@ class ApproveView(View):
         db.save_bot_audit(str(interaction.user), "flag", f"task={self.task_id}")
         await interaction.response.send_message(f"Task {self.task_id} flagged for review by {interaction.user}")
 
-    @Button(label="Re-run", style=ButtonStyle.blurple)
+    @discord.ui.button(label="Re-run", style=ButtonStyle.blurple)
     async def rerun(self, button, interaction):
         if "operators" not in [r.name for r in interaction.user.roles]:
             await interaction.response.send_message("You are not authorized to rerun.", ephemeral=True)

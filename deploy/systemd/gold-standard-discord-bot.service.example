@@ -1,0 +1,15 @@
+[Unit]
+Description=Gold Standard Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ali
+WorkingDirectory=/home/ali/worxpace/gold_standard
+EnvironmentFile=/home/ali/worxpace/gold_standard/.env
+ExecStart=/usr/bin/env python -m digest_bot.discord.bot_base
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
