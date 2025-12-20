@@ -144,7 +144,9 @@ Pipfile.lock
 # -----------------------------------------------------------------------------
 # mkdocs Documentation
 # -----------------------------------------------------------------------------
-/site/
+# The default mkdocs build places static site into /site/ — we intentionally allow committing a hand-crafted `site/` for GitHub Pages deployment
+!/site/
+!/site/**
 
 # -----------------------------------------------------------------------------
 # mypy / Type Checking

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gold Standard — Artifact Virtual</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">Gold Standard</div>
+      <nav class="nav">
+        <button class="nav-toggle" id="navToggle">☰</button>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="/changelog/">Changelog</a></li>
+          <li class="dropdown">
+            <a href="#">Data ▾</a>
+            <ul class="dropdown-menu">
+              <li><a href="/outputs/">Outputs</a></li>
+              <li><a href="/changelog/">Changelog</a></li>
+            </ul>
+          </li>
+          <li class="dropdown"><a href="#">Docs ▾</a>
+            <ul class="dropdown-menu">
+              <li><a href="/architecture.html">Architecture</a></li>
+              <li><a href="/ai_policy.html">AI Policy</a></li>
+              <li><a href="/privacy.html">Privacy</a></li>
+              <li><a href="/terms.html">Terms</a></li>
+              <li><a href="/license.html">License</a></li>
+            </ul>
+          </li>
+          <li><a href="https://github.com/amuzetnoM/gold_standard/releases">Releases</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <h1>Gold Standard</h1>
+        <p class="lead">Autonomous market insights, research, and operational tooling — live snapshots, charts, and reports published for stakeholders.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="/outputs/">View Latest Outputs</a>
+          <a class="btn" href="/changelog/">View Changelog</a>
+        </div>
+      </section>
+
+      <section class="tiles">
+        <article class="tile">
+          <h3>Live Reports</h3>
+          <p>Daily LLM reports, pre-market analysis, and research snapshots.</p>
+          <a href="/outputs/" class="small">Browse outputs →</a>
+        </article>
+        <article class="tile">
+          <h3>Data Ingest</h3>
+          <p>FRED, MarketFlow, TradingEconomics, yfinance, and more. Canonical data, normalized for consumption.</p>
+          <a href="/architecture.html" class="small">Ingest design →</a>
+        </article>
+        <article class="tile">
+          <h3>Observability</h3>
+          <p>Prometheus metrics, Grafana dashboards, and alerting rules for operational visibility.</p>
+          <a href="/changelog/" class="small">See metrics →</a>
+        </article>
+      </section>
+    </main>
+
+    <aside class="sidebar" id="sidebar">
+      <h4>Research & Papers</h4>
+      <ul>
+        <li><a href="/outputs/">Journal & snapshots</a></li>
+        <li><a href="/architecture.html">Architecture</a></li>
+        <li><a href="/changelog/">Changelog</a></li>
+      </ul>
+    </aside>
+
+    <footer class="site-footer">
+      <div>© 2025 Artifact Virtual — Gold Standard</div>
+    </footer>
+  </div>
+  <script src="/scripts.js"></script>
+</body>
+</html>
