@@ -2,6 +2,18 @@
 
 [![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 
+<p align="center">
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
+</p>
+
+### 🔬 Focus: Ingest Engine (Research) ⚡️
+
+- **Short:** Prototype an ingest engine to collect and normalize streaming/real-time data from multiple providers (FRED, Rapid, MarketFlow, TradingEconomics, yfinance/mplfinance) and persist the latest outputs independently of the main analysis loop.
+- **Goal:** Produce canonical, timestamp-normalized time series and lightweight vectorized artifacts suitable for downstream ML/LLM research. This is an exploratory research component; production-grade model training is out-of-scope for Gold Standard core.
+- **Approach:** Start with a blueprint & skeleton in `src/ingest_bot/` (connectors, fetchers, normalization layer, metadata), keep ingest runtime and keys out of the repo (see `.gitignore`), and expose an isolated ingest API for pull-based updates.
+
 ### HIGHLIGHTS
 
 > Version 3.6.0 Patch (2025-12-20)
@@ -39,10 +51,6 @@ Key fixes and improvements:
 Patch Summary: Production hardening, deterministic per-run chart generation, Notion daemon env-loading, and documentation updates.
 
 ...
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
-
 All notable changes to Gold Standard are documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

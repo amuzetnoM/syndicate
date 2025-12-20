@@ -85,6 +85,13 @@ secrets.env
 .ingest_keys
 data/ingest/
 
+# Ingest bot skeleton (blueprint tracked, runtime keys & data ignored)
+src/ingest_bot/
+!src/ingest_bot/BLUEPRINT.md
+src/ingest_bot/keys/
+src/ingest_bot/data/
+src/ingest_bot/*.env
+
 # -----------------------------------------------------------------------------
 # PyBuilder
 # -----------------------------------------------------------------------------

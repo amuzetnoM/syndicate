@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.5.2* | *stable: 3.4.0* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
+*version 3.6.0* | *stable: 3.5.3* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -27,7 +27,7 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 
 <!-- CI Status -->
 [![CI](https://img.shields.io/github/actions/workflow/status/amuzetnoM/gold_standard/python-ci.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=CI)](https://github.com/amuzetnoM/gold_standard/actions/workflows/python-ci.yml)
-[![Tests](https://img.shields.io/badge/tests-33%20passing-success?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/amuzetnoM/gold_standard/actions)
+[![Tests](https://img.shields.io/badge/tests-106%20passing-success?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/amuzetnoM/gold_standard/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/amuzetnoM/gold_standard?style=for-the-badge&logo=codecov&logoColor=white)](https://codecov.io/gh/amuzetnoM/gold_standard)
 
 <!-- Tech Stack -->

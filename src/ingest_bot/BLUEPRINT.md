@@ -1,5 +1,7 @@
 # Ingest Bot Blueprint
 
+> **Short Research Note:** This skeleton is the starting point for an ingest engine. Runtime keys and data directories are ignored via `.gitignore`; keep secrets out of the repository and use `.env` or a secrets manager.
+
 ## Goals
 - Provide a separate ingest service (not part of the main `run.py` loop) that can:
   - Poll or subscribe to realtime data sources (FRED, Rapid API feeds, MarketFlow, TradingEconomics, and yfinance fallback).
