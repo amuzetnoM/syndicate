@@ -1,0 +1,41 @@
+name: Publish Changelog to Pages
+
+on:
+  push:
+    paths:
+      - 'docs/changelog/CHANGELOG.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
+      - name: Convert changelog to HTML
+        run: |
+          mkdir -p public
+          pandoc docs/changelog/CHANGELOG.md -s -o public/index.html --metadata title="Gold Standard Changelog"
+
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: public
+
+  deploy:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
+        with: {}

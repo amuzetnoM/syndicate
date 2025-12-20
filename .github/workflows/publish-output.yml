@@ -1,0 +1,36 @@
+name: Publish Output to Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot_name:
+        description: 'Optional snapshot name (defaults to timestamp)'
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  deploy-output:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure script is executable
+        run: chmod +x scripts/deploy_output_to_pages.sh
+
+      - name: Run deploy script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          # The script expects outputs in $GITHUB_WORKSPACE/output
+          if [ ! -d "$GITHUB_WORKSPACE/output" ]; then
+            echo "No output/ directory found in workspace. Nothing to deploy." && exit 0
+          fi
+          ./scripts/deploy_output_to_pages.sh
