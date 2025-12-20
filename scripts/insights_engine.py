@@ -707,7 +707,21 @@ Extract 3-5 most important actionable tasks. Focus on specific, executable tasks
                 report_name = report_file.stem
 
                 entities = self.extract_entities(content, report_name)
-                actions = self.extract_actions(content, report_name)
+
+                # Optionally enqueue AI-powered insights extraction to the LLM task queue
+                if os.getenv("LLM_ASYNC_QUEUE", "").lower() in ("1", "true", "yes"):
+                    try:
+                        from db_manager import get_db
+
+                        db = get_db()
+                        task_id = db.add_llm_task(str(report_file), "", provider_hint=None, task_type="insights")
+                        self.logger.info(f"Enqueued insights extraction task {task_id} for {report_file}")
+                        actions = []
+                    except Exception as e:
+                        self.logger.warning(f"Failed to enqueue insights task for {report_file}: {e}")
+                        actions = self.extract_actions(content, report_name)
+                else:
+                    actions = self.extract_actions(content, report_name)
 
                 all_entities.extend(entities)
                 all_actions.extend(actions)

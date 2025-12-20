@@ -228,13 +228,38 @@ def generate_premarket(config: Config, logger, model=None, dry_run: bool = False
     filename = f"premarket_{week_info['date']}.md"
     report_path = os.path.join(reports_dir, filename)
 
-    if not no_ai and model is not None:
+    if not no_ai:
         prompt = build_premarket_prompt(config, data, quant.news, cortex, week_info)
-        try:
-            response = model.generate_content(prompt)
-            md.append(response.text)
-        except Exception as e:
-            logger.error(f"AI generation failed: {e}")
+        # If async queue enabled, enqueue the task and write a skeleton report immediately
+        if os.getenv("LLM_ASYNC_QUEUE", "").lower() in ("1", "true", "yes"):
+            logger.info("LLM async queue enabled - enqueuing premarket generation task")
+            # write skeleton content placeholder
+            skeleton = _generate_skeleton_premarket(data, week_info, cortex)
+            md.append(skeleton)
+            try:
+                from db_manager import get_db
+
+                db = get_db()
+                task_id = db.add_llm_task(report_path, prompt, provider_hint=None, task_type='generate')
+                logger.info(f"Enqueued LLM task {task_id} for {report_path}")
+            except Exception as e:
+                logger.warning(f"Failed to enqueue LLM task, falling back to inline generation: {e}")
+                # fallback to inline generation
+                if model is not None:
+                    try:
+                        response = model.generate_content(prompt)
+                        md[-1] = response.text
+                    except Exception as e2:
+                        logger.error(f"AI generation failed: {e2}")
+                        md[-1] = skeleton
+        elif model is not None:
+            try:
+                response = model.generate_content(prompt)
+                md.append(response.text)
+            except Exception as e:
+                logger.error(f"AI generation failed: {e}")
+                md.append(_generate_skeleton_premarket(data, week_info, cortex))
+        else:
             md.append(_generate_skeleton_premarket(data, week_info, cortex))
     else:
         md.append(_generate_skeleton_premarket(data, week_info, cortex))

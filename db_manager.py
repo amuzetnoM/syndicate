@@ -287,6 +287,31 @@ class DatabaseManager:
                 )
             """)
 
+            # LLM tasks table - persistent queue for long-running AI generations
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS llm_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    document_path TEXT NOT NULL,
+                    prompt TEXT NOT NULL,
+                    provider_hint TEXT,
+                    status TEXT DEFAULT 'pending',
+                    attempts INTEGER DEFAULT 0,
+                    response TEXT,
+                    error TEXT,
+                    priority TEXT DEFAULT 'normal',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    started_at TEXT,
+                    last_attempt_at TEXT,
+                    completed_at TEXT
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_llm_tasks_status_created ON llm_tasks(status, created_at)")
+            # Migration: add 'task_type' column to distinguish generation vs post-processing tasks
+            try:
+                cursor.execute("ALTER TABLE llm_tasks ADD COLUMN task_type TEXT DEFAULT 'generate'")
+            except sqlite3.OperationalError:
+                pass  # Column likely already exists
+
             # Migrate existing JSON blob from system_config into cortex_memory if present
             try:
                 cursor.execute("SELECT value FROM system_config WHERE key = 'cortex_memory'")
@@ -1066,6 +1091,78 @@ class DatabaseManager:
                 )
                 for row in cursor.fetchall()
             ]
+
+    # ==========================================
+    # LLM TASK QUEUE METHODS
+    # ==========================================
+
+    def add_llm_task(self, document_path: str, prompt: str, provider_hint: Optional[str] = None, priority: str = "normal", task_type: str = "generate") -> int:
+        """Enqueue a new LLM task and return the new task id.
+
+        task_type: 'generate'|'insights' etc - worker will decide behavior based on this.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO llm_tasks (document_path, prompt, provider_hint, priority, task_type)
+                VALUES (?, ?, ?, ?, ?)
+            """,
+                (document_path, prompt, provider_hint, priority, task_type),
+            )
+            return cursor.lastrowid
+
+    def claim_llm_tasks(self, limit: int = 1) -> List[Dict[str, Any]]:
+        """
+        Atomically claim up to `limit` pending tasks and mark them as in_progress.
+        Returns list of task rows as dicts.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id FROM llm_tasks WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?",
+                (limit,),
+            )
+            ids = [row["id"] for row in cursor.fetchall()]
+            if not ids:
+                return []
+            q = ",".join("?" for _ in ids)
+            cursor.execute(
+                f"UPDATE llm_tasks SET status = 'in_progress', started_at = CURRENT_TIMESTAMP WHERE id IN ({q})",
+                ids,
+            )
+            cursor.execute(f"SELECT * FROM llm_tasks WHERE id IN ({q})", ids)
+            rows = [dict(r) for r in cursor.fetchall()]
+            return rows
+
+    def update_llm_task_result(self, task_id: int, status: str, response: Optional[str] = None, error: Optional[str] = None, attempts: Optional[int] = None):
+        """Update task status, response, error and attempts count."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            fields = []
+            params: List[Any] = []
+            if response is not None:
+                fields.append("response = ?")
+                params.append(response)
+            if error is not None:
+                fields.append("error = ?")
+                params.append(error)
+            if attempts is not None:
+                fields.append("attempts = ?")
+                params.append(attempts)
+            if status == "completed":
+                fields.append("completed_at = CURRENT_TIMESTAMP")
+            fields.append("status = ?")
+            params.append(status)
+            params.append(task_id)
+            cursor.execute(f"UPDATE llm_tasks SET {', '.join(fields)} WHERE id = ?", params)
+
+    def get_llm_queue_length(self) -> int:
+        """Return number of tasks pending or in progress."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(1) as cnt FROM llm_tasks WHERE status IN ('pending','in_progress')")
+            return cursor.fetchone()["cnt"]
 
     # ==========================================
     # ANALYSIS SNAPSHOT METHODS

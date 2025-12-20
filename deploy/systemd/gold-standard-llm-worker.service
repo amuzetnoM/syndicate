@@ -1,0 +1,17 @@
+[Unit]
+Description=Gold Standard LLM Worker
+After=network.target
+
+[Service]
+Type=simple
+User=adam
+Group=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+ExecStart=/opt/run_gold_standard_llm_worker.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
