@@ -1,0 +1,37 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": null,
+    "title": "Gold Standard - LLM Overview",
+    "timezone": "browser",
+    "panels": [
+      {
+        "type": "graph",
+        "title": "LLM Queue Length",
+        "targets": [
+          {"expr": "gost_llm_queue_length"}
+        ],
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 6}
+      },
+      {
+        "type": "graph",
+        "title": "Sanitizer Corrections (total)",
+        "targets": [
+          {"expr": "gost_llm_sanitizer_corrections_total"}
+        ],
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6}
+      },
+      {
+        "type": "graph",
+        "title": "Worker Running / Tasks Processing",
+        "targets": [
+          {"expr": "gost_llm_worker_running"},
+          {"expr": "gost_llm_tasks_processing"}
+        ],
+        "gridPos": {"x": 0, "y": 6, "w": 24, "h": 6}
+      }
+    ],
+    "schemaVersion": 30
+  },
+  "overwrite": true
+}

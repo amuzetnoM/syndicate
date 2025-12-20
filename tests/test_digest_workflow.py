@@ -9,7 +9,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.digest_bot.discord.cogs.digest_workflow import ApproveView
 
 
-def test_approveview_instantiation():
+import pytest
+
+@pytest.mark.asyncio
+async def test_approveview_instantiation():
     view = ApproveView(task_id=1, author_id=123)
     assert view is not None
 

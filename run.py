@@ -108,6 +108,25 @@ def ensure_venv():
 # Ensure venv before importing project modules
 ensure_venv()
 
+# Start metrics server early to ensure scrape targets are available
+try:
+    from scripts.metrics_server import start_metrics_server
+    start_metrics_server()
+    print('[METRICS] metrics server started')
+except Exception as e:
+    print(f'[METRICS] could not start metrics server: {e}')
+
+# Deploy Grafana dashboard if credentials are present
+try:
+    from scripts.deploy_grafana_dashboard import deploy as deploy_grafana
+    deployed = deploy_grafana()
+    if deployed:
+        print('[GRAFANA] dashboard deployed')
+    else:
+        print('[GRAFANA] dashboard deploy skipped or failed')
+except Exception as e:
+    print(f'[GRAFANA] error during dashboard deploy: {e}')
+
 
 def find_venv_python() -> str | None:
     """Return the preferred venv Python executable path if available, else None."""

@@ -65,6 +65,15 @@ class GoldStandardBot:
         for c in cogs:
             self.register_cog(c)
 
+    def start_background_cogs(self):
+        # Register alerting and subscriptions cogs by default when running in real bot
+        try:
+            from .cogs import alerting, subscriptions
+            self.register_cog(alerting.AlertingCog(self))
+            self.register_cog(subscriptions.SubscriptionsCog(self))
+        except Exception:
+            LOG.exception("Failed to register background cogs")
+
     async def start(self):
         self._ensure_client()
         if not self.token:
@@ -97,5 +106,7 @@ def main():
         from .cogs import reporting, digest_workflow
         bot.register_cog(reporting.ReportingCog(bot))
         bot.register_cog(digest_workflow.DigestWorkflowCog(bot))
-    logging.basicConfig(level=logging.INFO)
-    main()
+        # Also register background cogs
+        bot.start_background_cogs()
+    except Exception:
+        LOG.exception("Failed to load development cogs")
