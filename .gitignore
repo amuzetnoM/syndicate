@@ -78,6 +78,8 @@ data/
 docs/changelog/RELEASE_PROCESS.md
 # Local secrets
 secrets.env
+# Private LLM / Notion tokens
+.gemini/
 
 # -----------------------------------------------------------------------------
 # PyBuilder

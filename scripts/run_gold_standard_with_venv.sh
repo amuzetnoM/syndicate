@@ -35,11 +35,26 @@ source "$VENV_DIR/bin/activate" || { echo "Failed to activate virtual environmen
 # Install dependencies if requirements.txt exists
 if [ -f "$REQUIREMENTS_FILE" ]; then
     echo "Installing dependencies from $REQUIREMENTS_FILE..."
-    pip install -r "$REQUIREMENTS_FILE" || { echo "Failed to install dependencies"; exit 1; }
+    if ! pip install -r "$REQUIREMENTS_FILE"; then
+        echo "Failed to install dependencies";
+        exit 1
+    fi
 fi
 
-# Execute run.py with --once argument
-echo "Running $RUN_PY_PATH --once..."
-python "$RUN_PY_PATH" --once || { echo "Failed to execute run.py --once"; exit 1; }
+# Source canonical secret store (.gemini/env.sh) if present (permissions 600 expected)
+if [ -f "$GOLD_STANDARD_DIR/.gemini/env.sh" ]; then
+    # shellcheck disable=SC1090
+    source "$GOLD_STANDARD_DIR/.gemini/env.sh"
+fi
+
+# Configure Ollama and LLM timeouts to avoid long blocking generations
+export OLLAMA_PING_TIMEOUT_S=${OLLAMA_PING_TIMEOUT_S:-2}
+export OLLAMA_LIST_TIMEOUT_S=${OLLAMA_LIST_TIMEOUT_S:-5}
+export OLLAMA_TIMEOUT_S=${OLLAMA_TIMEOUT_S:-120}
+export GOLDSTANDARD_LLM_TIMEOUT=${GOLDSTANDARD_LLM_TIMEOUT:-120}
+
+# Execute run.py with --once and wait flags to ensure publishing completes
+echo "Running $RUN_PY_PATH --once --wait..."
+python "$RUN_PY_PATH" --once --wait || { echo "Failed to execute run.py --once --wait"; exit 1; }
 
 deactivate # Deactivate virtual environment

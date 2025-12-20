@@ -56,6 +56,12 @@ except ImportError:
 # Backend 3: Ollama (requires ollama server running)
 try:
     import requests
+    import threading
+
+    # Concurrency limit for Ollama (prevent overload). Default: 2 concurrent calls
+    _OLLAMA_MAX_CONCURRENCY = int(os.environ.get("OLLAMA_MAX_CONCURRENCY", "2"))
+    _ollama_semaphore = threading.BoundedSemaphore(_OLLAMA_MAX_CONCURRENCY)
+
     # Check if Ollama is explicitly disabled via env
     _ollama_disabled = get_env_bool("OLLAMA_DISABLE") or get_env_bool("DISABLE_OLLAMA")
     if _ollama_disabled:
@@ -685,7 +691,13 @@ class OllamaLLM:
         if not self._available:
             raise RuntimeError("Ollama server not available")
 
+        # Avoid overloading Ollama: try to acquire semaphore, fail fast if overloaded
+        acquired = False
         try:
+            acquired = _ollama_semaphore.acquire(blocking=False)
+            if not acquired:
+                raise RuntimeError("Ollama overloaded: concurrency limit reached")
+
             import requests
 
             timeout = int(os.environ.get("OLLAMA_TIMEOUT_S", "600"))
@@ -706,6 +718,9 @@ class OllamaLLM:
             return resp.json()["response"]
         except Exception as e:
             raise RuntimeError(f"Ollama generate failed: {e}")
+        finally:
+            if acquired:
+                _ollama_semaphore.release()
 
     def chat(
         self,
@@ -728,7 +743,13 @@ class OllamaLLM:
         if not self._available:
             raise RuntimeError("Ollama server not available")
 
+        # Avoid overloading Ollama: try to acquire semaphore, fail fast if overloaded
+        acquired = False
         try:
+            acquired = _ollama_semaphore.acquire(blocking=False)
+            if not acquired:
+                raise RuntimeError("Ollama overloaded: concurrency limit reached")
+
             import time
 
             import requests
@@ -760,6 +781,9 @@ class OllamaLLM:
             }
         except Exception as e:
             raise RuntimeError(f"Ollama chat failed: {e}")
+        finally:
+            if acquired:
+                _ollama_semaphore.release()
 
     def generate_content(self, prompt: str, **kwargs) -> "GenerateContentResponse":
         """

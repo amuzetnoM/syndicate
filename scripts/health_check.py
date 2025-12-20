@@ -106,14 +106,59 @@ def check_executor():
         return False
 
 
+def check_llm():
+    """Check available LLM providers and whether at least one is available.
+
+    This performs a lightweight availability check without generating tokens:
+    - If GEMINI_API_KEY present, it ensures Gemini configuration is set
+    - Checks Ollama reachability (quick ping to /api/tags)
+    - Checks for local GGUF models (lists models, does not load large models)
+    """
+    try:
+        from main import Config, create_llm_provider
+        import logging
+
+        cfg = Config()
+        logger = logging.getLogger("healthcheck.llm")
+        provider = create_llm_provider(cfg, logger)
+        if provider and provider.is_available:
+            print(f"LLM: provider chain OK ({provider.name})")
+            return True
+        else:
+            # Fallbacks: quick Ollama and local checks
+            try:
+                from scripts.local_llm import is_ollama_reachable, LocalLLM
+                ollama_ok = is_ollama_reachable(cfg.OLLAMA_HOST)
+                if ollama_ok:
+                    print("LLM: Ollama reachable (fallback)")
+                    return True
+            except Exception:
+                pass
+            try:
+                from scripts.local_llm import LocalLLM
+                llm = LocalLLM()
+                models = llm.find_models()
+                if models:
+                    print(f"LLM: Local models found: {len(models)}")
+                    return True
+            except Exception:
+                pass
+            print("LLM: No providers available")
+            return False
+    except Exception as e:
+        print(f"LLM: healthcheck failed: {e}")
+        return False
+
+
 def main():
     ok_py = check_python_version()
     missing = check_packages()
     notion_ok = check_notion()
     db_ok = check_db_toggles()
     exec_ok = check_executor()
+    llm_ok = check_llm()
 
-    all_good = ok_py and (len(missing) == 0) and db_ok and exec_ok
+    all_good = ok_py and (len(missing) == 0) and db_ok and exec_ok and llm_ok
 
     print("\nOverall health: {}".format("OK" if all_good else "ISSUES"))
     return 0 if all_good else 2
