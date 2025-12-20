@@ -94,13 +94,8 @@ def main():
     # In dev, load cogs from the local package
     try:
         import importlib
-        from .cogs import reporting
+        from .cogs import reporting, digest_workflow
         bot.register_cog(reporting.ReportingCog(bot))
-    except Exception:
-        LOG.exception("Failed to register dev cogs; continuing without them")
-    bot.run()
-
-
-if __name__ == "__main__":
+        bot.register_cog(digest_workflow.DigestWorkflowCog(bot))
     logging.basicConfig(level=logging.INFO)
     main()
