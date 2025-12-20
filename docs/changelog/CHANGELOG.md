@@ -1,8 +1,7 @@
 # ACTIVE DEVELOPMENT
 
-[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
-
 <p align="center">
+[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
@@ -14,24 +13,11 @@
 - **Goal:** Produce canonical, timestamp-normalized time series and lightweight vectorized artifacts suitable for downstream ML/LLM research. This is an exploratory research component; production-grade model training is out-of-scope for Gold Standard core.
 - **Approach:** Start with a blueprint & skeleton in `src/ingest_bot/` (connectors, fetchers, normalization layer, metadata), keep ingest runtime and keys out of the repo (see `.gitignore`), and expose an isolated ingest API for pull-based updates.
 
-### HIGHLIGHTS
+All notable changes to Gold Standard are documented in this file.
 
-> Version 3.6.0 Patch (2025-12-20)
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Patch Summary: Subscription & alerting system, Discord operational blueprint, metrics expansion, and production hardening.
-
-Key fixes and improvements:
-- Added **subscription and alerting** system for Discord: users can subscribe to `sanitizer`, `queue`, and `digests` topics and receive direct alerts for on-call triage.
-- Implemented an automated **per-topic alerting background worker** that notifies subscribers and records audit events; includes thresholds and operator gating.
-- Added a **Server Blueprint** to provision Discord roles, channels, and a webhook automatically and idempotently.
-- Added a **systemd timer & service** for automated daily LLM reports and a Grafana dashboard JSON with a deploy helper script to programmatically upload dashboards when credentials are available.
-- Continued observability improvements: Prometheus metrics and alerting rules for queue growth, worker health, and sanitizer corrections.
-
-- Added Prometheus alert rules (`deploy/prometheus/gold_standard_llm_rules.yml`) for queue growth, worker health, and sanitizer corrections.
-- Implemented automatic task flagging when sanitizer corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`).
-- Added integration and unit tests to cover the worker flow and sanitizer audit behavior to prevent regressions.
-- Documentation: added `docs/observability/llm_metrics.md` describing metrics and recommended alert routing.
-- Misc: improved DB initialization to avoid migration-time issues detected during development.
+---
 
 
 > Version 3.5.2 Patch (2025-12-19)
