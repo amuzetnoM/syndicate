@@ -45,8 +45,22 @@ Testing & CI
 
 Roadmap
 -------
-1. Basic reporting & health alerts
-2. Moderator command set and sanitizer triage
-3. LLM-safe interactive summarization in ops channel
-4. Bot-managed Notion publish flow (review + approve)
-5. Advanced: automated incident postmortem generator and limited self-refactor commands (carefully gated)
+1. Phase 1 — Full Data Digest & Approval Workflow (MVP)
+   - `/digest full` (operators only): generates a full-data digest (summary + bias, rationale, headstate, KPIs, flagged items) posted as a short Discord message with an attached thread and a link to a full Notion/Gist for deeper inspection.
+   - **Interactive approval buttons**: `Approve`, `Flag`, `Re-run` attached to digest message. Approve triggers an audit entry and optional Notion publish (via operator confirm); Flag marks the task for manual review; Re-run enqueues a rerun via `llm_tasks`.
+   - **Audit trail**: every operator action (approve/flag/rerun) is recorded in a DB `bot_audit` table with user, action, details, and timestamp.
+   - **Safety rules**: sanitized numeric enforcement required before any Approve action completes.
+2. Phase 2 — Subscriptions & Policy Engine
+   - Topic subscriptions (gold/macros), policy-driven automations (queue/backlog thresholds), and scheduled incident workflows.
+3. Phase 3 — Explainable signals & gamification
+   - Signal citations, rationale expansion, operator leaderboards, and simulations.
+
+Operational details for Phase 1
+-------------------------------
+- Message flow: digest posted to ops channel → bot starts thread → operators take action using buttons → bot logs action and, on approval, publishes to Notion (or other configured sinks).
+- Size handling: short digest in chat (<=2k chars), full digest as Notion page or file upload; message shows a compact summary and link.
+- Deployment & safety: token storage in Vault, staging enablement in a private ops channel first, and operator role gating for approval commands.
+
+Testing & rollout
+------------------
+- Unit tests for command handlers and audit logging, integration smoke on staging, and manual operator-run trials for 1–2 weeks before wider roll-out.

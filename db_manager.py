@@ -159,6 +159,16 @@ class DatabaseManager:
                 )
             """)
 
+            # Bot audit table - records operator and bot actions (approve, flag, rerun, moderation)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS bot_audit (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user TEXT,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    created_at TEXT DEFAULT (datetime('now'))
+                )
+            """)
             # Persistent LLM tasks queue (ensure created early so tests and scripts can rely on it)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS llm_tasks (
@@ -191,6 +201,16 @@ class DatabaseManager:
             cursor.execute(
                 "INSERT INTO llm_sanitizer_audit (task_id, corrections, notes) VALUES (?, ?, ?)",
                 (task_id, corrections, notes),
+            )
+            return cursor.lastrowid
+
+    def save_bot_audit(self, user: str, action: str, details: str = None) -> int:
+        """Save an operator or bot action to the bot_audit table."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO bot_audit (user, action, details) VALUES (?, ?, ?)",
+                (user, action, details),
             )
             return cursor.lastrowid
 
@@ -1209,6 +1229,22 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(1) as cnt FROM llm_tasks WHERE status IN ('pending','in_progress')")
             return cursor.fetchone()["cnt"]
+
+    def get_llm_task(self, task_id: int) -> Optional[dict]:
+        """Fetch a single llm task by id."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM llm_tasks WHERE id = ?", (task_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def approve_llm_task(self, task_id: int, approver: str) -> bool:
+        """Mark a task as approved/published (requires sanitizer checks upstream)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE llm_tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = ?", (task_id,))
+            cursor.execute("INSERT INTO bot_audit (user, action, details) VALUES (?, 'approve', ?)", (approver, f"task={task_id}"))
+            return cursor.rowcount > 0
 
     # ==========================================
     # ANALYSIS SNAPSHOT METHODS
