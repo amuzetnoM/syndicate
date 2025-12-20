@@ -1,22 +1,26 @@
 # ACTIVE DEVELOPMENT
 
-[![Version](https://img.shields.io/badge/version-3.5.3-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 
 ### HIGHLIGHTS
 
-> Version 3.5.3 Patch (2025-12-20)
+> Version 3.6.0 Patch (2025-12-20)
 
-Patch Summary: LLM sanitizer enforcement, Prometheus metrics & alerts, sanitizer audit trail, and worker hardening.
+Patch Summary: Subscription & alerting system, Discord operational blueprint, metrics expansion, and production hardening.
 
 Key fixes and improvements:
-- **Prevented numeric hallucinations in LLM-generated reports** by embedding canonical numeric values into prompts and adding sanitizer logic that enforces those values in generated output.
-- **Sanitizer audit trail**: added `llm_sanitizer_audit` table and DB helper to persist corrections for audit and review.
-- **Prometheus metrics** for LLM queue & worker added: `gost_llm_queue_length`, `gost_llm_worker_running`, `gost_llm_tasks_processing`, and `gost_llm_sanitizer_corrections_total`.
-- **Alert rules**: added `deploy/prometheus/gold_standard_llm_rules.yml` with alerts for queue growth, worker down, and sanitizer corrections.
-- **Auto-flagging**: tasks with excessive sanitizer corrections are now flagged (`status='flagged'`) for manual review (configurable via `LLM_SANITIZER_FLAG_THRESHOLD`).
-- **Integration tests**: added an integration test for the worker and a sanitizer audit unit test to prevent regressions.
-- **Docs & Observability**: added `docs/observability/llm_metrics.md` with guidance on alerts and metrics.
-- **Minor**: Fixed various DB defensive initialization edge-cases uncovered while adding sanitizer audit table.
+- Added **subscription and alerting** system for Discord: users can subscribe to `sanitizer`, `queue`, and `digests` topics and receive direct alerts for on-call triage.
+- Implemented an automated **per-topic alerting background worker** that notifies subscribers and records audit events; includes thresholds and operator gating.
+- Added a **Server Blueprint** to provision Discord roles, channels, and a webhook automatically and idempotently.
+- Added a **systemd timer & service** for automated daily LLM reports and a Grafana dashboard JSON with a deploy helper script to programmatically upload dashboards when credentials are available.
+- Continued observability improvements: Prometheus metrics and alerting rules for queue growth, worker health, and sanitizer corrections.
+
+- Added Prometheus alert rules (`deploy/prometheus/gold_standard_llm_rules.yml`) for queue growth, worker health, and sanitizer corrections.
+- Implemented automatic task flagging when sanitizer corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`).
+- Added integration and unit tests to cover the worker flow and sanitizer audit behavior to prevent regressions.
+- Documentation: added `docs/observability/llm_metrics.md` describing metrics and recommended alert routing.
+- Misc: improved DB initialization to avoid migration-time issues detected during development.
+
 
 > Version 3.5.2 Patch (2025-12-19)
 
@@ -253,6 +257,37 @@ We are designing automated backup strategies that protect critical data without 
 ## Chagelog and Release History
 
 ---
+
+## [3.6.0] - 2025-12-20
+
+### Added
+- Subscription and alerting system for Discord: users can subscribe to `sanitizer`, `queue`, and `digests` topics and receive direct alerts for on-call triage.
+- Automated per-topic alerting background worker that notifies subscribers when thresholds are exceeded.
+- Operators role and permission hardening: added lightweight `operators` role and tightened channel permission overwrites for digests and bot logs.
+- Systemd timer and service for automated daily LLM reports (`gold-standard-daily-llm-report.timer` / `.service`).
+- Grafana dashboard JSON for LLM observability and helper scripts to programmatically deploy the dashboard if Grafana credentials are configured.
+
+### Changed
+- Improved release notes style and structure for recent releases (3.5.x) to improve readability and consistency.
+
+### Security & Operations
+- Sensitive tokens are not committed to the repository; ensure tokens remain stored in Vault or host `.env` with restricted access.
+
+
+## [3.5.3] - 2025-12-20
+
+Patch Summary: Sanity enforcement, observability, and worker hardening.
+
+Key fixes and improvements:
+- Prevented fabricated numeric values in LLM-generated reports by adding a canonical-values block to prompts and a sanitizer that enforces reported numeric values against those canonical values.
+- Added a **sanitizer audit trail** (`llm_sanitizer_audit` table) to persist correction records for review and post-incident analysis.
+- Exposed Prometheus metrics for LLM operations: `gost_llm_queue_length`, `gost_llm_worker_running`, `gost_llm_tasks_processing`, and `gost_llm_sanitizer_corrections_total`.
+- Added Prometheus alert rules (`deploy/prometheus/gold_standard_llm_rules.yml`) for queue growth, worker health, and sanitizer corrections.
+- Implemented automatic task flagging when sanitizer corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`).
+- Added integration and unit tests to cover the worker flow and sanitizer audit behavior to prevent regressions.
+- Documentation: added `docs/observability/llm_metrics.md` describing metrics and recommended alert routing.
+- Misc: improved DB initialization to avoid migration-time issues detected during development.
+
 
 ## [3.4.0] - 2025-12-13
 
