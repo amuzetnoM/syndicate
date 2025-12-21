@@ -1,11 +1,11 @@
 # ACTIVE DEVELOPMENT
 
-<p align="center">
+
 [![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
-</p>
+
 
 ### 🔬 Focus: Ingest Engine 
 
