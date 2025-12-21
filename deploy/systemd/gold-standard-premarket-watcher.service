@@ -1,0 +1,14 @@
+[Unit]
+Description=Gold Standard PreMarket Watcher
+After=network.target
+
+[Service]
+Type=simple
+User=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+ExecStart=/home/adam/worxpace/.venv/bin/python scripts/premarket_watcher.py
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -276,6 +276,27 @@ if [ ! -d "output" ]; then
     echo -e "${GREEN}Created output directories.${NC}"
 fi
 
+# Install systemd unit files and enable services (first-run only)
+if command -v systemctl &> /dev/null && [ -d "/run/systemd/system" ]; then
+    if [ -d "deploy/systemd" ]; then
+        if [ ! -f ".setup_systemd_done" ]; then
+            echo -e "[9/9] Installing systemd unit files and enabling monitor/service units (requires sudo)..."
+            sudo cp -n deploy/systemd/* /etc/systemd/system/ || echo -e "${YELLOW}WARNING: Failed to copy some unit files.${NC}"
+            sudo systemctl daemon-reload
+            # Enable and start monitor if unit exists
+            if [ -f "/etc/systemd/system/gold-standard-monitor.service" ]; then
+                sudo systemctl enable --now gold-standard-monitor.service || echo -e "${YELLOW}WARNING: Failed to enable/start gold-standard-monitor.service${NC}"
+            fi
+            # Attempt to enable core services if present
+            sudo systemctl enable --now gold-standard-discord-bot.service gold-standard-llm-worker.service gold-standard-daily-llm-report.timer || true
+            touch .setup_systemd_done
+            echo -e "${GREEN}Systemd units installed and monitor enabled (if present).${NC}"
+        else
+            echo -e "${YELLOW}Systemd units already installed in a previous setup run; skipping.${NC}"
+        fi
+    fi
+fi
+
 echo ""
 echo "========================================"
 echo -e "${GREEN}   Setup Complete!${NC}"

@@ -22,6 +22,69 @@ LOG = logging.getLogger("digest_bot.daily_report")
 DEFAULT_HOURS = 24
 
 
+import glob
+import os
+
+
+def _extract_premarket_summary() -> tuple[str, str, str]:
+    """Find the latest premarket file and extract Overall Bias, Rationale and Notion URL if available.
+
+    Returns (bias, rationale, notion_url) — empty strings if not found.
+    """
+    import sqlite3
+
+    reports_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output", "reports")
+
+    # Find the newest premarket file
+    candidates = glob.glob(os.path.join(reports_dir, "premarket_*.md"))
+    if not candidates:
+        # also check premarket subdir
+        candidates = glob.glob(os.path.join(reports_dir, "premarket", "*premarket*2025-*.md"))
+    if not candidates:
+        return "", "", ""
+
+    latest = sorted(candidates)[-1]
+
+    bias = ""
+    rationale = ""
+    try:
+        with open(latest, "r", encoding="utf-8") as f:
+            text = f.read()
+        # Simple parsing
+        m_bias = None
+        m_rat = None
+        for line in text.splitlines():
+            l = line.strip()
+            if l.startswith("*   **Overall Bias:**") or l.startswith("* **Overall Bias:**"):
+                m_bias = l
+            if l.startswith("*   **Rationale:**") or l.startswith("* **Rationale:**"):
+                m_rat = l
+            if m_bias and m_rat:
+                break
+        if m_bias:
+            # extract after colon
+            bias = m_bias.split(":", 1)[1].strip()
+        if m_rat:
+            rationale = m_rat.split(":", 1)[1].strip()
+    except Exception:
+        bias = ""
+        rationale = ""
+
+    notion_url = ""
+    try:
+        db = DatabaseManager()
+        with db._get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT notion_url FROM notion_sync WHERE file_path = ? ORDER BY synced_at DESC LIMIT 1", (latest,))
+            row = cur.fetchone()
+            if row and row[0]:
+                notion_url = row[0]
+    except Exception:
+        notion_url = ""
+
+    return bias, rationale, notion_url
+
+
 def build_report(db: DatabaseManager, hours: int = DEFAULT_HOURS) -> str:
     """Build a plain-text report summarizing LLM queue and sanitizer activity.
 
@@ -32,6 +95,9 @@ def build_report(db: DatabaseManager, hours: int = DEFAULT_HOURS) -> str:
     since_sql = since.strftime("%Y-%m-%d %H:%M:%S")
 
     queue_length = db.get_llm_queue_length()
+
+    # Capture premarket summary if available
+    bias, rationale, notion_url = _extract_premarket_summary()
 
     with db._get_connection() as conn:
         cursor = conn.cursor()
@@ -76,6 +142,13 @@ def build_report(db: DatabaseManager, hours: int = DEFAULT_HOURS) -> str:
     lines = []
     lines.append(f"**Gold Standard — LLM Daily Report** (last {hours}h)")
     lines.append("")
+
+    if bias:
+        lines.append(f"**Pre-Market Summary:** **{bias}** — {rationale}")
+        if notion_url:
+            lines.append(f"Notion: {notion_url}")
+        lines.append("")
+
     lines.append(f"- **Queue length**: {queue_length}")
     lines.append(f"- **Completed (last {hours}h)**: {completed_cnt}")
     lines.append(f"- **Sanitizer corrections (last {hours}h)**: {corrections_total}")

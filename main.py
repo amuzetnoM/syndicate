@@ -1300,14 +1300,17 @@ class QuantEngine:
         self._cleanup_old_charts()
 
         # Fetch data for each asset in parallel to reduce wall time
-        workers = min(6, max(2, len(ASSETS)))
+        # Use single-threaded fetch to avoid yfinance concurrency issues that may
+        # cause mismatched or duplicated data across assets.
+        workers = 1
         futures = {}
         with ThreadPoolExecutor(max_workers=workers) as ex:
             for key, conf in ASSETS.items():
                 conf = ASSETS[key]
                 futures[ex.submit(self._fetch, conf["p"], conf["b"])] = (key, conf)
 
-            for fut in futures:
+            from concurrent.futures import as_completed
+            for fut in as_completed(futures):
                 key, conf = futures[fut]
                 try:
                     df = fut.result()
@@ -1350,6 +1353,25 @@ class QuantEngine:
                         "sma200": round(sma200, 2) if sma200 is not None else None,
                     }
 
+                    # Persist snapshot to DB for historical use (best-effort)
+                    try:
+                        from db_manager import get_db, AnalysisSnapshot
+                        snap = AnalysisSnapshot(
+                            date=str(datetime.date.today()),
+                            asset=key,
+                            price=snapshot[key]["price"],
+                            rsi=snapshot[key].get("rsi"),
+                            sma_50=None,
+                            sma_200=snapshot[key].get("sma200"),
+                            atr=snapshot[key].get("atr"),
+                            adx=snapshot[key].get("adx"),
+                            trend=snapshot[key].get("regime"),
+                            raw_data=None,
+                        )
+                        get_db().save_analysis_snapshot(snap)
+                    except Exception as _:
+                        self.logger.debug("Failed to persist analysis snapshot", exc_info=True)
+
                     # Fetch news headlines
                     self._fetch_news(key, conf["p"])
 
@@ -1368,6 +1390,36 @@ class QuantEngine:
         if not snapshot:
             self.logger.error("Failed to fetch any market data")
             return None
+
+        # Diagnostic: detect uniform prices across assets which is a sign
+        # of an upstream mapping or aggregation bug.
+        try:
+            prices = [v.get('price') for v in snapshot.values() if isinstance(v, dict) and 'price' in v]
+            unique_prices = set(prices)
+            if len(prices) > 1 and len(unique_prices) == 1:
+                msg = f"Uniform prices detected across assets: {unique_prices}. This may indicate a mapping/fetch bug."
+                self.logger.warning(msg)
+                try:
+                    # Increment a metrics counter if available
+                    try:
+                        from gold_standard.metrics.server import METRICS
+
+                        if METRICS and "uniform_price_alerts_total" in METRICS:
+                            METRICS["uniform_price_alerts_total"].inc()
+                    except Exception:
+                        # metric increment is non-critical
+                        self.logger.debug("Failed to increment uniform_price_alerts_total metric", exc_info=True)
+
+                    # Send an alert to the configured Discord webhook to notify operators
+                    from scripts.notifier import send_discord
+
+                    send_discord(f"[Gold Standard] {msg}")
+                except Exception:
+                    # Non-critical: log failure to send alert but do not fail the run
+                    self.logger.debug("Failed to send uniform-price alert", exc_info=True)
+        except Exception:
+            # Non-critical diagnostic - do not fail the run
+            pass
 
         # Calculate intermarket ratios
         snapshot = self._compute_intermarket_ratios(snapshot)

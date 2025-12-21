@@ -1,4 +1,4 @@
-# Gold Standard — Local Development Context
+# Gold Standard — Local Development
 
 Purpose
 -------
@@ -94,6 +94,9 @@ If you need to move the authoritative runner to a different machine:
 2. Copy the `.env` file securely (do not check into git). Ensure file ownership and mode `600`.
 3. Install Python deps in a venv and `pip install -e .`.
 4. Copy systemd unit files: `deploy/systemd/*` to `/etc/systemd/system/` and `sudo systemctl daemon-reload`.
+
+> **Note:** Running `./setup.sh` will attempt to copy `deploy/systemd/*` into `/etc/systemd/system/` and **enable & start** `gold-standard-monitor.service` (and other core units) automatically on the first run when systemd is present; this operation requires `sudo` access.
+
 5. Enable and start services: `sudo systemctl enable --now gold-standard-discord-bot.service gold-standard-llm-worker.service && sudo systemctl enable --now gold-standard-daily-llm-report.timer gold-standard-monitor.service`.
 6. Verify with `sudo systemctl status` and `sudo journalctl -u <service>`.
 

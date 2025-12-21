@@ -75,19 +75,37 @@ def process_task(task: dict, cfg: Config) -> None:
                 def _replace_price(match, canonical_price):
                     nonlocal corrected
                     full = match.group(0)
-                    num = float(match.group(2).replace(",", ""))
+                    # Tolerate trailing punctuation (e.g., '98.72.'), strip commas, and sanitize
+                    import re as _re
+                    raw = match.group(2).replace(",", "")
+                    clean = _re.sub(r"[^0-9.\-]", "", raw)
+                    try:
+                        num = float(clean)
+                    except Exception:
+                        # If we cannot parse, skip replacement
+                        return full
+
                     if abs((num - canonical_price) / canonical_price) > 0.05:
                         corrected += 1
                         notes.append(f"Replaced {num} with {canonical_price}")
                         return match.group(1) + str(canonical_price)
                     return full
 
-                # For each canonical asset, replace nearby mentions
+                # For each canonical asset, replace nearby mentions (handle plural and different casings)
+                import re
+
                 for asset, price in canonical.items():
-                    # Replace patterns like 'Gold: $1234' or 'gold ... $1234'
-                    text = re.sub(rf"(\b{asset}\b[^\n]{{0,40}}\$)([0-9\.,]+)", lambda m, p=price: _replace_price(m, p), text, flags=re.IGNORECASE)
-                    # Replace 'Current Gold Price: $1234' pattern
-                    text = re.sub(rf"(Current\s+{asset.capitalize()}\s+Price:\s*\$)\s*[0-9\.,]+", lambda m, p=price: m.group(1) + str(p), text, flags=re.IGNORECASE)
+                    # Build likely token variants so 'YIELD' matches 'Yields' in natural text
+                    variants = {asset, asset.lower(), asset.title(), asset.capitalize()}
+                    if asset.upper() == "YIELD":
+                        variants.update({"Yields", "Yield", "YIELD"})
+
+                    for tok in variants:
+                        # Replace patterns like 'Gold: $1234' or 'gold ... $1234' where the token appears
+                        text = re.sub(rf"(\b{re.escape(tok)}\b[^\n]{{0,40}}\$)([0-9\.,]+)", lambda m, p=price: _replace_price(m, p), text, flags=re.IGNORECASE)
+
+                        # Replace 'Current Gold Price: $1234' pattern for variants too
+                        text = re.sub(rf"(Current\s+{re.escape(tok)}\s+Price:\s*\$)\s*[0-9\.,]+", lambda m, p=price: m.group(1) + str(p), text, flags=re.IGNORECASE)
 
                 return text, corrected, notes
 

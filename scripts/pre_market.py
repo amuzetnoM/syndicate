@@ -121,6 +121,8 @@ def build_premarket_prompt(
         "If you need to compute levels (support/stop), compute them using the provided prices and show calculations."
     )
 
+    perf_line = f"Performance: {trade_summary['wins']}W / {trade_summary['losses']}L | Win Rate: {trade_summary['win_rate']:.1f}% | Total PnL: ${trade_summary['total_pnl']:.2f}"
+
     return f"""
 You are "Gold Standard" - an elite quantitative trading algorithm.
 Generate a comprehensive PRE-MARKET PLAN for {week_info['weekday']}, {week_info['formatted']}.
@@ -140,8 +142,8 @@ Intermarket:
 
 === ACTIVE POSITIONS ===
 {active_trades_text}
-"""
-Performance: {trade_summary['wins']}W / {trade_summary['losses']}L | Win Rate: {trade_summary['win_rate']:.1f}% | Total PnL: ${trade_summary['total_pnl']:.2f}
+
+{perf_line}
 
 === RECENT NEWS ===
 {chr(10).join(['* ' + n for n in news[:5]]) if news else "No significant headlines."}
@@ -183,8 +185,8 @@ List any known economic events for today/this week:
 | Component | Trade Idea | Risk Management |
 |-----------|------------|-----------------|
 | Direction | LONG / SHORT / FLAT | Entry discipline notes |
-| Entry Zone | ${support_zone_low:.0f} - ${support_zone_high:.0f} | Staggered entry strategy |
-| Stop Loss | ${suggested_sl:.0f} (2x ATR) | Hard stop, no exceptions |
+| Entry Zone | {support_zone_low:.0f} - {support_zone_high:.0f} | Staggered entry strategy |
+| Stop Loss | {suggested_sl:.0f} (2x ATR) | Hard stop, no exceptions |
 | Initial Targets | List 2-3 price targets | Partial exit strategy |
 | Intraday Notes | Key times/events to watch | Risk reduction before data |
 
@@ -194,7 +196,7 @@ List any known economic events for today/this week:
 * **Major Resistance:** $X,XXX
 * **Immediate Support:** $X,XXX
 * **Major Support (Invalidation):** $X,XXX
-* **Stop Loss Floor:** ${suggested_sl:.0f}
+* **Stop Loss Floor:** {suggested_sl:.0f}
 
 ## 6. Session Strategy
 
@@ -303,6 +305,43 @@ def generate_premarket(config: Config, logger, model=None, dry_run: bool = False
                     if support_zone_low is not None and support_zone_high is not None and suggested_sl is not None:
                         text = re.sub(r"\$X,XXX|\$X,XXX|\$X,XXX", f"${int(support_zone_low)}", text)
 
+                    # Enforce canonical prices for all known assets to prevent accidental mis-attribution
+                    try:
+                        def enforce_canonical(text: str) -> str:
+                            # For each asset in the data dict, replace nearby $numbers with the canonical price
+                            for asset_key, v in data.items():
+                                if not isinstance(v, dict):
+                                    continue
+                                asset_price = v.get("price")
+                                if asset_price is None:
+                                    continue
+
+                                # Variants to match in natural language (e.g., 'Yields' -> 'YIELD')
+                                variants = {asset_key, asset_key.lower(), asset_key.title(), asset_key.capitalize()}
+                                if asset_key.upper() == "YIELD":
+                                    variants.update({"Yields", "Yield", "YIELD"})
+
+                                for tok in variants:
+                                    # Match constructs like 'DXY ($98.72)' or 'rising Yields ($98.72)'
+                                    pattern = re.compile(rf"({re.escape(tok)}[^\n]{{0,40}}\$)\s*[0-9\.,]+", flags=re.IGNORECASE)
+
+                                    def _repl(m):
+                                        return m.group(1) + f"{asset_price}"
+
+                                    text = pattern.sub(_repl, text)
+
+                                # As a fallback, also replace explicit 'Asset: $number' patterns where asset key appears
+                                fallback = re.compile(rf"({re.escape(asset_key)}\s*:\s*\$)\s*[0-9\.,]+", flags=re.IGNORECASE)
+
+                                text = fallback.sub(lambda m: m.group(1) + f"{asset_price}", text)
+
+                            return text
+
+                        text = enforce_canonical(text)
+                    except Exception:
+                        # Non-critical; if enforcement fails, leave text as-is
+                        pass
+
                     return text
 
                 sanitized = sanitize_generated(generated)
@@ -343,6 +382,16 @@ def _generate_skeleton_premarket(data: Dict[str, Any], week_info: Dict[str, Any]
 
     trade_summary = cortex.get_trade_summary()
 
+    # Compute stop loss string safely
+    try:
+        if gold_price != 'N/A':
+            stop_loss_val = float(gold_price) - (float(gold_atr) * 2)
+            stop_loss_str = f"${stop_loss_val:.0f}"
+        else:
+            stop_loss_str = "N/A"
+    except Exception:
+        stop_loss_str = "N/A"
+
     return f"""# Pre-Market Plan
 ## Week {week_info['week_num']}, {week_info['month']} {week_info['year']}
 ### {week_info['weekday']}, {week_info['formatted']}
@@ -369,7 +418,7 @@ def _generate_skeleton_premarket(data: Dict[str, Any], week_info: Dict[str, Any]
 |-----------|---------------|
 | Direction | [PENDING] |
 | Entry Zone | [Calculate from ATR] |
-| Stop Loss | ${float(gold_price) - (float(gold_atr) * 2) if gold_price != 'N/A' else 'N/A':.0f} |
+| Stop Loss | {stop_loss_str} |
 
 ## 4. Performance Summary
 

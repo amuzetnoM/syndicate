@@ -84,6 +84,46 @@ WantedBy=timers.target
 ```
 
 - You can test sending with a single run: `sudo systemctl start gold-standard-daily-llm-report.service` and inspect the logs with `journalctl -u gold-standard-daily-llm-report.service -n 200 --no-pager`.
+
+## Discord webhook setup (quick)
+
+If you want the Gold Standard system to post alerts to Discord, create a webhook in a channel (Server Settings → Integrations → Webhooks → New Webhook) and copy the webhook URL.
+
+A helper script is provided to validate and persist the webhook and Notion credentials:
+
+- Test and persist a Discord webhook into the project `.env` (and optionally to systemd units):
+
+```bash
+# Test and persist webhook to .env (will attempt to send a test message)
+python scripts/discord_setup.py --webhook "https://discord.com/api/webhooks/..." 
+
+# Persist into systemd units (requires sudo)
+python scripts/discord_setup.py --webhook "https://discord.com/api/webhooks/..." --persist-systemd --services gold-standard-llm-worker.service,gold-standard-premarket-watcher.service
+```
+
+- Persist Notion credentials to `.env`:
+
+```bash
+python scripts/discord_setup.py --notion-api "<NOTION_TOKEN>" --notion-db "<DATABASE_ID>"
+```
+
+- If you prefer to manually edit `.env`, add the following lines (project root):
+
+```ini
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+NOTION_API_KEY=secret_xxx
+NOTION_DATABASE_ID=xxx-xxxx-...
+```
+
+- After updating systemd drop-in files, reload and restart:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart gold-standard-llm-worker.service gold-standard-premarket-watcher.service
+```
+
+- The helper is a convenience to avoid editing systemd files directly; use it if you want the systemd units to inherit the env var automatically.
+
 - We added a smoke-test CI workflow (`.github/workflows/smoke.yml`): set `SMOKE_NOTION_API_KEY` and `SMOKE_NOTION_DATABASE_ID` in GitHub Secrets to enable weekly smoke publishes.
 - **Host tools**: `git`, `docker`, `docker-compose`, `python3`, and `gcc` are already installed and ready.
 
