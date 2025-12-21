@@ -17,6 +17,7 @@ Features:
 
 import asyncio
 import logging
+import os
 import sys
 from datetime import date, datetime
 from typing import Any, Dict, Optional
@@ -98,8 +99,12 @@ class DigestDiscordBot(commands.Bot):
 
         # Intents for full functionality
         intents = discord.Intents.default()
-        intents.message_content = True
-        intents.members = True
+        # Enable message content only if explicitly requested via env var
+        if os.getenv("DISCORD_ENABLE_MESSAGE_CONTENT") == "1":
+            intents.message_content = True
+        # Members intent is privileged; enable only when allowed in portal
+        if os.getenv("DISCORD_ENABLE_MEMBERS") == "1":
+            intents.members = True
         intents.guilds = True
 
         super().__init__(
@@ -137,6 +142,41 @@ class DigestDiscordBot(commands.Bot):
 
         # Add cogs/commands
         await self._register_commands()
+
+        # Register recommended cogs (reporting, alerts, moderation, pins, etc.)
+        try:
+            from .cogs import (
+                reporting,
+                digest_workflow,
+                sanitizer_alerts,
+                moderation,
+                alerting,
+                subscriptions,
+                pins,
+                resources,
+            )
+
+            # Add cogs idempotently to avoid duplicate command registration on reconnect
+            cogs_to_add = [
+                reporting.ReportingCog,
+                digest_workflow.DigestWorkflowCog,
+                sanitizer_alerts.SanitizerAlertsCog,
+                moderation.ModerationCog,
+                alerting.AlertingCog,
+                subscriptions.SubscriptionsCog,
+                pins.PinsCog,
+                resources.ResourcesCog,
+            ]
+
+            for cog_cls in cogs_to_add:
+                try:
+                    if not self.get_cog(cog_cls.__name__):
+                        await self.add_cog(cog_cls(self))
+                except Exception:
+                    logger.exception("Failed to add cog %s", cog_cls.__name__)
+
+        except Exception:
+            logger.exception("Failed to register cogs")
 
         # Start background tasks
         self.digest_check_loop.start()
@@ -628,6 +668,82 @@ class DigestDiscordBot(commands.Bot):
                 color=discord.Color.gold(),
             )
             await interaction.response.send_message(embed=embed)
+
+        @self.tree.command(name="publish_changelog", description="Publish changelog into the resources channel and pin it (operators)")
+        @app_commands.checks.has_permissions(manage_messages=True)
+        async def publish_changelog_cmd(interaction: discord.Interaction):
+            await interaction.response.defer()
+            try:
+                import io
+                from pathlib import Path
+
+                changelog = Path(self.config.root_dir) / "docs" / "changelog" / "CHANGELOG.md"
+                if not changelog.exists():
+                    await interaction.followup.send("Changelog file not found.", ephemeral=True)
+                    return
+
+                content = changelog.read_text(encoding="utf-8")
+                first_heading = None
+                for line in content.splitlines():
+                    if line.startswith("## "):
+                        first_heading = line.strip("# ")
+                        break
+
+                ch = None
+                if self.guide:
+                    ch = self.guide.get_channel("📚-resources")
+
+                if not ch and interaction.guild:
+                    ch = discord.utils.get(interaction.guild.text_channels, name="📚-resources")
+
+                if not ch:
+                    await interaction.followup.send("Resources channel not found; run `/setup` or create `📚-resources`.", ephemeral=True)
+                    return
+
+                file = discord.File(io.BytesIO(content.encode("utf-8")), filename="CHANGELOG.md")
+                msg = await ch.send(f"📣 **Changelog published**\n{first_heading or 'Full changelog attached.'}", file=file)
+                try:
+                    await msg.pin(reason="Published changelog via slash command")
+                except Exception:
+                    pass
+
+                await interaction.followup.send(f"Changelog posted to {ch.mention} and pinned.", ephemeral=True)
+            except Exception as e:
+                await interaction.followup.send(f"Failed to publish changelog: {e}", ephemeral=True)
+
+        @self.tree.command(name="pin_commands", description="Post and pin the public command guide into resources channel (operators)")
+        @app_commands.checks.has_permissions(manage_messages=True)
+        async def pin_commands_cmd(interaction: discord.Interaction):
+            await interaction.response.defer()
+            try:
+                ch = None
+                if self.guide:
+                    ch = self.guide.get_channel("📚-resources")
+
+                if not ch and interaction.guild:
+                    ch = discord.utils.get(interaction.guild.text_channels, name="📚-resources")
+
+                if not ch:
+                    await interaction.followup.send("Resources channel not found.", ephemeral=True)
+                    return
+
+                commands_text = (
+                    "**Bot commands**\n"
+                    "- `/digest` — Generate and post today's digest.\n"
+                    "- `/health` — Show bot health.\n"
+                    "- `/publish_changelog` — Publish changelog to resources (operators).\n"
+                    "- `/pin_commands` — Post and pin this guide (operators).\n"
+                )
+
+                msg = await ch.send(commands_text)
+                try:
+                    await msg.pin(reason="Pinned command guide via slash command")
+                except Exception:
+                    pass
+
+                await interaction.followup.send(f"Command guide posted to {ch.mention} and pinned.", ephemeral=True)
+            except Exception as e:
+                await interaction.followup.send(f"Failed to post command guide: {e}", ephemeral=True)
 
     # ══════════════════════════════════════════════════════════════════════════
     # RUNNING

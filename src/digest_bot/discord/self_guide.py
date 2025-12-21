@@ -341,6 +341,16 @@ class ServerBlueprint:
                         ChannelSpec.digests_channel(),
                         ChannelSpec.premarket_channel(),
                         ChannelSpec.journal_channel(),
+                        ChannelSpec(
+                            name="📚-research-journal",
+                            topic="🔬 Research journal and working notes. Published research and drafts.",
+                            position=4,
+                        ),
+                        ChannelSpec(
+                            name="📈-day-charts",
+                            topic="📊 Daily charts and visualizations (auto-posted). Pins are used to keep latest charts visible.",
+                            position=7,
+                        ),
                     ],
                     reason="Category for automated market intelligence",
                 ),
@@ -354,6 +364,14 @@ class ServerBlueprint:
                             topic="📚 Educational resources, tutorials, and guides "
                             "for improving your trading skills.",
                             position=6,
+                        ),
+                        ChannelSpec(
+                            name="📚-resources",
+                            topic="📚 Changelog, documentation, and pinned command guide. Read-only for most users.",
+                            position=7,
+                            permission_overwrites={
+                                "@everyone": {"send_messages": False},
+                            },
                         ),
                     ],
                     reason="Category for community interaction",
