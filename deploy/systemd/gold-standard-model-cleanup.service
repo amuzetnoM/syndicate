@@ -1,0 +1,13 @@
+[Unit]
+Description=Gold Standard Model Cleanup (dry-run by default)
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/adam/worxpace/.venv/bin/python /home/adam/worxpace/gold_standard/scripts/cleanup_models.py --confirm
+WorkingDirectory=/home/adam/worxpace/gold_standard
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
