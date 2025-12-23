@@ -55,6 +55,7 @@ except Exception:
         pass
 import hashlib
 from filelock import FileLock
+import html
 
 # Import database manager for sync tracking
 try:
@@ -981,6 +982,20 @@ class NotionPublisher:
             # Extract title from H1 or filename
             h1_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
             title = h1_match.group(1).strip() if h1_match else filename.replace(".md", "").replace("_", " ")
+            # Sanitize title: strip HTML tags and unescape entities to avoid corrupted Notion titles
+            def _sanitize_title(s: str) -> str:
+                if not s:
+                    return s
+                try:
+                    # Unescape HTML entities then remove tags
+                    t = html.unescape(s)
+                    t = re.sub(r"<[^>]+>", "", t)
+                    t = re.sub(r"\s+", " ", t).strip()
+                    return t
+                except Exception:
+                    return s
+
+            title = _sanitize_title(title)
             result = self.publish(title=title, content=content, doc_type=doc_type, tags=tags, filename=filename)
 
             # Record the sync in the database
