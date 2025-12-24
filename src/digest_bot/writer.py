@@ -40,6 +40,7 @@ model: "{model}"
 tokens_used: {tokens_used}
 generation_time_s: {generation_time:.2f}
 version: "1.0"
+publish_to_notion: false
 ---
 
 # 📊 Daily Digest — {date}
@@ -70,6 +71,7 @@ version: "1.0"
 MINIMAL_TEMPLATE = """---
 title: "Daily Digest - {date}"
 generated: "{timestamp}"
+publish_to_notion: false
 ---
 
 # 📊 Daily Digest — {date}
