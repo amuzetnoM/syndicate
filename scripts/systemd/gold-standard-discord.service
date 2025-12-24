@@ -1,0 +1,22 @@
+[Unit]
+Description=Gold Standard Discord/Digest Worker
+After=network.target
+
+[Service]
+Type=simple
+User=adam
+Group=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/adam/worxpace/gold_standard/.env
+
+# Adjust ExecStart to the appropriate run command for the Discord bot/digest worker.
+# Common options: run module or script that starts the bot, or use a small wrapper script.
+ExecStart=/usr/bin/env python3 -m src.digest_bot
+
+Restart=on-failure
+RestartSec=20
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

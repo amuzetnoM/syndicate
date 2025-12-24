@@ -1,0 +1,25 @@
+#!/bin/sh
+## Gold Standard - Notion Sync Service
+# Copy to /etc/systemd/system/gold-standard-notion-sync.service and adjust paths as needed
+
+[Unit]
+Description=Gold Standard Notion Sync Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=adam
+Group=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/adam/worxpace/gold_standard/.env
+
+ExecStart=/usr/bin/env python3 scripts/notion_publisher.py --sync-all
+
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
