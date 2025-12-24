@@ -41,6 +41,7 @@ tokens_used: {tokens_used}
 generation_time_s: {generation_time:.2f}
 version: "1.0"
 publish_to_notion: false
+publish_to_discord: false
 ---
 
 # 📊 Daily Digest — {date}
@@ -72,6 +73,7 @@ MINIMAL_TEMPLATE = """---
 title: "Daily Digest - {date}"
 generated: "{timestamp}"
 publish_to_notion: false
+publish_to_discord: false
 ---
 
 # 📊 Daily Digest — {date}

@@ -202,6 +202,78 @@ class DigestWorkflowCog(commands.Cog):
         else:
             await ctx.send(discord_templates.plain_daily_text(structured))
 
+    @commands.command(name="recent_sends")
+    @commands.has_role("operators")
+    async def cmd_recent_sends(self, ctx, limit: int = 10):
+        """List recent Discord sends recorded by the system (operators only)."""
+        from db_manager import DatabaseManager
+        db = DatabaseManager()
+        with db._get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT id, channel, fingerprint, sent_at FROM discord_messages ORDER BY sent_at DESC LIMIT ?", (limit,))
+            rows = cur.fetchall()
+        if not rows:
+            await ctx.send("No recent sends recorded.")
+            return
+        lines = [f"id={r['id']} channel={r['channel']} sent_at={r['sent_at']} fp={r['fingerprint'][:12]}..." for r in rows]
+        await ctx.send("\n".join(lines))
+
+    @commands.command(name="clear_fingerprint")
+    @commands.has_role("operators")
+    async def cmd_clear_fingerprint(self, ctx, fingerprint: str):
+        """Remove stored sends for a fingerprint so a message may be re-sent."""
+        from db_manager import DatabaseManager
+        db = DatabaseManager()
+        with db._get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM discord_messages WHERE fingerprint = ?", (fingerprint,))
+            deleted = cur.rowcount
+        await ctx.send(f"Cleared {deleted} records for fingerprint {fingerprint[:12]}...")
+
+    @commands.command(name="resend_daily")
+    @commands.has_role("operators")
+    async def cmd_resend_daily(self, ctx, hours: int = 24, webhook: str = None):
+        """Rebuild and resend the daily report (operators only)."""
+        from ..daily_report import build_structured_report, DEFAULT_HOURS
+        from db_manager import DatabaseManager
+        db = DatabaseManager()
+        structured = build_structured_report(db, hours=hours or DEFAULT_HOURS)
+        embed = discord_templates.build_daily_embed(structured)
+        # Dedup check
+        try:
+            import hashlib, json
+            payload_key = json.dumps(embed, sort_keys=True, default=str)
+            fingerprint = hashlib.sha256(payload_key.encode('utf-8')).hexdigest()
+        except Exception:
+            fingerprint = None
+
+        channel_key = webhook or (str(ctx.channel.id) if hasattr(ctx.channel, 'id') else 'channel')
+        db = DatabaseManager()
+        if fingerprint and db.was_discord_recent(channel_key, fingerprint, minutes=1):
+            await ctx.send("Recent duplicate found; skipped resend.")
+            return
+
+        # Send via webhook if provided, otherwise to current channel
+        from scripts.notifier import send_discord
+        ok = False
+        if webhook:
+            ok = send_discord(None, webhook_url=webhook, embed=embed)
+        else:
+            try:
+                embed_obj = discord.Embed.from_dict(embed) if hasattr(discord, 'Embed') else None
+                if embed_obj:
+                    await ctx.send(embed=embed_obj)
+                    ok = True
+                else:
+                    await ctx.send(discord_templates.plain_daily_text(structured))
+                    ok = True
+            except Exception:
+                ok = False
+
+        if ok and fingerprint:
+            db.record_discord_send(channel_key, fingerprint, hashlib.sha256(payload_key.encode('utf-8')).hexdigest())
+        await ctx.send("Resend completed" if ok else "Resend failed")
+
 
 def setup(bot):
     return DigestWorkflowCog(bot)
