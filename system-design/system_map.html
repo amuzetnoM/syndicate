@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gold Standard — Interactive System Map</title>
+  <style>
+    body{font-family:Inter,Segoe UI,Helvetica,Arial;margin:0;height:100vh;display:flex;}
+    #network{flex:1;border-right:1px solid #e6e6e6}
+    #panel{width:360px;padding:16px;box-sizing:border-box;overflow:auto}
+    h2{margin:8px 0}
+    .meta{font-size:12px;color:#666}
+    .node-key{font-weight:600}
+    .toggle{margin-bottom:8px}
+    .search{width:100%;padding:6px;margin-bottom:8px}
+    .chip{display:inline-block;padding:6px 8px;border-radius:16px;background:#f1f5f9;margin:3px;cursor:pointer}
+    .chip.active{background:#0ea5a4;color:white}
+    .footer{font-size:12px;color:#888;margin-top:12px}
+  </style>
+  <link href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css" rel="stylesheet">
+</head>
+<body>
+  <div id="network"></div>
+  <div id="panel">
+    <h2>Gold Standard — System Map</h2>
+    <div class="meta">Interactive architecture map — click nodes for details, filter categories on the right.</div>
+    <input id="search" class="search" placeholder="Search nodes (name or file)" />
+    <div id="categories"></div>
+    <hr />
+    <div id="info"><em>Click a node to see description and file links.</em></div>
+    <div class="footer">Generated: 2025-12-24 — File: system-design/system_map.html</div>
+  </div>
+
+  <script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+  <script>
+    // Node dataset (concise but exhaustive overview). Each node includes a category and a path hint.
+    const nodes = new vis.DataSet([
+      { id: 'main', label: 'main.py', group: 'Core', title: 'Entrypoint: coordinates analysis runs and orchestration', path:'main.py' },
+      { id: 'run', label: 'run.py', group: 'Core', title: 'CLI runner / orchestration', path:'run.py' },
+      { id: 'db', label: 'db_manager.py', group: 'Database', title: 'SQLite DB access and schema', path:'db_manager.py' },
+      { id: 'executor', label: 'executor_daemon', group: 'Executor', title: 'Detached task executor; handles LLM jobs and pipeline tasks', path:'scripts/executor_daemon.py' },
+      { id: 'executor_runner', label: 'executor_runner', group: 'Executor', title: 'Runner utilities and runner CLI', path:'scripts/executor_runner.py' },
+      { id: 'llm_factory', label: 'LLM Providers', group: 'LLM', title: 'Provider strategy: Gemini → Ollama → Local (llama.cpp)', path:'src/*/llm*' },
+      { id: 'ollama', label: 'Ollama', group: 'LLM', title: 'Local Ollama server integration (HTTP)', path:'.env / OLLAMA_HOST' },
+      { id: 'gemini', label: 'Gemini', group: 'LLM', title: 'Cloud provider (Google Gemini) — optional', path:'.env GEMINI_API_KEY' },
+      { id: 'local_llm', label: 'Local LLM', group: 'LLM', title: 'llama.cpp / GGUF local models', path:'scripts/local_llm.py' },
+      { id: 'digest', label: 'Digest Bot', group: 'Bots', title: 'Daily digest generation, templates, Discord integration', path:'src/digest_bot' },
+      { id: 'discord', label: 'Discord', group: 'Integrations', title: 'Discord bot + webhooks for digests and alerts', path:'src/digest_bot/discord' },
+      { id: 'notion_pub', label: 'Notion Publisher', group: 'Notion', title: 'Sync markdown outputs to Notion, fingerprinting, frontmatter gating', path:'scripts/notion_publisher.py' },
+      { id: 'notion_fmt', label: 'Notion Formatter', group: 'Notion', title: 'Markdown → Notion blocks conversion (tables normalization)', path:'scripts/notion_formatter.py' },
+      { id: 'notion_api', label: 'Notion API', group: 'Notion', title: 'External Notion service (NOTION_API_KEY)', path:'.env NOTION_API_KEY' },
+      { id: 'templates', label: 'Templates', group: 'Formatting', title: 'Discord & digest templates and writers', path:'src/digest_bot/discord/templates.py' },
+      { id: 'writer', label: 'Writer', group: 'Formatting', title: 'Digest writer and frontmatter', path:'src/digest_bot/writer.py' },
+      { id: 'notifier', label: 'notifier.py', group: 'Integrations', title: 'Webhook sender for Discord and other targets', path:'scripts/notifier.py' },
+      { id: 'metrics', label: 'metrics_server.py', group: 'Observability', title: 'Prometheus metrics exporter', path:'scripts/metrics_server.py' },
+      { id: 'grafana', label: 'Grafana', group: 'Observability', title: 'Dashboards & JSON imports', path:'_system/grafana_dashboard_*.json' },
+      { id: 'docker', label: 'Docker / CI', group: 'Deployment', title: 'Dockerfile, GHCR image build and automation', path:'Dockerfile' },
+      { id: 'systemd', label: 'systemd units', group: 'Deployment', title: 'Service & timer units for executor, Notion, Discord', path:'scripts/systemd/*' },
+      { id: 'pipeline_audit', label: 'pipeline_audit.py', group: 'Ops', title: 'Audit and cleanup utilities for DB and orphan records', path:'scripts/pipeline_audit.py' },
+      { id: 'notion_cleanup', label: 'notion_cleanup', group: 'Ops', title: 'Cleanup helpers & archive scripts', path:'scripts/notion_cleanup_*.py' },
+      { id: 'docker_ci', label: 'GH Actions', group: 'Deployment', title: 'Release workflows and docker build/push actions', path:'.github/workflows' },
+      { id: 'archives', label: 'archives/', group: 'Data', title: 'Backups and archived artifacts', path:'archives/' },
+      { id: 'output', label: 'output/', group: 'Data', title: 'Generated reports, charts, and outputs', path:'output/' },
+      { id: 'charts', label: 'Charts & Images', group: 'Formatting', title: 'Chart generator and image hosting (IMGBB optional)', path:'scripts/chart_publisher.py' },
+      { id: 'tests', label: 'tests/', group: 'Quality', title: 'Unit & integration tests (pytest)', path:'tests/' },
+      { id: 'social', label: 'Social', group: 'External', title: 'Social automation components & strategy', path:'src/social' },
+      { id: 'db_tables', label: 'DB Tables', group: 'Database', title: 'notion_sync, document_lifecycle, llm_sanitizer_audit, discord_messages', path:'db_manager.py -> schema' },
+      { id: 'prom_rules', label: 'Prom Rules', group: 'Observability', title: 'Prometheus alert rules (deploy/prometheus)', path:'deploy/prometheus' }
+    ]);
+
+    // Edges show primary interactions
+    const edges = new vis.DataSet([
+      { from: 'main', to: 'db' },
+      { from: 'run', to: 'executor' },
+      { from: 'executor', to: 'llm_factory' },
+      { from: 'llm_factory', to: 'ollama' },
+      { from: 'llm_factory', to: 'gemini' },
+      { from: 'llm_factory', to: 'local_llm' },
+      { from: 'digest', to: 'llm_factory' },
+      { from: 'digest', to: 'discord' },
+      { from: 'discord', to: 'notifier' },
+      { from: 'notion_pub', to: 'notion_api' },
+      { from: 'notion_fmt', to: 'notion_pub' },
+      { from: 'notion_pub', to: 'db' },
+      { from: 'db', to: 'pipeline_audit' },
+      { from: 'metrics', to: 'grafana' },
+      { from: 'docker', to: 'docker_ci' },
+      { from: 'systemd', to: 'executor' },
+      { from: 'systemd', to: 'notion_pub' },
+      { from: 'systemd', to: 'discord' },
+      { from: 'charts', to: 'notion_pub' },
+      { from: 'writer', to: 'notion_pub' },
+      { from: 'writer', to: 'digest' },
+      { from: 'db_tables', to: 'db' },
+      { from: 'notion_cleanup', to: 'notion_pub' },
+      { from: 'archives', to: 'notion_cleanup' },
+      { from: 'social', to: 'digest' }
+    ]);
+
+    // Category list
+    const categories = [...new Set(nodes.get().map(n => n.group))];
+
+    // Create network
+    const container = document.getElementById('network');
+    const data = { nodes, edges };
+    const options = {
+      nodes:{shape:'dot',size:18,font:{size:14}},
+      edges:{arrows:{to:false},smooth:{type:'cubicBezier'}},
+      physics:{stabilization:{iterations:200}},
+      interaction:{hover:true,tooltipDelay:200}
+    };
+    const network = new vis.Network(container, data, options);
+
+    // Build category chips
+    const catEl = document.getElementById('categories');
+    const active = {};
+    categories.forEach(c=>{ active[c]=true; const el=document.createElement('span'); el.className='chip active'; el.textContent=c; el.onclick=()=>{ active[c]=!active[c]; el.classList.toggle('active'); filterCategories(); }; catEl.appendChild(el); });
+
+    function filterCategories(){
+      const all = nodes.get();
+      all.forEach(n=>{ network.body.data.nodes.update({id:n.id,hidden: !active[n.group]}); });
+      edges.forEach(e=>{ const fromVisible = !network.body.data.nodes.get(e.from).hidden; const toVisible = !network.body.data.nodes.get(e.to).hidden; network.body.data.edges.update({id:e.id, hidden: !(fromVisible && toVisible)}); });
+    }
+
+    // Node click handler -> show details
+    network.on('click', function(params){ if(params.nodes.length){ const id=params.nodes[0]; const node=nodes.get(id); showInfo(node); } });
+
+    function showInfo(node){
+      const info = document.getElementById('info');
+      info.innerHTML = `<div class="node-key">${node.label}</div><div class="meta">Category: ${node.group}</div><p>${node.title || ''}</p><p><strong>Example files / config:</strong><br/><code>${node.path || ''}</code></p><p><strong>Interactions:</strong></p>`;
+      // list edges
+      const outs = edges.get().filter(e=>e.from===node.id).map(e=>nodes.get(e.to).label);
+      const ins = edges.get().filter(e=>e.to===node.id).map(e=>nodes.get(e.from).label);
+      const ul = document.createElement('ul');
+      outs.forEach(o=>{ const li=document.createElement('li'); li.textContent = `-> ${o}`; ul.appendChild(li); });
+      ins.forEach(i=>{ const li=document.createElement('li'); li.textContent = `<- ${i}`; ul.appendChild(li); });
+      info.appendChild(ul);
+      const pathLink = document.createElement('div'); pathLink.style.marginTop='8px'; pathLink.innerHTML = `<em>Open files in editor by path; example: <code>${node.path}</code></em>`;
+      info.appendChild(pathLink);
+    }
+
+    // Search
+    document.getElementById('search').addEventListener('input',(e)=>{ const q=e.target.value.toLowerCase(); nodes.forEach(n=>{ const visible = !q || n.label.toLowerCase().includes(q) || (n.path && n.path.toLowerCase().includes(q)) || (n.title && n.title.toLowerCase().includes(q)); network.body.data.nodes.update({id:n.id, hidden: !visible}); }); });
+
+    // initial fit
+    network.once('stabilizationIterationsDone', function(){ network.fit({animation:{duration:400}}); });
+  </script>
+</body>
+</html>
