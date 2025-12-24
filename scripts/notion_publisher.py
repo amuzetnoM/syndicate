@@ -53,6 +53,8 @@ except Exception:
         load_dotenv()
     except Exception:
         pass
+# Global env toggle to disable wet Notion publishes for safe testing
+_DISABLE_NOTION_PUBLISH = str(os.getenv("DISABLE_NOTION_PUBLISH", "0")).lower() in ("1", "true", "yes")
 import hashlib
 from filelock import FileLock
 import html
@@ -1272,6 +1274,11 @@ def sync_all_outputs(output_dir: str = None, force: bool = False, dry_run: bool 
             print("[NOTION] Sync already completed for today, skipping")
             return {"success": [], "skipped": [], "failed": [], "reason": "Already synced today"}
 
+    # If global disable is set, force dry_run mode to avoid any API calls
+    if _DISABLE_NOTION_PUBLISH:
+        print("[NOTION] Global Notion publish disabled via DISABLE_NOTION_PUBLISH; running in dry-run mode.")
+        dry_run = True
+
     publisher = NotionPublisher(no_client_ok=dry_run)
     results = {"success": [], "skipped": [], "failed": []}
 
@@ -1329,8 +1336,13 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true", help="Test connection")
     parser.add_argument("--force", action="store_true", help="Force sync even if unchanged")
     parser.add_argument("--dry-run", action="store_true", help="Validate publish without creating pages")
+    parser.add_argument("--no-notion", action="store_true", help="Disable wet Notion publishes (safe dry-run)")
     parser.add_argument("--status", action="store_true", help="Show sync status")
     args = parser.parse_args()
+
+    # Allow CLI toggle to override environment
+    if getattr(args, 'no_notion', False):
+        globals()['_DISABLE_NOTION_PUBLISH'] = True
 
     try:
         if args.test:

@@ -1,7 +1,7 @@
 # ACTIVE DEVELOPMENT
 
 
-[![Version](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.6.1-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
@@ -11,6 +11,30 @@ All notable changes to Gold Standard are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+
+## [3.6.1] - 2025-12-24
+
+### Discord digest & Notion safety — Formatting, dedupe, and safe dry-run
+
+### Added
+- Overhauled Discord digest formatting with concise embeds and plaintext fallback.
+- Admin preview and interactive commands: `!preview_digest`, `!recent_sends`, `!clear_fingerprint`, `!resend_daily`.
+- `scripts/discord_preview.py` for local embed/plaintext previews and safe dev sends.
+- DB table `discord_messages` for dedupe and rate-limit tracking; record and query recent sends.
+- Global Notion publish toggle via `DISABLE_NOTION_PUBLISH` env var and CLI `--no-notion` flag for `scripts/notion_publisher.py`.
+
+### Changed
+- Digest writer templates include `publish_to_discord: false` opt-out in frontmatter and `publish_to_notion: false` remains set for digest outputs.
+- Notion sync now respects global disable and will run in dry-run mode when toggled off.
+- Added fingerprint-based dedupe for Discord sends; admin controls to clear or resend messages.
+
+### Tested
+- Ran end-to-end dry-run cycle: executor (dry-run), Notion sync in safe no-notion mode, daily report dry-run, and embed preview output.
+
+### Notes
+- Please verify webhooks and operator roles before enabling wet Notion publishes or live Discord sends.
+
 
 
 
