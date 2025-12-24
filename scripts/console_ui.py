@@ -47,11 +47,14 @@ def render_system_banner(title: str = "Gold Standard", subtitle: str = "Precious
     """Render a consistent system banner for terminal startup using Rich when available."""
     console = get_console()
     if RICH_AVAILABLE:
-        from rich.markdown import Markdown
         from rich.panel import Panel
+        from rich.text import Text
 
-        md = Markdown(f"# {title}\n\n{subtitle}")
-        console.print(Panel(md, style="bold cyan", expand=True))
+        title_text = Text(title, style="bold gold1")
+        subtitle_text = Text(subtitle, style="dim")
+        # Build a small renderable combining title and subtitle
+        header = Text.assemble(title_text, "\n", subtitle_text)
+        console.print(Panel(header, style="", expand=True))
     else:
         console.print(f"=== {title} ===\n{subtitle}\n")
 

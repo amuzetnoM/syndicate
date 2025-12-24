@@ -1,0 +1,16 @@
+[Unit]
+Description=Gold Standard Weekly Cleanup Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=adam
+Group=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/adam/worxpace/gold_standard/.env
+
+ExecStart=/usr/bin/env python3 scripts/cleanup_retirement.py --weekly --execute
+
+[Install]
+WantedBy=multi-user.target

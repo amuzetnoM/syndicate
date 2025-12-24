@@ -1,0 +1,16 @@
+[Unit]
+Description=Gold Standard Daily Run (one-shot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=adam
+Group=adam
+WorkingDirectory=/home/adam/worxpace/gold_standard
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/adam/worxpace/gold_standard/.env
+
+ExecStart=/usr/bin/env python3 /home/adam/worxpace/gold_standard/main.py --once
+
+[Install]
+WantedBy=multi-user.target
