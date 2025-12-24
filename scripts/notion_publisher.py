@@ -980,7 +980,9 @@ class NotionPublisher:
                     db.release_stale_claims(ttl)
                 except Exception:
                     pass
-                file_hash = db.get_file_hash(normalized_path)
+                # Only read stored file hash if we don't have a computed fingerprint
+                if not file_hash:
+                    file_hash = db.get_file_hash(normalized_path)
                 # Check document lifecycle to avoid duplicate publishes
                 doc = db.get_document_status(normalized_path)
                 if doc:
@@ -1033,6 +1035,18 @@ class NotionPublisher:
 
                 status = get_document_status(content)
                 ai_processed = is_ai_processed(content)
+
+                # Allow explicit opt-out for Notion publishing via frontmatter
+                meta_publish = meta.get("publish_to_notion") if isinstance(meta, dict) else None
+                if meta_publish is False:
+                    return {
+                        "page_id": "",
+                        "url": "",
+                        "type": doc_type or "notes",
+                        "tags": [],
+                        "skipped": True,
+                        "reason": "opted_out_publish",
+                    }
 
                 if not is_ready_for_sync(content):
                     reason = f"Document status is '{status}'"

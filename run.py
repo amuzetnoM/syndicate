@@ -894,6 +894,8 @@ def _run_post_analysis_tasks(force_inline: bool = False, wait_for_completion: bo
                                 "_act-",  # Action task outputs (e.g., research_ACT-20251203-0001)
                                 "act-",  # Action task files
                                 "file_index",  # Index files
+                                "digest_",  # Automatically generated daily digests
+                                "digests/",  # Files under the digests folder
                             ]
                             if any(p in filename for p in excluded_patterns):
                                 return False
