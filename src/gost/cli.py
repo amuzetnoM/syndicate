@@ -6,12 +6,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard CLI - Command-line interface for the autonomous analysis system.
+Syndicate CLI - Command-line interface for the autonomous analysis system.
 """
 
 import argparse
@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Add package root to path for imports
 PACKAGE_ROOT = Path(__file__).parent
-PROJECT_ROOT = PACKAGE_ROOT.parent.parent.parent  # src/gost -> gold_standard
+PROJECT_ROOT = PACKAGE_ROOT.parent.parent.parent  # src/gost -> syndicate
 
 # Banner
 BANNER = r"""
@@ -51,7 +51,7 @@ def _signal_handler(signum, frame):
 
 
 def print_banner():
-    """Print the Gold Standard banner."""
+    """Print the Syndicate banner."""
     print(BANNER)
 
 
@@ -90,7 +90,7 @@ def ensure_project_setup():
 
 def run_analysis(mode: str = "all", no_ai: bool = False, force: bool = False):
     """
-    Run Gold Standard analysis.
+    Run Syndicate analysis.
 
     Args:
         mode: Analysis mode ('all', 'daily', 'premarket', 'weekly', 'monthly', 'yearly')
@@ -120,7 +120,7 @@ def run_analysis(mode: str = "all", no_ai: bool = False, force: bool = False):
 
 def run_daemon(no_ai: bool = False, interval_minutes: int = 1):
     """
-    Run Gold Standard as an autonomous daemon.
+    Run Syndicate as an autonomous daemon.
 
     Args:
         no_ai: Disable AI-generated content
@@ -239,7 +239,7 @@ def main():
     """Main entry point for the gost CLI."""
     parser = argparse.ArgumentParser(
         prog="gost",
-        description="Gold Standard - Autonomous precious metals intelligence system",
+        description="Syndicate - Autonomous precious metals intelligence system",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -264,7 +264,7 @@ Examples:
     parser.add_argument("--interactive", "-i", action="store_true", help="Interactive menu mode")
     parser.add_argument("--once", action="store_true", help="Run once and exit (no daemon)")
     parser.add_argument("--interval-min", type=int, default=1, help="Minutes between daemon runs (default: 1)")
-    parser.add_argument("--init", action="store_true", help="Initialize Gold Standard in current directory")
+    parser.add_argument("--init", action="store_true", help="Initialize Syndicate in current directory")
 
     args = parser.parse_args()
 
