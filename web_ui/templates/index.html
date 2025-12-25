@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Standard - Precious Metals Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-gold">GOLD</span>
+            <span class="brand-standard">STANDARD</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link active">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/analysis" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Analysis
+            </a>
+            <a href="/tasks" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                Tasks
+                <span class="badge" id="task-count">0</span>
+            </a>
+            <a href="/settings" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Settings
+            </a>
+        </div>
+        <div class="nav-status">
+            <div class="status-indicator" id="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Connected</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <h1>Dashboard</h1>
+                <p class="subtitle">Real-time precious metals intelligence</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="refreshData()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" onclick="runAnalysis()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Run Analysis
+                </button>
+            </div>
+        </header>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-label">Gold Price</span>
+                    <svg class="metric-icon gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="metric-value" id="gold-price">$--</div>
+                <div class="metric-change positive" id="gold-change">+0.00%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-label">Silver Price</span>
+                    <svg class="metric-icon silver" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="metric-value" id="silver-price">$--</div>
+                <div class="metric-change positive" id="silver-change">+0.00%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-label">Gold/Silver Ratio</span>
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                </div>
+                <div class="metric-value" id="gsr-value">--</div>
+                <div class="metric-label small">Current Ratio</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-label">Market Bias</span>
+                    <svg class="metric-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <div class="metric-value bias" id="market-bias">NEUTRAL</div>
+                <div class="metric-label small" id="bias-updated">Last updated: --</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Charts Section -->
+            <section class="card charts-section">
+                <div class="card-header">
+                    <h2>Market Charts</h2>
+                    <div class="chart-tabs" id="chart-tabs">
+                        <button class="chart-tab active" data-chart="GOLD">Gold</button>
+                        <button class="chart-tab" data-chart="SILVER">Silver</button>
+                        <button class="chart-tab" data-chart="DXY">DXY</button>
+                        <button class="chart-tab" data-chart="VIX">VIX</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" id="chart-container">
+                        <img id="chart-image" src="" alt="Loading chart..." class="chart-image">
+                        <div class="chart-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Journal Section -->
+            <section class="card journal-section">
+                <div class="card-header">
+                    <h2>Today's Journal</h2>
+                    <span class="date-badge" id="journal-date"></span>
+                </div>
+                <div class="card-body">
+                    <div class="journal-content" id="journal-content">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading journal...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Health -->
+            <section class="card health-section">
+                <div class="card-header">
+                    <h2>System Health</h2>
+                    <span class="refresh-timer" id="refresh-timer">Updated: now</span>
+                </div>
+                <div class="card-body">
+                    <div class="health-grid" id="health-grid">
+                        <div class="health-item">
+                            <span class="health-label">Reports Generated</span>
+                            <span class="health-value" id="reports-count">--</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Tasks Pending</span>
+                            <span class="health-value" id="tasks-pending">--</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Tasks Completed</span>
+                            <span class="health-value" id="tasks-completed">--</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Win Rate</span>
+                            <span class="health-value" id="win-rate">--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Tasks -->
+            <section class="card tasks-section">
+                <div class="card-header">
+                    <h2>Recent Tasks</h2>
+                    <a href="/tasks" class="view-all-link">View All →</a>
+                </div>
+                <div class="card-body">
+                    <div class="tasks-list" id="tasks-list">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading tasks...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
