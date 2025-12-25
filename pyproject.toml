@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gost"
-version = "3.6.1"
+version = "3.7.0"
 description = "Gold Standard - Autonomous precious metals intelligence system with AI-powered analysis"
 readme = "README.md"
 license = "MIT"
@@ -63,6 +63,12 @@ dev = [
 ]
 gui = [
     "tkinter",
+]
+webui = [
+    "Flask>=3.0.0",
+    "Flask-SocketIO>=5.3.0",
+    "python-socketio>=5.10.0",
+    "eventlet>=0.35.0",
 ]
 
 [project.urls]

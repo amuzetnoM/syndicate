@@ -1,7 +1,7 @@
 # ACTIVE DEVELOPMENT
 
 
-[![Version](https://img.shields.io/badge/version-3.6.1-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
@@ -11,6 +11,84 @@ All notable changes to Gold Standard are documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+
+## [3.7.0] - 2025-12-25
+
+### Modern Web UI — Production-ready dashboard with real-time updates
+
+### Added
+- **Web UI System** - Complete Flask-based web interface for Gold Standard
+  - Real-time dashboard with live market metrics (Gold, Silver, GSR, Market Bias)
+  - Interactive chart viewer with tab-based asset switching (Gold, Silver, DXY, VIX)
+  - AI journal display with markdown formatting
+  - System health monitoring (reports, tasks, win rate)
+  - Task management with status badges
+  - WebSocket integration for live updates without page refresh
+  - Responsive mobile-first design with dark theme and gold accents
+  
+- **Web UI Components** (`web_ui/`)
+  - `app.py` - Flask application with RESTful API and WebSocket handlers
+  - `templates/index.html` - Beautiful responsive dashboard page
+  - `static/css/style.css` - Professional design system (695 LOC)
+  - `static/js/dashboard.js` - Real-time client with auto-refresh
+  - `start.py` - Quick launcher script
+  - `install.sh` - One-click installation script
+  
+- **Documentation**
+  - `web_ui/README.md` - Quick start guide
+  - `web_ui/DOCS.md` - Comprehensive technical documentation
+  - `web_ui/DESIGN.md` - Design system reference with color palette and components
+  - `web_ui/PREVIEW.md` - Visual mockups and examples
+  - `web_ui/PROJECT_SUMMARY.md` - Complete project overview
+
+- **API Endpoints**
+  - `GET /api/status` - System health and period info
+  - `GET /api/metrics` - Real-time market data with calculated GSR
+  - `GET /api/journal` - Today's AI-generated analysis
+  - `GET /api/tasks` - Pending/ready/scheduled tasks
+  - `GET /api/charts` - Available chart metadata
+  - `GET /api/memory` - Cortex memory state
+  - `GET /api/toggles` - Feature toggle states
+  - `POST /api/toggles/<feature>` - Toggle features (notion, tasks, insights)
+
+- **Dependencies** - Added Flask ecosystem to `requirements.txt`
+  - Flask 3.0+ for web framework
+  - Flask-SocketIO 5.3+ for WebSocket support
+  - python-socketio 5.10+ for client/server
+  - eventlet 0.35+ for async server
+
+- **Optional Dependency Group** - Added `webui` extra in `pyproject.toml`
+  ```bash
+  pip install -e ".[webui]"
+  ```
+
+### Changed
+- Updated `requirements.txt` with web UI dependencies
+- Bumped version from 3.6.1 to 3.7.0 in `pyproject.toml`
+- Updated Dockerfile version label to 3.7.0
+- Improved CI workflows - removed duplicate `ci.yml`, enhanced `python-ci.yml` robustness
+
+### Technical Details
+- **Backend**: Flask with WebSocket support, RESTful API design
+- **Frontend**: Vanilla JavaScript with Socket.IO client, no framework dependencies
+- **Design**: Dark theme (#0a0e1a) with gold accents (#f59e0b), Inter font family
+- **Architecture**: Single-page application with real-time updates, mobile-responsive grid layout
+- **Security**: Environment-based secrets, CORS configuration, input validation
+- **Deployment**: systemd service, Nginx reverse proxy, HTTPS support documented
+
+### Quick Start
+```bash
+bash web_ui/install.sh      # Install dependencies
+python web_ui/start.py      # Start server on port 5000
+# Open http://localhost:5000
+```
+
+### Notes
+- Web UI is production-ready with comprehensive documentation
+- All existing functionality remains unchanged - this is a pure addition
+- Optional feature - system works identically without web UI
+- Total: 1,685 lines of production code, ~78KB across 15 files
 
 
 ## [3.6.1] - 2025-12-24

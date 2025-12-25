@@ -12,7 +12,7 @@
 ```
 
 # Gold Standard
-*version 3.6.0* | *stable: 3.6.0* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
+*version 3.7.0* | *stable: 3.7.0* | [CHANGELOG](https://artifact-virtual.gitbook.io/gold-standard)
 
 ![FUCK IT · SHIP IT](https://img.shields.io/badge/FUCK%20IT-SHIP%20IT-2f2f2f?style=for-the-badge&labelColor=6f42c1&logoColor=white)
 
@@ -95,6 +95,8 @@ A comprehensive end-to-end system combining real-time market data, technical ind
 | **Comprehensive Tagging** | Auto-extracts tickers, keywords (Fed, CPI, FOMC) for complete coverage |
 | **Smart Chart Integration** | Auto-detects tickers and embeds relevant charts in Notion pages |
 | **Usage Management** | Tracks API usage, caches uploads, manages free-tier limits |
+| **Modern Web UI** | Flask-based dashboard with real-time metrics, charts, and task management |
+| **WebSocket Updates** | Live data updates without page refresh via Socket.IO |
 | **Dual Interface** | Command-line CLI and graphical GUI dashboard |
 | **No-AI Mode** | Run data analysis without API calls for testing or offline use |
 
@@ -302,6 +304,39 @@ The GUI provides:
   - **Charts** - Gallery of generated chart images
   - **Reports** - List of all generated reports
   - **Trades** - Trade simulation history and stats
+
+### Modern Web UI (New in 3.7.0) 🌐
+
+Launch the Flask-based web dashboard with real-time updates:
+
+```bash
+# Install web UI dependencies
+bash web_ui/install.sh
+
+# Start web server
+python web_ui/start.py
+
+# Open browser to http://localhost:5000
+```
+
+**Features:**
+- 📊 **Live Dashboard** - Real-time market metrics (Gold, Silver, GSR, bias) with auto-refresh
+- 📈 **Interactive Charts** - Tab-based chart viewer (Gold, Silver, DXY, VIX)
+- 📝 **AI Journal** - Today's AI-generated market analysis with markdown formatting
+- 🏥 **System Health** - Reports generated, tasks pending/completed, win rate
+- 📋 **Task Management** - Monitor autonomous system tasks with status badges
+- ⚡ **WebSocket Updates** - Live data without page refresh via Socket.IO
+- 📱 **Responsive Design** - Works perfectly on desktop, tablet, and mobile
+- 🎨 **Dark Theme** - Professional appearance with stunning gold accents
+
+**Quick API Access:**
+- `GET /api/status` - System health and period info
+- `GET /api/metrics` - Real-time market data
+- `GET /api/journal` - Today's AI analysis
+- `GET /api/tasks` - Task queue status
+- `POST /api/toggles/<feature>` - Control system features
+
+See [`web_ui/README.md`](../web_ui/README.md) for complete documentation, deployment guides, and production setup instructions.
 
 ---
 
