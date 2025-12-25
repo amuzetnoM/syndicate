@@ -1,8 +1,8 @@
-# Gold Standard Web UI - Visual Guide
+# Syndicate Web UI - Visual Guide
 
 ## 🎨 Design Philosophy
 
-The Gold Standard Web UI embodies **professional elegance** with a focus on:
+The Syndicate Web UI embodies **professional elegance** with a focus on:
 - **Clarity** - Information is presented clearly and hierarchically
 - **Efficiency** - Quick access to critical data and functions
 - **Beauty** - Stunning visual design that's a pleasure to use
@@ -304,4 +304,4 @@ Ready-to-use components:
 
 **Design System Complete** ✨
 
-This UI provides a **best-in-class experience** for monitoring and interacting with the Gold Standard precious metals intelligence system.
+This UI provides a **best-in-class experience** for monitoring and interacting with the Syndicate precious metals intelligence system.

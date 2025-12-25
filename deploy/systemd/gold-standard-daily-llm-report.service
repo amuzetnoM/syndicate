@@ -1,13 +1,13 @@
 [Unit]
-Description=Gold Standard daily LLM operations report
+Description=Syndicate daily LLM operations report
 After=network.target
 
 [Service]
 Type=oneshot
 User=adam
-WorkingDirectory=/home/adam/worxpace/gold_standard
-EnvironmentFile=/home/adam/worxpace/gold_standard/.env
-Environment=PYTHONPATH=/home/adam/worxpace/gold_standard/src
+WorkingDirectory=/home/adam/worxpace/syndicate
+EnvironmentFile=/home/adam/worxpace/syndicate/.env
+Environment=PYTHONPATH=/home/adam/worxpace/syndicate/src
 ExecStart=/home/adam/worxpace/.venv/bin/python -m digest_bot.daily_report
 
 [Install]

@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard GUI v3
+Syndicate GUI v3
 ═══════════════════════════════════════════════════════════════════════════════
 Modern dashboard with dual-pane architecture:
 - LEFT: Polished Data View (charts grid, analysis, reports)
@@ -394,9 +394,9 @@ class TaskCard(tk.Frame):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class GoldStandardGUI:
+class SyndicateGUI:
     """
-    Gold Standard v3 - Dual-Pane Dashboard
+    Syndicate v3 - Dual-Pane Dashboard
 
     Architecture:
     ┌─────────────────────────────────────────────────────────────────────────┐
@@ -423,7 +423,7 @@ class GoldStandardGUI:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Gold Standard — Precious Metals Intelligence Complex")
+        self.root.title("Syndicate — Precious Metals Intelligence Complex")
         self.root.geometry("1600x950")
         self.root.minsize(1400, 800)
         self.root.configure(bg=Theme.BG_MAIN)
@@ -515,8 +515,8 @@ class GoldStandardGUI:
         title_row = tk.Frame(brand, bg=Theme.BG_PANEL)
         title_row.pack(anchor=tk.W)
 
-        tk.Label(title_row, text="GOLD", bg=Theme.BG_PANEL, fg=Theme.GOLD, font=Theme.FONT_HERO).pack(side=tk.LEFT)
-        tk.Label(title_row, text="STANDARD", bg=Theme.BG_PANEL, fg=Theme.TEXT_PRIMARY, font=Theme.FONT_HERO).pack(
+        tk.Label(title_row, text="SYNDICATE", bg=Theme.BG_PANEL, fg=Theme.GOLD, font=Theme.FONT_HERO).pack(side=tk.LEFT)
+        tk.Label(title_row, text="", bg=Theme.BG_PANEL, fg=Theme.TEXT_PRIMARY, font=Theme.FONT_HERO).pack(
             side=tk.LEFT, padx=(8, 0)
         )
 
@@ -1132,7 +1132,7 @@ class GoldStandardGUI:
 
 
 def main():
-    """Launch the Gold Standard GUI."""
+    """Launch the Syndicate GUI."""
     root = tk.Tk()
 
     # Set icon if available
@@ -1143,7 +1143,7 @@ def main():
     except Exception:
         pass
 
-    app = GoldStandardGUI(root)
+    app = SyndicateGUI(root)
 
     # Handle close
     def on_close():

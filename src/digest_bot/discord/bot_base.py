@@ -1,6 +1,6 @@
-"""Blueprint bot core for Gold Standard Discord integration.
+"""Blueprint bot core for Syndicate Discord integration.
 
-This module creates a `GoldStandardBot` abstraction around `discord.Bot` to make
+This module creates a `SyndicateBot` abstraction around `discord.Bot` to make
 unit-testing and lifecycle management easier.
 """
 from __future__ import annotations

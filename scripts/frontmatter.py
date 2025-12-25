@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Frontmatter Utilities for Gold Standard Reports
+Frontmatter Utilities for Syndicate Reports
 
 Adds YAML frontmatter headers to markdown files for MCP publishing.
 Supports automatic type detection and tag extraction.

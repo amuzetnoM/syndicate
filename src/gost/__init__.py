@@ -6,12 +6,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard (gost) - Autonomous Precious Metals Intelligence System
+Syndicate (gost) - Autonomous Precious Metals Intelligence System
 
 A comprehensive end-to-end system combining real-time market data,
 technical indicators, economic calendar intelligence, and Google Gemini AI

@@ -1,4 +1,4 @@
-# Gold Standard Operations
+# Syndicate Operations
 
 This document summarizes operations for the offloaded executor and model cleanup utilities.
 
@@ -8,7 +8,7 @@ This document summarizes operations for the offloaded executor and model cleanup
 - Purpose: Run short, low-latency LLM tasks locally using GGUF models (via `llama-cpp-python` or native `pyvdb`).
 - Invocation:
   - Single run: `python scripts/offloaded_executor.py --once`
-  - Service: `systemctl start gold-standard-offloaded-executor.service`
+  - Service: `systemctl start syndicate-offloaded-executor.service`
 - Env vars:
   - `OFFLOAD_POLL_S` (default: 30) — interval between polling cycles
   - `OFFLOAD_MAX_TASKS` (default: 5) — tasks per cycle

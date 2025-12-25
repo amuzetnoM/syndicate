@@ -15,7 +15,7 @@
 - pipeline/ — normalization helpers and a small writer (`write_ingest_records(source, records, dest_dir)`).
 
 ## Operational notes
-- The ingest bot should run as a separate systemd service (e.g., `gold-standard-ingest.service`) or as a lightweight container.
+- The ingest bot should run as a separate systemd service (e.g., `syndicate-ingest.service`) or as a lightweight container.
 - Secrets/API keys should be provided via host environment variables or a secrets manager; do NOT commit keys to the repo.
 - Keep ingests idempotent: include source-provided IDs or timestamps and check the manifest before writing duplicates.
 

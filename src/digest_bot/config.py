@@ -17,7 +17,7 @@ from typing import Literal, Optional
 
 
 def _get_project_root() -> Path:
-    """Find the gold_standard project root directory."""
+    """Find the syndicate project root directory."""
     current = Path(__file__).resolve().parent
     # Walk up until we find pyproject.toml or main.py
     for _ in range(10):
@@ -149,7 +149,7 @@ class PathConfig:
 
     # Database
     database_path: Path = field(
-        default_factory=lambda: _env_path("DATABASE_PATH", _get_project_root() / "data" / "gold_standard.db")
+        default_factory=lambda: _env_path("DATABASE_PATH", _get_project_root() / "data" / "syndicate.db")
     )
 
     # Log file

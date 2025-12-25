@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Helper: move Docker Compose bind-mount data to a dedicated data disk
-# Usage: sudo ./move_docker_data.sh /mnt/newdisk/gold_standard/docker-data
+# Usage: sudo ./move_docker_data.sh /mnt/newdisk/syndicate/docker-data
 
 set -euo pipefail
 
-DEST=${1:-/mnt/newdisk/gold_standard/docker-data}
+DEST=${1:-/mnt/newdisk/syndicate/docker-data}
 SRC_DIR=$(pwd)/docker-data
 
 echo "Destination: $DEST"
@@ -24,7 +24,7 @@ echo "(This script will not modify files automatically; update your compose file
 
 cat <<'EOF'
 Example docker-compose volume entry (use absolute path):
-  - /mnt/newdisk/gold_standard/docker-data/gost_data:/app/data
+  - /mnt/newdisk/syndicate/docker-data/gost_data:/app/data
 EOF
 
 echo "Done. Ensure permissions and SELinux contexts (if applicable) are correct."

@@ -344,7 +344,7 @@ def main(
     log_file: Optional[Path],
 ) -> None:
     """
-    Gold Standard Digest Bot
+    Syndicate Digest Bot
 
     Generates daily market intelligence digests by synthesizing
     pre-market plans, daily journals, and weekly reports using

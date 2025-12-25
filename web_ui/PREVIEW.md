@@ -1,4 +1,4 @@
-# Gold Standard Web UI - Visual Preview
+# Syndicate Web UI - Visual Preview
 
 ## 🖥️ Dashboard Screenshot (ASCII Art)
 
@@ -224,4 +224,4 @@ Error:        ● (Static red)
 **This mockup represents the actual implemented design!** 🎨✨
 
 All components shown here are functional and ready to use.
-The UI provides a **beautiful, intuitive, and professional interface** for the Gold Standard system.
+The UI provides a **beautiful, intuitive, and professional interface** for the Syndicate system.

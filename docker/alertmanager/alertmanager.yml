@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Alertmanager Configuration - Gold Standard
+# Alertmanager Configuration - Syndicate
 # ══════════════════════════════════════════════════════════════════════════════
 
 global:
@@ -37,7 +37,7 @@ route:
 
 # Inhibition rules - suppress notifications
 inhibit_rules:
-  # If GoldStandardDown is firing, suppress all other Gold Standard alerts
+  # If SyndicateDown is firing, suppress all other Syndicate alerts
   - source_match:
       alertname: 'GoldStandardDown'
     target_match_re:

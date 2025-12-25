@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily timer to run Gold Standard Notion sync
+Description=Daily timer to run Syndicate Notion sync
 
 [Timer]
 OnCalendar=*-*-* 05:00:00

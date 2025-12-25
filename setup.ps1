@@ -1,11 +1,11 @@
-# Gold Standard - Automated Setup Script (Windows PowerShell)
+# Syndicate - Automated Setup Script (Windows PowerShell)
 # Run with: .\setup.ps1
 # Requires: Python 3.10-3.13 (3.14 not supported due to numba)
 # Auto-installs Python 3.12 via winget if needed
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Yellow
-Write-Host "   Gold Standard - Automated Setup" -ForegroundColor Yellow
+Write-Host "   Syndicate - Automated Setup" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Yellow
 Write-Host ""
 

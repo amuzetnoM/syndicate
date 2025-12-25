@@ -1,6 +1,6 @@
-# Contributing to Gold Standard
+# Contributing to Syndicate
 
-Thank you for your interest in contributing to Gold Standard! This document provides guidelines and instructions for contributing to v3.0 and beyond.
+Thank you for your interest in contributing to Syndicate! This document provides guidelines and instructions for contributing to v3.0 and beyond.
 
 ## Table of Contents
 
@@ -32,12 +32,12 @@ By participating in this project, you agree to maintain a respectful and inclusi
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/gold_standard.git
-   cd gold_standard
+   git clone https://github.com/YOUR_USERNAME/syndicate.git
+   cd syndicate
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/amuzetnoM/gold_standard.git
+   git remote add upstream https://github.com/amuzetnoM/syndicate.git
    ```
 
 ---
@@ -82,7 +82,7 @@ Add your `GEMINI_API_KEY` for AI features (optional for development with `--no-a
 ### Directory Structure
 
 ```
-gold_standard/
+syndicate/
 ├── main.py              # Core: Config, Cortex, QuantEngine, Strategist
 ├── run.py               # CLI: Daemon mode, interactive menu, GUI launcher
 ├── gui.py               # GUI: Modern dual-pane dashboard (v3.0)
@@ -325,7 +325,7 @@ See [Project Architecture](#project-architecture) above for the full module brea
 
 ```
                     ┌─────────────────────────────────────────────────────┐
-                    │                   Gold Standard v3.0                │
+                    │                   Syndicate v3.0                │
                     └─────────────────────────────────────────────────────┘
                                            │
            ┌───────────────────────────────┼───────────────────────────────┐
@@ -360,7 +360,7 @@ See [Project Architecture](#project-architecture) above for the full module brea
 
 ## Need Help?
 
-- Check existing [issues](https://github.com/amuzetnoM/gold_standard/issues)
+- Check existing [issues](https://github.com/amuzetnoM/syndicate/issues)
 - Read the [README](README.md) and [GUIDE](docs/GUIDE.md)
 - Open a discussion for questions
 

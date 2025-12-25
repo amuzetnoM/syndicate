@@ -1,10 +1,10 @@
 [Unit]
-Description=Gold Standard Run Once Script
+Description=Syndicate Run Once Script
 
 [Service]
 Type=oneshot
-ExecStart=/opt/run_gold_standard_with_venv.sh
-WorkingDirectory=/mnt/disk/gold_standard
+ExecStart=/opt/run_syndicate_with_venv.sh
+WorkingDirectory=/mnt/disk/syndicate
 StandardOutput=journal
 StandardError=journal
 

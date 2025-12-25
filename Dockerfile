@@ -6,13 +6,13 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 #
 # Multi-stage Dockerfile for production deployment
-# Build: docker build -t gold-standard .
-# Run:   docker run -d --name gold-standard gold-standard
+# Build: docker build -t syndicate .
+# Run:   docker run -d --name syndicate syndicate
 #
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -46,9 +46,9 @@ FROM python:3.12-slim as runtime
 
 # Labels for GitHub Container Registry
 LABEL org.opencontainers.image.source="https://github.com/amuzetnoM/gold_standard"
-LABEL org.opencontainers.image.description="Gold Standard - Autonomous Precious Metals Intelligence System"
+LABEL org.opencontainers.image.description="Syndicate - Autonomous Precious Metals Intelligence System"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.title="Gold Standard"
+LABEL org.opencontainers.image.title="Syndicate"
 LABEL org.opencontainers.image.vendor="SIRIUS Alpha"
 LABEL org.opencontainers.image.version="3.7.0"
 

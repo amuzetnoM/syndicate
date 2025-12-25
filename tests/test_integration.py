@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard v3.0 - Integration Test
+Syndicate v3.0 - Integration Test
 Tests all new modules working together.
 """
 

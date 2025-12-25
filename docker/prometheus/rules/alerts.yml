@@ -1,46 +1,46 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Prometheus Alert Rules - Gold Standard
+# Prometheus Alert Rules - Syndicate
 # ══════════════════════════════════════════════════════════════════════════════
 
 groups:
-  - name: gold_standard_alerts
+  - name: syndicate_alerts
     rules:
       # Application Health
       - alert: GoldStandardDown
-        expr: up{job="gold-standard"} == 0
+        expr: up{job="syndicate"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Gold Standard application is down"
-          description: "Gold Standard has been unreachable for more than 1 minute."
+          summary: "Syndicate application is down"
+          description: "Syndicate has been unreachable for more than 1 minute."
 
       - alert: GoldStandardHighCPU
-        expr: rate(container_cpu_usage_seconds_total{name="gold-standard"}[5m]) > 0.8
+        expr: rate(container_cpu_usage_seconds_total{name="syndicate"}[5m]) > 0.8
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Gold Standard high CPU usage"
-          description: "Gold Standard CPU usage is above 80% for 5 minutes."
+          summary: "Syndicate high CPU usage"
+          description: "Syndicate CPU usage is above 80% for 5 minutes."
 
       - alert: GoldStandardHighMemory
-        expr: container_memory_usage_bytes{name="gold-standard"} / container_spec_memory_limit_bytes{name="gold-standard"} > 0.85
+        expr: container_memory_usage_bytes{name="syndicate"} / container_spec_memory_limit_bytes{name="syndicate"} > 0.85
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Gold Standard high memory usage"
-          description: "Gold Standard memory usage is above 85% of limit."
+          summary: "Syndicate high memory usage"
+          description: "Syndicate memory usage is above 85% of limit."
 
       # Task Execution Alerts
       - alert: StuckTasksDetected
-        expr: gold_standard_stuck_tasks > 0
+        expr: syndicate_stuck_tasks > 0
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Stuck tasks detected in Gold Standard"
+          summary: "Stuck tasks detected in Syndicate"
           description: "{{ $value }} tasks have been stuck for more than 10 minutes."
 
       - alert: HighFailureRate
@@ -63,12 +63,12 @@ groups:
           description: "Disk usage is above 85% on root filesystem."
 
       - alert: ContainerRestarting
-        expr: changes(container_start_time_seconds{name="gold-standard"}[15m]) > 2
+        expr: changes(container_start_time_seconds{name="syndicate"}[15m]) > 2
         for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "Gold Standard container restarting"
+          summary: "Syndicate container restarting"
           description: "Container has restarted more than 2 times in the last 15 minutes."
 
   - name: infrastructure_alerts

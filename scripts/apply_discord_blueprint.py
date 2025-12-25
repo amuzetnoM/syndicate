@@ -105,7 +105,7 @@ async def run(guild_id: str | None = None):
             LOG.error("Could not find digests channel after blueprint application")
         else:
             # Create webhook for the digests channel
-            wh = await dig_channel.create_webhook(name="gold-standard-bot")
+            wh = await dig_channel.create_webhook(name="syndicate-bot")
             webhook_url = f"https://discord.com/api/webhooks/{wh.id}/{wh.token}"
             LOG.info(f"Created webhook: {webhook_url}")
 

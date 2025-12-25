@@ -1,6 +1,6 @@
 # Digest Bot
 
-> Lightweight robot summarizer for Gold Standard daily outputs.
+> Lightweight robot summarizer for Syndicate daily outputs.
 
 ---
 
@@ -22,7 +22,7 @@ Key features:
 ## Installation
 
 ```bash
-# From gold_standard root
+# From syndicate root
 cd src/digest_bot
 pip install -r requirements.txt
 
@@ -38,7 +38,7 @@ pip install llama-cpp-python
 ## Quick Start
 
 ```bash
-# From gold_standard root, with venv active
+# From syndicate root, with venv active
 python -m digest_bot                     # run with defaults
 python -m digest_bot run                 # same as above
 python -m digest_bot run --dry-run       # preview without saving
@@ -95,7 +95,7 @@ python -m digest_bot cleanup --keep 30 --dry-run
 
 ## Configuration
 
-Set via environment variables or `.env` file in `gold_standard/`:
+Set via environment variables or `.env` file in `syndicate/`:
 
 ### LLM Settings
 
@@ -119,7 +119,7 @@ Set via environment variables or `.env` file in `gold_standard/`:
 | `PRE_MARKET_DIR` | `output/reports/premarket` | Pre-market plan location |
 | `WEEKLY_DIR` | `output/reports/weekly` | Weekly report location |
 | `DIGEST_OUTPUT_DIR` | `output/digests` | Digest output directory |
-| `DATABASE_PATH` | `data/gold_standard.db` | SQLite database path |
+| `DATABASE_PATH` | `data/syndicate.db` | SQLite database path |
 | `DIGEST_LOG_FILE` | `output/digests/digest_bot.log` | Log file path |
 
 ### Gate Settings
@@ -232,7 +232,7 @@ if status.all_inputs_ready:
 ## Testing
 
 ```bash
-# From gold_standard root
+# From syndicate root
 pytest tests/test_digest_bot.py -v
 
 # With coverage

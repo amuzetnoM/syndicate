@@ -6,7 +6,7 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -512,7 +512,7 @@ class TestPromptBuilding:
         prompt = strategist._build_prompt(80, 15.5, "* GOLD: $2000")
 
         # Verify prompt contains key elements
-        assert "Gold Standard" in prompt
+        assert "Syndicate" in prompt
         assert "GOLD" in prompt or "$2000" in prompt
         assert "GSR" in prompt or "80" in prompt
         assert "VIX" in prompt or "15.5" in prompt

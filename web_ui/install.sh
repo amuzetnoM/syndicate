@@ -1,11 +1,11 @@
 #!/bin/bash
-# Gold Standard Web UI - Quick Install Script
+# Syndicate Web UI - Quick Install Script
 # This script installs all necessary dependencies and starts the web UI
 
 set -e
 
 echo "================================================"
-echo "  Gold Standard Web UI - Installation"
+echo "  Syndicate Web UI - Installation"
 echo "================================================"
 echo ""
 

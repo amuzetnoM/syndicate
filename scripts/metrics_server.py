@@ -7,11 +7,11 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Prometheus Metrics Endpoint for Gold Standard
+Prometheus Metrics Endpoint for Syndicate
 
 Exposes system health metrics via HTTP for Prometheus scraping.
 Run alongside the daemon with: python scripts/metrics_server.py
@@ -64,13 +64,13 @@ def get_metrics():
 
     # Minimal safe fallback metrics (no DB calls, always safe)
     metrics = []
-    metrics.append("# HELP gold_standard_info Application information")
-    metrics.append("# TYPE gold_standard_info gauge")
-    metrics.append('gold_standard_info{version="unknown"} 1')
+    metrics.append("# HELP syndicate_info Application information")
+    metrics.append("# TYPE syndicate_info gauge")
+    metrics.append('syndicate_info{version="unknown"} 1')
     metrics.append("")
-    metrics.append("# HELP gold_standard_uptime_seconds Application uptime in seconds")
-    metrics.append("# TYPE gold_standard_uptime_seconds gauge")
-    metrics.append(f"gold_standard_uptime_seconds {time.time() - start_time}")
+    metrics.append("# HELP syndicate_uptime_seconds Application uptime in seconds")
+    metrics.append("# TYPE syndicate_uptime_seconds gauge")
+    metrics.append(f"syndicate_uptime_seconds {time.time() - start_time}")
 
     return "\n".join(metrics) + "\n"
 
@@ -132,7 +132,7 @@ start_time = time.time()
 
 if __name__ == "__main__":
     print("=" * 60)
-    print(" Gold Standard - Prometheus Metrics Exporter")
+    print(" Syndicate - Prometheus Metrics Exporter")
     print("=" * 60)
     print("\nEndpoints:")
     print(f"  📊 Metrics: http://{METRICS_HOST}:{METRICS_PORT}/metrics")

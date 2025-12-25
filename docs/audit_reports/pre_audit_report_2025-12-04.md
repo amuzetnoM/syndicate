@@ -1,6 +1,6 @@
 # Preliminary Audit Report
 
-*Gold Standard v3.1*
+*Syndicate v3.1*
 
 > **Audit Date:** 2025-12-04
 > **Version:** Snapshot of public repository and documentation at audit time
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This assessment evaluates the public surface of the gold_standard project (repository layout, docs, and observable design). The project demonstrates deliberate architectural intent and solid documentation practices, but several critical operational, security, and quality controls are unverified from public artifacts. Absent or unclear practices in data validation, testing, dependency management, secrets handling, observability, and reproducible deployments constitute material risks for production use.
+This assessment evaluates the public surface of the syndicate project (repository layout, docs, and observable design). The project demonstrates deliberate architectural intent and solid documentation practices, but several critical operational, security, and quality controls are unverified from public artifacts. Absent or unclear practices in data validation, testing, dependency management, secrets handling, observability, and reproducible deployments constitute material risks for production use.
 Preliminary overall risk: Moderate–High. The codebase is promising as a mid-stage project but requires prioritized remediation and governance before productionization.
 
 ---
@@ -218,7 +218,7 @@ Verification checklist (to close the audit remediation sprint)
 
 ## Closing Assessment
 
-The gold_standard project has a sound structural foundation and public documentation practices. To reach production-grade readiness, prioritize defenses around external input validation, testing and CI, dependency and secret hygiene, and operational observability. Implementing the prioritized remediation plan above will significantly reduce material risk and improve auditability, reproducibility, and maintainability.
+The syndicate project has a sound structural foundation and public documentation practices. To reach production-grade readiness, prioritize defenses around external input validation, testing and CI, dependency and secret hygiene, and operational observability. Implementing the prioritized remediation plan above will significantly reduce material risk and improve auditability, reproducibility, and maintainability.
 
 Prepared by: Audit automation and manual review of public artifacts (no private/config artifacts analyzed).
 Prepared on: 2025-12-04

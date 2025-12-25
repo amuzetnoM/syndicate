@@ -1,6 +1,6 @@
-# Gold Standard - Suggested Improvements
+# Syndicate - Suggested Improvements
 
-This document outlines potential areas for improvement for the Gold Standard system, aimed at enhancing its robustness, maintainability, and autonomous operation. These suggestions are based on a comprehensive understanding of the system's architecture, current implementation, and common software engineering best practices.
+This document outlines potential areas for improvement for the Syndicate system, aimed at enhancing its robustness, maintainability, and autonomous operation. These suggestions are based on a comprehensive understanding of the system's architecture, current implementation, and common software engineering best practices.
 
 ## Implementation Status (2025-12-18)
 
@@ -21,7 +21,7 @@ These changes are recorded here so the remaining recommendations can be prioriti
     *   **Improvement**: Implement comprehensive Alertmanager rules for critical operational issues.
     *   **Rationale**: Shifts from reactive to proactive maintenance.
     *   **Examples**:
-        *   Alerts for `gold_standard` Docker container failures or excessive restarts.
+        *   Alerts for `syndicate` Docker container failures or excessive restarts.
         *   Alerts for low disk space on `/mnt/newdisk`.
         *   Alerts for critical application errors (e.g., API connection failures, data fetch errors, Notion publishing failures) detected in logs.
         *   Alerts for LLM API usage nearing quota limits.
@@ -65,7 +65,7 @@ These changes are recorded here so the remaining recommendations can be prioriti
 ## 5. Data Integrity & Archiving
 
 *   **Automated Database Backups**:
-    *   **Improvement**: Implement automated daily/weekly backups of the SQLite database (`gold_standard.db`) to a secure, off-disk location (e.g., a cloud storage bucket, NFS share).
+    *   **Improvement**: Implement automated daily/weekly backups of the SQLite database (`syndicate.db`) to a secure, off-disk location (e.g., a cloud storage bucket, NFS share).
     *   **Rationale**: Safeguards critical historical analysis data against data loss due to corruption, accidental deletion, or disk failure.
 *   **Refined File Organization Logic**:
     *   **Improvement**: Review and potentially enhance the `FileOrganizer`'s logic to handle more complex scenarios, such as:
@@ -74,4 +74,4 @@ These changes are recorded here so the remaining recommendations can be prioriti
         *   Offering configurable rules for what constitutes a "stale" file for archiving.
     *   **Rationale**: Improves the long-term maintainability and usability of the generated output files.
 
-By addressing these areas, the Gold Standard system can evolve into an even more resilient, intelligent, and truly autonomous platform, minimizing the need for manual intervention and maximizing its value as a quantitative analysis tool.
+By addressing these areas, the Syndicate system can evolve into an even more resilient, intelligent, and truly autonomous platform, minimizing the need for manual intervention and maximizing its value as a quantitative analysis tool.

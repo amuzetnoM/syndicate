@@ -11,7 +11,7 @@ LOG = logging.getLogger("deploy_grafana")
 
 GRAFANA_URL = os.getenv("GRAFANA_URL")
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY")
-DASHBOARD_PATH = os.path.join(os.path.dirname(__file__), "..", "deploy", "grafana", "gold_standard_llm_dashboard.json")
+DASHBOARD_PATH = os.path.join(os.path.dirname(__file__), "..", "deploy", "grafana", "syndicate_llm_dashboard.json")
 
 
 def deploy():

@@ -1,8 +1,8 @@
-# Gold Standard Technical Booklet
+# Syndicate Technical Booklet
 
 > Educational Guide and Technical Reference — v3.4.0 | Stable: v3.3.1
 
-This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Gold Standard quantitative analysis system. Version 3.4.0 introduces the standalone Task Executor Daemon with Docker containerization, building on v3.3.1's container robustness fixes, v3.3's document lifecycle management, v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
+This booklet provides in-depth documentation of the mathematical foundations, design decisions, and extension patterns for the Syndicate quantitative analysis system. Version 3.4.0 introduces the standalone Task Executor Daemon with Docker containerization, building on v3.3.1's container robustness fixes, v3.3's document lifecycle management, v3.2's intelligent scheduling, Notion deduplication, persistent task execution with retry logic, and comprehensive file tagging.
 
 ---
 
@@ -484,7 +484,7 @@ CREATE TABLE notion_sync (
 
 ## Intelligent Scheduling
 
-Version 3.2 introduces a revolutionary intelligent task scheduling system that transforms Gold Standard from a periodic runner into a sophisticated autonomous execution engine.
+Version 3.2 introduces a revolutionary intelligent task scheduling system that transforms Syndicate from a periodic runner into a sophisticated autonomous execution engine.
 
 ### Core Principles
 
@@ -997,7 +997,7 @@ actions = extractor.extract_actions(report_content, "Journal_2025-12-01.md")
 
 ## Task Executor
 
-Gold Standard provides **two execution architectures** for processing action insights:
+Syndicate provides **two execution architectures** for processing action insights:
 
 1. **Inline Executor** (`scripts/task_executor.py`) - Legacy blocking execution within main daemon
 2. **Executor Daemon** (`scripts/executor_daemon.py`) - **Recommended** standalone worker with production hardening
@@ -1051,15 +1051,15 @@ python scripts/executor_daemon.py --spawn
 
 ```bash
 # Install service
-sudo cp scripts/systemd/gold-standard-executor.service /etc/systemd/system/
+sudo cp scripts/systemd/syndicate-executor.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now gold-standard-executor.service
+sudo systemctl enable --now syndicate-executor.service
 
 # Check status
-sudo systemctl status gold-standard-executor
+sudo systemctl status syndicate-executor
 
 # View logs
-sudo journalctl -u gold-standard-executor -f
+sudo journalctl -u syndicate-executor -f
 ```
 
 #### Environment Variables
@@ -1617,10 +1617,10 @@ For automated runs, use system scheduler:
 
 ```bash
 # Cron (Unix) - Daemon mode with 1-minute intervals
-@reboot cd /path/to/gold_standard && python run.py --daemon --interval-min 240
+@reboot cd /path/to/syndicate && python run.py --daemon --interval-min 240
 
 # Single daily run at 8 AM
-0 8 * * * cd /path/to/gold_standard && python run.py --mode daily --once
+0 8 * * * cd /path/to/syndicate && python run.py --mode daily --once
 
 # Task Scheduler (Windows) - Similar configuration
 ```

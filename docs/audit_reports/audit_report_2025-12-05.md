@@ -23,7 +23,7 @@ ___  _|__|_______/  |_ __ _______  |  |
 
 ---
 
-**Project:** `gold_standard`
+**Project:** `syndicate`
 **Version:** `1.0`
 **Generated:** `2025-12-05 12:34:41 UTC`
 **Framework:** Flex Audit v2.0

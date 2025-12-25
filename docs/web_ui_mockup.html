@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syndicate - Web UI Mockup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0a0e1a;
+            color: #f9fafb;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #111827;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .navbar {
+            background: #1f2937;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #374151;
+        }
+        .nav-brand {
+            display: flex;
+            gap: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .brand-gold { color: #f59e0b; }
+        .brand-standard { color: #f9fafb; }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .nav-link {
+            color: #9ca3af;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .header {
+            padding: 2rem;
+            background: #111827;
+            border-bottom: 1px solid #374151;
+        }
+        .header-title h1 {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+            color: #f9fafb;
+        }
+        .subtitle {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: #f59e0b;
+        }
+        .metric-label {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            color: #f59e0b;
+        }
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .metric-change.positive { color: #10b981; }
+        .metric-change.negative { color: #ef4444; }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        .chart-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #f9fafb;
+        }
+        .chart-placeholder {
+            background: linear-gradient(135deg, #2d3748 0%, #1f2937 100%);
+            height: 200px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 3rem;
+        }
+        .footer {
+            padding: 1.5rem 2rem;
+            background: #1f2937;
+            border-top: 1px solid #374151;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .footer strong {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <span class="brand-gold">SYNDICATE</span>
+                <span class="brand-standard">INTELLIGENCE</span>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active">Dashboard</a>
+                <a href="#" class="nav-link">Analysis</a>
+                <a href="#" class="nav-link">Tasks</a>
+                <a href="#" class="nav-link">Settings</a>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>Connected</span>
+            </div>
+        </nav>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <h1>Dashboard</h1>
+                <p class="subtitle">Real-time precious metals intelligence</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Gold Price</div>
+                    <div class="metric-value">$2,078.45</div>
+                    <div class="metric-change positive">+1.24%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Silver Price</div>
+                    <div class="metric-value">$24.32</div>
+                    <div class="metric-change positive">+0.87%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">USD Index</div>
+                    <div class="metric-value">103.45</div>
+                    <div class="metric-change negative">-0.32%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">VIX Index</div>
+                    <div class="metric-value">14.23</div>
+                    <div class="metric-change positive">+2.15%</div>
+                </div>
+            </div>
+
+            <!-- Chart Grid -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Gold Futures (GC)</div>
+                    <div class="chart-placeholder">📈</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Silver Futures (SI)</div>
+                    <div class="chart-placeholder">📊</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Dollar Index (DX)</div>
+                    <div class="chart-placeholder">💹</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Market Analysis</div>
+                    <div class="chart-placeholder">🎯</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <strong>SYNDICATE</strong> Precious Metals Intelligence System | v3.7.0 | Connected
+        </div>
+    </div>
+</body>
+</html>

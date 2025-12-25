@@ -166,17 +166,17 @@ Fixtures in `tests/fixtures/`:
 
 ## Phase 7 — Deployment
 
-1. **Systemd timer** (`deploy/systemd/gold-standard-digest.timer`):
+1. **Systemd timer** (`deploy/systemd/syndicate-digest.timer`):
    - Schedule: 17:00 daily (after analysis likely complete).
    - `Persistent=true` to catch up on missed runs.
 
-2. **Service** (`deploy/systemd/gold-standard-digest.service`):
+2. **Service** (`deploy/systemd/syndicate-digest.service`):
    - `ExecStart=python -m digest_bot`
    - `EnvironmentFile` pointing to `.env`.
 
 3. **Cron alternative** (for non-systemd hosts):
    ```
-   0 17 * * * cd /path/to/gold_standard && .venv/bin/python -m digest_bot >> /var/log/digest_bot.log 2>&1
+   0 17 * * * cd /path/to/syndicate && .venv/bin/python -m digest_bot >> /var/log/digest_bot.log 2>&1
    ```
 
 ---

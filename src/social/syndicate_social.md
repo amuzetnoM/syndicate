@@ -1,8 +1,8 @@
-# Gold Standard — Autonomous Social Media Strategy
+# Syndicate — Autonomous Social Media Strategy
 
 Last updated: 2025-12-24
 
-This document describes a fully autonomous, quota-safe, low-cost social media publishing system for Gold Standard. It is written to run as a detached process, integrated with the existing pipeline (digests, insights, charts, and report outputs) while minimizing external API quota usage.
+This document describes a fully autonomous, quota-safe, low-cost social media publishing system for Syndicate. It is written to run as a detached process, integrated with the existing pipeline (digests, insights, charts, and report outputs) while minimizing external API quota usage.
 
 Goals
 - Reliable, hands-off operation with predictable throughput (e.g. 1–2 posts/day per platform).
@@ -59,14 +59,14 @@ Operational Details
 - DB tables: add `social_posts` (platform, fingerprint, payload_hash, sent_at, status, external_id).
 - Admin UI / CLI: `scripts/social_preview.py` to preview payloads, and `scripts/social_send.py --platform mastodon --dry-run` for safe tests.
 - Monitoring: expose `gost_social_posts_sent_total` Prometheus metric and alerts for repeated failures or quota hits.
-- Systemd: run social worker as `gold-standard-social.service` with safe restart/backoff and `DISABLE_SOCIAL_PUBLISH` env toggle for emergency pause.
+- Systemd: run social worker as `syndicate-social.service` with safe restart/backoff and `DISABLE_SOCIAL_PUBLISH` env toggle for emergency pause.
 
 Implementation Plan (minimum viable)
 1. Add `src/social/worker.py` that scans `output/` and produces post candidates via local LLM.
 2. Add `scripts/social_preview.py` for local preview and `scripts/social_send.py` for sending/dry-run.
 3. Add `social_posts` DB schema and helpers in `db_manager.py`.
 4. Integrate fingerprint dedupe logic reusing digest/discord code paths.
-5. Create `systemd` unit `gold-standard-social.service` and add scheduling (daily windows).
+5. Create `systemd` unit `syndicate-social.service` and add scheduling (daily windows).
 6. Configure Prometheus metrics and Grafana panels for social activity.
 
 Optional: Low-cost media generation

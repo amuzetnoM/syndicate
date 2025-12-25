@@ -1,4 +1,4 @@
-# Gold Standard Android MVP
+# Syndicate Android MVP
 
 > Comprehensive Design Blueprint
 

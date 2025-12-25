@@ -1,5 +1,5 @@
 [Unit]
-Description=Gold Standard Weekly Cleanup Service
+Description=Syndicate Weekly Cleanup Service
 After=network.target
 
 [Service]

@@ -1,7 +1,7 @@
-# Gold Standard — System Architecture
+# Syndicate — System Architecture
 
 ## Purpose
-This document summarizes the system architecture, design rationale, and operational conventions for Gold Standard. It is an actionable reference for contributors, maintainers, and operators — covering module responsibilities, data flow, persistence, concurrency, testing, and deployment.
+This document summarizes the system architecture, design rationale, and operational conventions for Syndicate. It is an actionable reference for contributors, maintainers, and operators — covering module responsibilities, data flow, persistence, concurrency, testing, and deployment.
 
 ## Design principles
 - Single responsibility per module; clear public APIs for integration.
@@ -11,7 +11,7 @@ This document summarizes the system architecture, design rationale, and operatio
 - Minimal privileges: file locking and transactional DB operations to prevent corruption.
 
 ## High-level overview
-Gold Standard is a Precious Metals Intelligence System that combines market data ingestion, technical analysis, regime/strategy synthesis, memory/persistence, and optional AI-enhanced insights. Primary concerns:
+Syndicate is a Precious Metals Intelligence System that combines market data ingestion, technical analysis, regime/strategy synthesis, memory/persistence, and optional AI-enhanced insights. Primary concerns:
 - Reliable data retrieval (yfinance + fallbacks)
 - Deterministic TA with fallbacks (pandas_ta → NumPy)
 - Persistent memory and graded predictions for simulation and backtesting
@@ -55,7 +55,7 @@ ASCII data flow:
 
 ## LLM Provider Architecture
 
-Gold Standard uses a **FallbackLLMProvider** pattern for resilient AI-powered analysis with three provider tiers:
+Syndicate uses a **FallbackLLMProvider** pattern for resilient AI-powered analysis with three provider tiers:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -104,7 +104,7 @@ Gold Standard uses a **FallbackLLMProvider** pattern for resilient AI-powered an
 
 ## Task Executor Daemon Architecture
 
-Gold Standard uses a **decoupled task execution model** that separates task identification from execution:
+Syndicate uses a **decoupled task execution model** that separates task identification from execution:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -156,9 +156,9 @@ python scripts/executor_daemon.py --health
 
 **Systemd Service:**
 ```bash
-sudo cp scripts/systemd/gold-standard-executor.service /etc/systemd/system/
+sudo cp scripts/systemd/syndicate-executor.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now gold-standard-executor.service
+sudo systemctl enable --now syndicate-executor.service
 ```
 
 Key design notes:
@@ -206,7 +206,7 @@ ai:
   enabled: true
   provider: gemini
 db:
-  path: ./data/gold_standard.sqlite
+  path: ./data/syndicate.sqlite
 logging:
   level: INFO
 ```
@@ -305,7 +305,7 @@ Concurrency & integrity:
 
 ## Insights & Task Execution System
 
-Gold Standard features a fully autonomous intelligence pipeline that extracts insights from generated reports and executes actionable tasks without manual intervention.
+Syndicate features a fully autonomous intelligence pipeline that extracts insights from generated reports and executes actionable tasks without manual intervention.
 
 ### Entity Insights
 - Extracts named entities from reports: institutions (Fed, ECB, CME), indicators (CPI, RSI), assets, events, persons
@@ -327,7 +327,7 @@ Gold Standard features a fully autonomous intelligence pipeline that extracts in
 
 ## Intelligent Scheduling System
 
-Gold Standard v3.2 introduces an industry-leading intelligent task scheduling system that transforms the daemon from a simple periodic runner into a sophisticated execution engine.
+Syndicate v3.2 introduces an industry-leading intelligent task scheduling system that transforms the daemon from a simple periodic runner into a sophisticated execution engine.
 
 ### Core Philosophy
 
@@ -526,7 +526,7 @@ Examples:
 - Add AI providers: implement new adapter conforming to Strategist.ai_adapter interface.
 
 ## Vector Studio Integration
-Gold Standard includes a companion high-performance vector database and AI training platform (`../vector_database/`) for semantic search and future AI training:
+Syndicate includes a companion high-performance vector database and AI training platform (`../vector_database/`) for semantic search and future AI training:
 
 **Purpose:**
 - Store embeddings of charts, reports, and journals
@@ -553,7 +553,7 @@ python scripts\download_models.py --download
 ```
 
 **Integration Points:**
-- `pyvdb` Python bindings for direct use from Gold Standard
+- `pyvdb` Python bindings for direct use from Syndicate
 - CLI tool `vdb_cli` for manual operations
 - Memory-mapped storage for efficient large-scale data
 

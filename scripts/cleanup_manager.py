@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Cleanup Manager for Gold Standard
+Cleanup Manager for Syndicate
 Manages storage limits on free-tier services (imgbb, Notion).
 Implements smart retention policies and usage tracking.
 """
@@ -32,7 +32,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from dotenv import load_dotenv
 
 try:
-    from gold_standard.utils.env_loader import load_env
+    from syndicate.utils.env_loader import load_env
 
     load_env(PROJECT_ROOT / ".env")
 except Exception:
@@ -87,7 +87,7 @@ class UsageStats:
 
 
 class CleanupManager:
-    """Manage cleanup and retention for Gold Standard services."""
+    """Manage cleanup and retention for Syndicate services."""
 
     def __init__(self):
         self.imgbb_key = os.getenv("IMGBB_API_KEY")
@@ -360,7 +360,7 @@ def print_status():
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Cleanup Manager for Gold Standard")
+    parser = argparse.ArgumentParser(description="Cleanup Manager for Syndicate")
     parser.add_argument("--status", action="store_true", help="Show usage status and recommendations")
     parser.add_argument("--cleanup-charts", action="store_true", help="Remove old chart cache entries")
     parser.add_argument("--cleanup-local", action="store_true", help="Archive old local reports")

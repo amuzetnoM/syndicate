@@ -40,7 +40,7 @@ DIGEST_PROMPT_TEMPLATE = """# Daily Intelligence Digest Request
 ## Context
 Today's date: {date}
 
-You have access to three documents from the Gold Standard analysis system:
+You have access to three documents from the Syndicate analysis system:
 
 ---
 ## Document 1: Pre-Market Plan

@@ -1,11 +1,11 @@
-# 🐳 Gold Standard Docker Suite
+# 🐳 Syndicate Docker Suite
 
 Complete containerized deployment with full monitoring stack.
 
 ## Quick Start
 
 ```bash
-# Start core services (Gold Standard + Monitoring)
+# Start core services (Syndicate + Monitoring)
 docker compose up -d
 
 # Start with full monitoring (cAdvisor, Node Exporter)
@@ -22,7 +22,7 @@ docker compose --profile dev up -d
 
 | Service | Port | Description |
 |---------|------|-------------|
-| Gold Standard | - | Main application (daemon mode) |
+| Syndicate | - | Main application (daemon mode) |
 | Prometheus | 9090 | Metrics collection |
 | Grafana | 3000 | Visualization dashboards |
 | Alertmanager | 9093 | Alert routing |
@@ -55,10 +55,10 @@ GRAFANA_ADMIN_PASSWORD=your_secure_password
 
 | Volume | Purpose |
 |--------|---------|
-| `gold-standard-data` | SQLite database, cached data |
-| `gold-standard-output` | Reports, charts, research |
-| `gold-standard-prometheus` | Metrics storage (30 days) |
-| `gold-standard-grafana` | Dashboards, settings |
+| `syndicate-data` | SQLite database, cached data |
+| `syndicate-output` | Reports, charts, research |
+| `syndicate-prometheus` | Metrics storage (30 days) |
+| `syndicate-grafana` | Dashboards, settings |
 
 ## Commands
 
@@ -91,7 +91,7 @@ docker compose run --rm gost python run.py --once
 ## Dashboards
 
 Pre-configured Grafana dashboards:
-- **Gold Standard Overview** - Application health, task metrics
+- **Syndicate Overview** - Application health, task metrics
 - Container resource usage (CPU, Memory)
 - Task execution rates and duration percentiles
 
@@ -107,10 +107,10 @@ Configure alerts in `docker/alertmanager/alertmanager.yml`:
 
 ```bash
 # Pull latest image
-docker pull ghcr.io/amuzetnom/gold_standard:latest
+docker pull ghcr.io/amuzetnom/syndicate:latest
 
 # Or build locally
-docker build -t gold-standard:local .
+docker build -t syndicate:local .
 
 # Run with production settings
 docker compose -f docker-compose.yml up -d

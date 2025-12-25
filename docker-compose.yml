@@ -6,7 +6,7 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 #
@@ -21,7 +21,7 @@
 #
 # Usage:
 #   docker compose up -d                 # Start all services
-#   docker compose up -d gost executor   # Start only Gold Standard services
+#   docker compose up -d gost executor   # Start only Syndicate services
 #   docker compose logs -f executor      # Follow executor logs
 #   docker compose --profile dev up      # Start with development tools
 #   docker compose down                  # Stop all services
@@ -30,14 +30,14 @@
 
 services:
   # ===========================================================================
-  # Gold Standard - Main Analysis Daemon
+  # Syndicate - Main Analysis Daemon
   # ===========================================================================
   gost:
     build:
       context: .
       dockerfile: Dockerfile
       target: runtime
-    container_name: gold-standard
+    container_name: syndicate
     restart: unless-stopped
     environment:
       - TZ=UTC
@@ -82,14 +82,14 @@ services:
           memory: 512M
 
   # ===========================================================================
-  # Gold Standard - Task Executor Daemon
+  # Syndicate - Task Executor Daemon
   # ===========================================================================
   executor:
     build:
       context: .
       dockerfile: Dockerfile
       target: runtime
-    container_name: gold-standard-executor
+    container_name: syndicate-executor
     restart: unless-stopped
     command: ["python", "scripts/executor_daemon.py", "--daemon", "--poll-interval", "30"]
     environment:
@@ -292,7 +292,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: gold-standard-dev
+    container_name: syndicate-dev
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
@@ -317,6 +317,6 @@ services:
 networks:
   gost-network:
     driver: bridge
-    name: gold-standard-network
+    name: syndicate-network
 
 # No named Docker volumes used: all persistent data is bound to ./docker-data/*

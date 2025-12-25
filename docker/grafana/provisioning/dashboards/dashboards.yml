@@ -1,14 +1,14 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Grafana Dashboard Provisioning - Gold Standard
+# Grafana Dashboard Provisioning - Syndicate
 # ══════════════════════════════════════════════════════════════════════════════
 
 apiVersion: 1
 
 providers:
-  - name: 'Gold Standard Dashboards'
+  - name: 'Syndicate Dashboards'
     orgId: 1
-    folder: 'Gold Standard'
-    folderUid: 'gold-standard'
+    folder: 'Syndicate'
+    folderUid: 'syndicate'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

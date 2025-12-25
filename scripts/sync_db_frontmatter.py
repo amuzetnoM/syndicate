@@ -17,7 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts.frontmatter import parse_frontmatter
 from db_manager import get_db
 try:
-    from gold_standard.utils.env_loader import load_env
+    from syndicate.utils.env_loader import load_env
     load_env()
 except Exception:
     pass

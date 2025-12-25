@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gold Standard Pipeline Audit Tool
+Syndicate Pipeline Audit Tool
 
 Comprehensive testing and auditing of the entire pipeline:
 - Research module
@@ -387,7 +387,7 @@ def audit_schedule() -> Dict[str, Any]:
 def run_full_audit():
     """Run the complete pipeline audit."""
     print("\n" + "=" * 60)
-    print("       GOLD STANDARD PIPELINE AUDIT")
+    print("       SYNDICATE PIPELINE AUDIT")
     print(f"       {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -495,7 +495,7 @@ def run_cleanup(dry_run: bool = True) -> Dict[str, int]:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(prog="pipeline_audit", description="Audit and cleanup the Gold Standard pipeline")
+    parser = argparse.ArgumentParser(prog="pipeline_audit", description="Audit and cleanup the Syndicate pipeline")
     parser.add_argument("--cleanup", action="store_true", help="Run orphan record cleanup (dry run by default)")
     parser.add_argument("--execute", action="store_true", help="Actually execute cleanup (otherwise dry run)")
 

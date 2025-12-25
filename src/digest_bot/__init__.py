@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ══════════════════════════════════════════════════════════════════════════════
-#  Digest Bot - Gold Standard Daily Summarizer
+#  Digest Bot - Syndicate Daily Summarizer
 #  Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Digest Bot: Lightweight local-AI summarizer for Gold Standard daily outputs.
+Digest Bot: Lightweight local-AI summarizer for Syndicate daily outputs.
 
 Reads pre-market plans, daily journals, and weekly reports to generate
 concise, actionable daily digests using local LLM inference.

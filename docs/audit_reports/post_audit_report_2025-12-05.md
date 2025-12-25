@@ -1,8 +1,8 @@
-# Gold Standard - Post-Audit Report
+# Syndicate - Post-Audit Report
 
 **Date:** December 5, 2025
 **Auditor:** ARTIFACT virtual / flex_audit v2.0
-**Repository:** gold_standard
+**Repository:** syndicate
 **Branch:** main
 
 ---

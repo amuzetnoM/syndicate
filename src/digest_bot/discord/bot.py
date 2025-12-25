@@ -89,7 +89,7 @@ logger = logging.getLogger(__name__)
 # ══════════════════════════════════════════════════════════════════════════════
 
 BOT_IDENTITY = """
-I am the Gold Standard Digest Bot, an AI-powered market intelligence assistant.
+I am the Syndicate Digest Bot, an AI-powered market intelligence assistant.
 
 My Purpose:
 - Generate and deliver daily market intelligence digests
@@ -481,7 +481,7 @@ class DigestDiscordBot(BotBase):
         )
 
         embed.set_author(
-            name="Gold Standard Digest Bot",
+            name="Syndicate Digest Bot",
             icon_url=self.user.avatar.url if self.user and self.user.avatar else None,
         )
 

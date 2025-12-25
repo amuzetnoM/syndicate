@@ -13,7 +13,7 @@ All metrics are served at the project's metrics server (default port `8000`), al
 
 ## Recommended Alert Rules
 
-We added `deploy/prometheus/gold_standard_llm_rules.yml` with the following alerts:
+We added `deploy/prometheus/syndicate_llm_rules.yml` with the following alerts:
 
 - `GoldStandardLLMQueueGrowing`: triggers when `gost_llm_queue_length > 10` for 5m.
 - `GoldStandardLLMWorkerDown`: triggers when `gost_llm_worker_running == 0` for 2m.

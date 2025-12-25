@@ -1,4 +1,4 @@
-# Gold Standard Android MVP
+# Syndicate Android MVP
 
 > Conceptual Wireframes
 
@@ -22,7 +22,7 @@ All main screens can be reached from this navigation.
 
 ```
 +--------------------------------------------------------------+
-| Gold Standard [Top App Bar, Title, Gold accent]              |
+| Syndicate [Top App Bar, Title, Gold accent]              |
 +--------------------------------------------------------------+
 |   GOLD PRICE          [last updated: 14:32]      (Refresh)   |
 |--------------------------------------------------------------|

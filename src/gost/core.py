@@ -6,12 +6,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard Core - Main analysis engine.
+Syndicate Core - Main analysis engine.
 """
 
 import os
@@ -23,7 +23,7 @@ from typing import Any, Dict, Optional
 
 class GoldStandard:
     """
-    Main Gold Standard analysis engine.
+    Main Syndicate analysis engine.
 
     Provides methods for running various analysis modes:
     - Daily journal generation
@@ -34,7 +34,7 @@ class GoldStandard:
 
     def __init__(self, no_ai: bool = False, project_root: Optional[Path] = None):
         """
-        Initialize Gold Standard.
+        Initialize Syndicate.
 
         Args:
             no_ai: Disable AI-generated content
@@ -58,7 +58,7 @@ class GoldStandard:
             # Installed package - use current directory
             return cwd
 
-        # Development mode - go up from src/gost to gold_standard
+        # Development mode - go up from src/gost to syndicate
         return package_dir.parent.parent
 
     def _setup_paths(self):

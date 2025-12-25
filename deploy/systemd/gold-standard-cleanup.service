@@ -1,11 +1,11 @@
 [Unit]
-Description=Gold Standard Cleanup and Retirement Service
+Description=Syndicate Cleanup and Retirement Service
 After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/opt/run_gold_standard_cleanup.sh
-WorkingDirectory=/mnt/disk/gold_standard
+ExecStart=/opt/run_syndicate_cleanup.sh
+WorkingDirectory=/mnt/disk/syndicate
 StandardOutput=journal
 StandardError=journal
 

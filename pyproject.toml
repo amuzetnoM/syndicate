@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gost"
 version = "3.7.0"
-description = "Gold Standard - Autonomous precious metals intelligence system with AI-powered analysis"
+description = "Syndicate - Autonomous precious metals intelligence system with AI-powered analysis"
 readme = "README.md"
 license = "MIT"
 authors = [

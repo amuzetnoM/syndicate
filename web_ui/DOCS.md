@@ -1,8 +1,8 @@
-# Gold Standard - Modern Web UI
+# Syndicate - Modern Web UI
 
 ## Overview
 
-A beautiful, modern web interface for the Gold Standard precious metals intelligence system. Built with Flask, featuring real-time updates, responsive design, and an intuitive user experience.
+A beautiful, modern web interface for the Syndicate precious metals intelligence system. Built with Flask, featuring real-time updates, responsive design, and an intuitive user experience.
 
 ## Key Features
 
@@ -154,17 +154,17 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 web_ui.app:app
 
 ### Using systemd Service
 
-Create `/etc/systemd/system/gold-standard-web.service`:
+Create `/etc/systemd/system/syndicate-web.service`:
 
 ```ini
 [Unit]
-Description=Gold Standard Web UI
+Description=Syndicate Web UI
 After=network.target
 
 [Service]
 Type=simple
 User=your-user
-WorkingDirectory=/path/to/gold_standard
+WorkingDirectory=/path/to/syndicate
 Environment="PATH=/path/to/venv/bin"
 Environment="WEB_UI_HOST=0.0.0.0"
 Environment="WEB_UI_PORT=5000"
@@ -179,9 +179,9 @@ WantedBy=multi-user.target
 Start the service:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable gold-standard-web
-sudo systemctl start gold-standard-web
-sudo systemctl status gold-standard-web
+sudo systemctl enable syndicate-web
+sudo systemctl start syndicate-web
+sudo systemctl status syndicate-web
 ```
 
 ### Nginx Reverse Proxy
@@ -275,10 +275,10 @@ chmod 644 output/charts/*.png
 python db_manager.py
 
 # Check permissions
-ls -la data/gold_standard.db
+ls -la data/syndicate.db
 
 # Reset if needed (WARNING: deletes data)
-rm data/gold_standard.db
+rm data/syndicate.db
 python db_manager.py
 ```
 
@@ -331,7 +331,7 @@ Use SQLAlchemy for better database performance:
 ```python
 from flask_sqlalchemy import SQLAlchemy
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/gold_standard.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/syndicate.db'
 db = SQLAlchemy(app)
 ```
 
@@ -345,8 +345,8 @@ db = SQLAlchemy(app)
 
 ## Support
 
-- **GitHub Issues**: https://github.com/amuzetnoM/gold_standard/issues
-- **Documentation**: https://github.com/amuzetnoM/gold_standard
+- **GitHub Issues**: https://github.com/amuzetnoM/syndicate/issues
+- **Documentation**: https://github.com/amuzetnoM/syndicate
 - **License**: MIT
 
 ## Changelog
@@ -364,4 +364,4 @@ db = SQLAlchemy(app)
 
 ---
 
-Built with ❤️ for the Gold Standard project
+Built with ❤️ for the Syndicate project

@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Promtail Configuration - Gold Standard Log Collection
+# Promtail Configuration - Syndicate Log Collection
 # ══════════════════════════════════════════════════════════════════════════════
 
 server:
@@ -44,14 +44,14 @@ scrape_configs:
       - output:
           source: output
 
-  # Gold Standard specific logs
-  - job_name: gold-standard
+  # Syndicate specific logs
+  - job_name: syndicate
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
         filters:
           - name: name
-            values: ["gold-standard"]
+            values: ["syndicate"]
 
     relabel_configs:
       - source_labels: ['__meta_docker_container_name']
@@ -63,7 +63,7 @@ scrape_configs:
         target_label: 'service'
 
     pipeline_stages:
-      # Parse Gold Standard log format
+      # Parse Syndicate log format
       - regex:
           expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<message>.*)$'
       - labels:

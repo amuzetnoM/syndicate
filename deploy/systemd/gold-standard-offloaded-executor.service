@@ -1,11 +1,11 @@
 [Unit]
-Description=Gold Standard Offloaded Executor (local fast GGUF models)
+Description=Syndicate Offloaded Executor (local fast GGUF models)
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/adam/worxpace/.venv/bin/python /home/adam/worxpace/gold_standard/scripts/offloaded_executor.py
-WorkingDirectory=/home/adam/worxpace/gold_standard
+ExecStart=/home/adam/worxpace/.venv/bin/python /home/adam/worxpace/syndicate/scripts/offloaded_executor.py
+WorkingDirectory=/home/adam/worxpace/syndicate
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal

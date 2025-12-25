@@ -34,7 +34,7 @@ def build_daily_embed(summary: Dict[str, Any]) -> Dict[str, Any]:
 
     Expects a structured `summary` produced by `daily_report.build_structured_report`.
     """
-    title = f"Gold Standard — LLM Daily Report ({summary.get('hours', 24)}h)"
+    title = f"Syndicate — LLM Daily Report ({summary.get('hours', 24)}h)"
     desc = f"Queue: **{summary.get('queue_length', 0)}** · Completed: **{summary.get('completed', 0)}** · Corrections: **{summary.get('corrections', 0)}**"
 
     embed = {
@@ -75,7 +75,7 @@ def build_daily_embed(summary: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def plain_daily_text(summary: Dict[str, Any]) -> str:
-    lines = [f"Gold Standard — LLM Daily Report ({summary.get('hours',24)}h)"]
+    lines = [f"Syndicate — LLM Daily Report ({summary.get('hours',24)}h)"]
     lines.append("")
     pm = summary.get("premarket") or {}
     if pm.get("bias"):

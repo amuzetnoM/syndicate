@@ -154,7 +154,7 @@ def process_task(task: dict, cfg: Config) -> None:
                 if corrections:
                     try:
                         # Increment Prometheus counter if available
-                        from gold_standard.metrics.server import METRICS
+                        from syndicate.metrics.server import METRICS
 
                         if "llm_sanitizer_corrections_total" in METRICS:
                             METRICS["llm_sanitizer_corrections_total"].inc(corrections)
@@ -247,7 +247,7 @@ def process_task(task: dict, cfg: Config) -> None:
 def main():
     # Metrics integration (optional)
     try:
-        from gold_standard.metrics.server import METRICS
+        from syndicate.metrics.server import METRICS
     except Exception:
         METRICS = None
 

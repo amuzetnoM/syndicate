@@ -147,7 +147,7 @@ def build_report(db: DatabaseManager, hours: int = DEFAULT_HOURS) -> str:
 
     # Build message
     lines = []
-    lines.append(f"**Gold Standard — LLM Daily Report** (last {hours}h)")
+    lines.append(f"**Syndicate — LLM Daily Report** (last {hours}h)")
     lines.append("")
 
     if bias:

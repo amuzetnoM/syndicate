@@ -1,6 +1,6 @@
 # VM Verification Checklist — Odyssey
 
-Purpose: A concise, operator-friendly checklist to verify the VM (`odyssey`) is healthy and ready to run Gold Standard autonomously (daily reports, LLM worker, Discord bot, backups, and observability).
+Purpose: A concise, operator-friendly checklist to verify the VM (`odyssey`) is healthy and ready to run Syndicate autonomously (daily reports, LLM worker, Discord bot, backups, and observability).
 
 How to use: Run the checks below and mark each item as PASS / FAIL with timestamp and short notes. Aim for fully automated checks where possible; commands are provided.
 
@@ -25,15 +25,15 @@ How to use: Run the checks below and mark each item as PASS / FAIL with timestam
 
 ## Service-level checks (daily / after deploy)
 - [ ] 5. LLM worker
-  - Command: systemctl status gold-standard-llm-worker.service --no-pager
-  - Expected: Active (running). Check `journalctl -u gold-standard-llm-worker.service -n 200` for errors.
+  - Command: systemctl status syndicate-llm-worker.service --no-pager
+  - Expected: Active (running). Check `journalctl -u syndicate-llm-worker.service -n 200` for errors.
 
 - [ ] 6. Discord bot
-  - Command: systemctl status gold-standard-discord-bot.service --no-pager
+  - Command: systemctl status syndicate-discord-bot.service --no-pager
   - Expected: Active (running); bot logs show connection to gateway and PID; no repeated "Command 'digest' already registered" errors.
 
 - [ ] 7. Daily LLM report timer
-  - Command: systemctl status gold-standard-daily-llm-report.timer && systemctl list-timers --all | grep daily-llm || true
+  - Command: systemctl status syndicate-daily-llm-report.timer && systemctl list-timers --all | grep daily-llm || true
   - Expected: Timer active and last-run / next-run timestamps sane.
 
 - [ ] 8. Prometheus & Grafana (if installed)
@@ -41,7 +41,7 @@ How to use: Run the checks below and mark each item as PASS / FAIL with timestam
   - Expected: Services respond and report healthy status.
 
 - [ ] 9. Healthcheck & retry services (if enabled)
-  - Command: systemctl list-units --type=service 'gold-standard-*' --no-pager
+  - Command: systemctl list-units --type=service 'syndicate-*' --no-pager
   - Expected: healthcheck and retry services either succeed or are intentionally disabled/masked when not installed.
 
 ## Application checks (weekly / on release)
@@ -74,7 +74,7 @@ How to use: Run the checks below and mark each item as PASS / FAIL with timestam
   - Expected: Metrics (gost_llm_queue_length, gost_llm_worker_running, gost_llm_tasks_processing, gost_llm_sanitizer_corrections_total) present.
 
 - [ ] 17. Alert rules sanity
-  - Action: Check `deploy/prometheus/gold_standard_llm_rules.yml` is loaded into Prometheus & Alertmanager routes to the ops channel.
+  - Action: Check `deploy/prometheus/syndicate_llm_rules.yml` is loaded into Prometheus & Alertmanager routes to the ops channel.
 
 ## Deployment & pages
 - [ ] 18. GitHub Pages publish (changelog/site)

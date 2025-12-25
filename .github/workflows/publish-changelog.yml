@@ -24,7 +24,7 @@ jobs:
       - name: Convert changelog to HTML
         run: |
           mkdir -p public/changelog
-          pandoc docs/changelog/CHANGELOG.md -s -o public/changelog/index.html --metadata title="Gold Standard Changelog"
+          pandoc docs/changelog/CHANGELOG.md -s -o public/changelog/index.html --metadata title="Syndicate Changelog"
           # Copy static site files into public/ so Pages serves the site and the changelog together
           if [ -d site ]; then
             cp -r site/* public/ || true

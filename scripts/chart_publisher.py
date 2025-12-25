@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Chart Publisher for Gold Standard
+Chart Publisher for Syndicate
 Uploads chart images to image hosting and maintains URL mapping.
 Supports: imgbb (free), local file serving, or direct Notion upload.
 """
@@ -35,7 +35,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from dotenv import load_dotenv
 
 try:
-    from gold_standard.utils.env_loader import load_env
+    from syndicate.utils.env_loader import load_env
 
     load_env(PROJECT_ROOT / ".env")
 except Exception:
@@ -302,7 +302,7 @@ def setup_imgbb_key():
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Chart Publisher for Gold Standard")
+    parser = argparse.ArgumentParser(description="Chart Publisher for Syndicate")
     parser.add_argument("--setup", action="store_true", help="Set up imgbb API key")
     parser.add_argument("--upload-all", action="store_true", help="Upload all charts")
     parser.add_argument("--upload", type=str, help="Upload specific ticker chart")

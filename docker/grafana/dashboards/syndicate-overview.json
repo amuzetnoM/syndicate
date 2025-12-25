@@ -76,7 +76,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up{job=\"gold-standard\"}",
+          "expr": "up{job=\"syndicate\"}",
           "refId": "A"
         }
       ],
@@ -133,7 +133,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "gold_standard_tasks_ready",
+          "expr": "syndicate_tasks_ready",
           "refId": "A"
         }
       ],
@@ -190,7 +190,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "gold_standard_tasks_scheduled",
+          "expr": "syndicate_tasks_scheduled",
           "refId": "A"
         }
       ],
@@ -255,7 +255,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "gold_standard_stuck_tasks",
+          "expr": "syndicate_stuck_tasks",
           "refId": "A"
         }
       ],
@@ -343,7 +343,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_cpu_usage_seconds_total{name=\"gold-standard\"}[5m]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{name=\"syndicate\"}[5m]) * 100",
           "legendFormat": "CPU Usage",
           "refId": "A"
         }
@@ -432,7 +432,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "container_memory_usage_bytes{name=\"gold-standard\"}",
+          "expr": "container_memory_usage_bytes{name=\"syndicate\"}",
           "legendFormat": "Memory Usage",
           "refId": "A"
         },
@@ -441,7 +441,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "container_spec_memory_limit_bytes{name=\"gold-standard\"}",
+          "expr": "container_spec_memory_limit_bytes{name=\"syndicate\"}",
           "legendFormat": "Memory Limit",
           "refId": "B"
         }
@@ -530,7 +530,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "increase(gold_standard_task_completions_total[1h])",
+          "expr": "increase(syndicate_task_completions_total[1h])",
           "legendFormat": "Completed",
           "refId": "A"
         },
@@ -539,7 +539,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "increase(gold_standard_task_failures_total[1h])",
+          "expr": "increase(syndicate_task_failures_total[1h])",
           "legendFormat": "Failed",
           "refId": "B"
         }
@@ -628,7 +628,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.50, rate(gold_standard_task_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, rate(syndicate_task_duration_seconds_bucket[5m]))",
           "legendFormat": "p50",
           "refId": "A"
         },
@@ -637,7 +637,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, rate(gold_standard_task_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(syndicate_task_duration_seconds_bucket[5m]))",
           "legendFormat": "p95",
           "refId": "B"
         },
@@ -646,7 +646,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, rate(gold_standard_task_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.99, rate(syndicate_task_duration_seconds_bucket[5m]))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -657,7 +657,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["gold-standard", "precious-metals", "monitoring"],
+  "tags": ["syndicate", "precious-metals", "monitoring"],
   "templating": {
     "list": []
   },
@@ -667,8 +667,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Gold Standard - System Overview",
-  "uid": "gold-standard-overview",
+  "title": "Syndicate - System Overview",
+  "uid": "syndicate-overview",
   "version": 1,
   "weekStart": ""
 }

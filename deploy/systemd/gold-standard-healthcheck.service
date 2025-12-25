@@ -1,11 +1,11 @@
 [Unit]
-Description=Gold Standard healthcheck service
+Description=Syndicate healthcheck service
 After=network.target
 
 [Service]
 Type=oneshot
 User=ali
-ExecStart=/opt/gold_standard_health_check.sh
+ExecStart=/opt/syndicate_health_check.sh
 
 [Install]
 WantedBy=multi-user.target

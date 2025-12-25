@@ -40,18 +40,18 @@ Prerequisites
 - Watch logs and ensure bot registers commands and posts to configured channel.
 
 Status: blueprint applied
-- The ServerBlueprint was applied to the guild **Gold Standard** (ID: `1452021841706090539`).
+- The ServerBlueprint was applied to the guild **Syndicate** (ID: `1452021841706090539`).
 - Channels created (sample): `📊-daily-digests` (ops channel), `🚨-alerts`, `📈-premarket-plans`, `📔-trading-journal`, `💬-market-discussion`, `🤖-bot-logs`, `📋-admin-commands`.
 - A webhook was created in the ops channel and `DISCORD_OPS_CHANNEL_ID` and `DISCORD_WEBHOOK_URL` were written to your local `.env` file.
-- The systemd service `gold-standard-discord-bot.service` has been installed and started on this VM; check its status with: `sudo systemctl status gold-standard-discord-bot.service`.
+- The systemd service `syndicate-discord-bot.service` has been installed and started on this VM; check its status with: `sudo systemctl status syndicate-discord-bot.service`.
 
 7) Smoke tests
 - Run `python -m digest_bot.daily_report` (with `PYTHONPATH=src`) to post a test digest via the webhook, or use `/digest quick` and `/digest full` in the ops channel (operator role required for the latter).
 
 7) Systemd (staging/production)
-- Use `deploy/systemd/gold-standard-discord-bot.service.example` as a template.
-- Copy it to `/etc/systemd/system/gold-standard-discord-bot.service`, update `User` and `WorkingDirectory`, and ensure `.env` is readable by the service.
-- `sudo systemctl daemon-reload && sudo systemctl enable --now gold-standard-discord-bot.service`
+- Use `deploy/systemd/syndicate-discord-bot.service.example` as a template.
+- Copy it to `/etc/systemd/system/syndicate-discord-bot.service`, update `User` and `WorkingDirectory`, and ensure `.env` is readable by the service.
+- `sudo systemctl daemon-reload && sudo systemctl enable --now syndicate-discord-bot.service`
 
 8) Smoke tests
 - `/digest quick` (public) and `/digest full` (operators) should be available; run them in the ops channel.

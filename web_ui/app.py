@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gold Standard Web UI - Main Application
+Syndicate Web UI - Main Application
 Modern Flask-based web interface with real-time updates
 """
 import json
@@ -21,7 +21,7 @@ from db_manager import get_db
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gold-standard-secret-key-change-in-production')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'syndicate-secret-key-change-in-production')
 app.config['JSON_SORT_KEYS'] = False
 
 # Initialize SocketIO for real-time updates
@@ -382,7 +382,7 @@ def main():
     port = int(os.environ.get('WEB_UI_PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     
-    logger.info(f"Starting Gold Standard Web UI on {host}:{port}")
+    logger.info(f"Starting Syndicate Web UI on {host}:{port}")
     logger.info(f"Dashboard: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
     
     socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)

@@ -6,19 +6,19 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard Project Initialization.
+Syndicate Project Initialization.
 
-Creates project structure and template files for a new Gold Standard installation.
+Creates project structure and template files for a new Syndicate installation.
 """
 
 from pathlib import Path
 
-ENV_TEMPLATE = """# Gold Standard Configuration
+ENV_TEMPLATE = """# Syndicate Configuration
 # ==========================
 
 # Required: Google Gemini API Key
@@ -44,7 +44,7 @@ CORTEX_TEMPLATE = """{
 }
 """
 
-GITIGNORE_TEMPLATE = """# Gold Standard
+GITIGNORE_TEMPLATE = """# Syndicate
 .env
 *.pyc
 __pycache__/
@@ -67,7 +67,7 @@ coverage.xml
 
 def initialize_project(target_dir: Path = None):
     """
-    Initialize a new Gold Standard project in the target directory.
+    Initialize a new Syndicate project in the target directory.
 
     Creates:
     - Directory structure (output, data, scripts)
@@ -79,7 +79,7 @@ def initialize_project(target_dir: Path = None):
     """
     target = target_dir or Path.cwd()
 
-    print(f"\n[INIT] Initializing Gold Standard in: {target}\n")
+    print(f"\n[INIT] Initializing Syndicate in: {target}\n")
 
     # Create directories
     directories = [
@@ -136,7 +136,7 @@ def initialize_project(target_dir: Path = None):
 
   2. (Optional) Add Notion credentials for auto-publishing
 
-  3. Run Gold Standard:
+  3. Run Syndicate:
      gost --once         # Single analysis run
      gost                # Start autonomous daemon
      gost --interactive  # Interactive menu

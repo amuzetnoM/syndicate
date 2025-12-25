@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily timer to run Gold Standard main one-shot at 05:00
+Description=Daily timer to run Syndicate main one-shot at 05:00
 
 [Timer]
 OnCalendar=*-*-* 05:00:00

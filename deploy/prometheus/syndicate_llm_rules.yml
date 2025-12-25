@@ -1,5 +1,5 @@
 groups:
-  - name: gold_standard_llm.rules
+  - name: syndicate_llm.rules
     rules:
       - alert: GoldStandardLLMQueueGrowing
         expr: gost_llm_queue_length > 10

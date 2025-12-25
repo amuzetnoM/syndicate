@@ -6,7 +6,7 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -14,7 +14,7 @@
 
 # Default target
 help:
-	@echo "Gold Standard - Docker Commands"
+	@echo "Syndicate - Docker Commands"
 	@echo "================================"
 	@echo ""
 	@echo "  make build        - Build Docker images"
@@ -22,7 +22,7 @@ help:
 	@echo "  make up-full      - Start with full monitoring"
 	@echo "  make up-dev       - Start development environment"
 	@echo "  make down         - Stop all services"
-	@echo "  make logs         - Follow Gold Standard logs"
+	@echo "  make logs         - Follow Syndicate logs"
 	@echo "  make shell        - Open shell in container"
 	@echo "  make test         - Run tests in container"
 	@echo "  make lint         - Run linting"
@@ -87,6 +87,6 @@ status:
 	@docker compose ps
 	@echo ""
 	@echo "Endpoints:"
-	@echo "  Grafana:      http://localhost:3000 (admin/goldstandard)"
+	@echo "  Grafana:      http://localhost:3000 (admin/syndicate)"
 	@echo "  Prometheus:   http://localhost:9090"
 	@echo "  Alertmanager: http://localhost:9093"

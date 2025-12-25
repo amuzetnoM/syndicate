@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gold Standard Local LLM Provider
+Syndicate Local LLM Provider
 
 Provides a high-level Python interface for local LLM inference.
 Supports multiple backends:
@@ -203,7 +203,7 @@ class LocalLLM:
         # Default model search paths
         self._model_dirs = [
             PROJECT_ROOT / "models",
-            Path.home() / ".cache" / "gold_standard" / "models",
+            Path.home() / ".cache" / "syndicate" / "models",
             Path("C:/models"),
             Path("/models"),
             Path(os.environ.get("LOCAL_LLM_MODEL", "")).parent if os.environ.get("LOCAL_LLM_MODEL") else None,
@@ -831,7 +831,7 @@ def download_model(model_key: str, dest_dir: Optional[str] = None) -> Optional[s
 
     Args:
         model_key: Key from RECOMMENDED_MODELS (e.g., 'mistral-7b')
-        dest_dir: Destination directory (default: ~/.cache/gold_standard/models)
+        dest_dir: Destination directory (default: ~/.cache/syndicate/models)
 
     Returns:
         Path to downloaded model, or None if failed
@@ -843,7 +843,7 @@ def download_model(model_key: str, dest_dir: Optional[str] = None) -> Optional[s
 
     model_info = RECOMMENDED_MODELS[model_key]
 
-    dest_path = Path(dest_dir) if dest_dir else Path.home() / ".cache" / "gold_standard" / "models"
+    dest_path = Path(dest_dir) if dest_dir else Path.home() / ".cache" / "syndicate" / "models"
     dest_path.mkdir(parents=True, exist_ok=True)
 
     filepath = dest_path / model_info["filename"]
@@ -952,7 +952,7 @@ def download_model(model_key: str, dest_dir: Optional[str] = None) -> Optional[s
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Gold Standard Local LLM")
+    parser = argparse.ArgumentParser(description="Syndicate Local LLM")
     parser.add_argument("--list", action="store_true", help="List available models")
     parser.add_argument("--download", type=str, help="Download a model (mistral-7b, llama3-8b, phi3-mini)")
     parser.add_argument("--model", type=str, help="Path to GGUF model")

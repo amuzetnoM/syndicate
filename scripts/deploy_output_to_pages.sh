@@ -4,7 +4,7 @@ set -euo pipefail
 # Deploy contents of 'output/' to the gh-pages branch under 'outputs/<date>/'.
 # Requires: GITHUB_TOKEN (repo write) and git installed.
 
-REPO=${GITHUB_REPOSITORY:-amuzetnoM/gold_standard}
+REPO=${GITHUB_REPOSITORY:-amuzetnoM/syndicate}
 BRANCH=gh-pages
 DATE=$(date -u +"%Y-%m-%d_%H%MZ")
 TEMP_DIR=$(mktemp -d)

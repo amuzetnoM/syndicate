@@ -1,12 +1,12 @@
 # ACTIVE DEVELOPMENT
 
 
-[![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/amuzetnoM/gold_standard/releases)
+[![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/amuzetnoM/syndicate/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/) &nbsp;
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) &nbsp;
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/gold_standard)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)](https://ghcr.io/amuzetnom/syndicate)
 
-All notable changes to Gold Standard are documented in this file.
+All notable changes to Syndicate are documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Modern Web UI — Production-ready dashboard with real-time updates
 
 ### Added
-- **Web UI System** - Complete Flask-based web interface for Gold Standard
+- **Web UI System** - Complete Flask-based web interface for Syndicate
   - Real-time dashboard with live market metrics (Gold, Silver, GSR, Market Bias)
   - Interactive chart viewer with tab-based asset switching (Gold, Silver, DXY, VIX)
   - AI journal display with markdown formatting
@@ -119,7 +119,7 @@ python web_ui/start.py      # Start server on port 5000
 ### 🔬 Focus: Ingest Engine 
 
 - **Short:** An ingest engine prototype to collect and normalize streaming/real-time data from multiple providers (FRED, Rapid, MarketFlow, TradingEconomics, yfinance/mplfinance) and persist the latest outputs independently of the main analysis loop.
-- **Goal:** Produce canonical, timestamp-normalized time series and lightweight vectorized artifacts suitable for downstream ML/LLM research. This is an exploratory research component; production-grade model training is out-of-scope for Gold Standard core.
+- **Goal:** Produce canonical, timestamp-normalized time series and lightweight vectorized artifacts suitable for downstream ML/LLM research. This is an exploratory research component; production-grade model training is out-of-scope for Syndicate core.
 - **Status:** Initial blueprint and plans drafted; development pending prioritization.
 ---
 
@@ -138,7 +138,7 @@ python web_ui/start.py      # Start server on port 5000
 - Subscription and alerting system for Discord: users can subscribe to `sanitizer`, `queue`, and `digests` topics and receive direct alerts for on-call triage.
 - Automated per-topic alerting background worker that notifies subscribers when thresholds are exceeded.
 - Operators role and permission hardening: added lightweight `operators` role and tightened channel permission overwrites for digests and bot logs.
-- Systemd timer and service for automated daily LLM reports (`gold-standard-daily-llm-report.timer` / `.service`).
+- Systemd timer and service for automated daily LLM reports (`syndicate-daily-llm-report.timer` / `.service`).
 - Grafana dashboard JSON for LLM observability and helper scripts to programmatically deploy the dashboard if Grafana credentials are configured.
 
 ### Changed
@@ -159,7 +159,7 @@ Key fixes and improvements:
 - Prevented fabricated numeric values in LLM-generated reports by adding a canonical-values block to prompts and a sanitizer that enforces reported numeric values against those canonical values.
 - Added a **sanitizer audit trail** (`llm_sanitizer_audit` table) to persist correction records for review and post-incident analysis.
 - Exposed Prometheus metrics for LLM operations: `gost_llm_queue_length`, `gost_llm_worker_running`, `gost_llm_tasks_processing`, and `gost_llm_sanitizer_corrections_total`.
-- Added Prometheus alert rules (`deploy/prometheus/gold_standard_llm_rules.yml`) for queue growth, worker health, and sanitizer corrections.
+- Added Prometheus alert rules (`deploy/prometheus/syndicate_llm_rules.yml`) for queue growth, worker health, and sanitizer corrections.
 - Implemented automatic task flagging when sanitizer corrections exceed the configured threshold (`LLM_SANITIZER_FLAG_THRESHOLD`).
 - Added integration and unit tests to cover the worker flow and sanitizer audit behavior to prevent regressions.
 - Documentation: added `docs/observability/llm_metrics.md` describing metrics and recommended alert routing.
@@ -266,7 +266,7 @@ See the "Added", "Fixed", and "Changed" sections below for full details.
   - Environment variable `GOST_DETACHED_EXECUTOR=1` to enable detached mode
   - `spawn_executor_daemon()` function in run.py for programmatic spawning
 
-- **Systemd Service Template** (`scripts/systemd/gold-standard-executor.service`)
+- **Systemd Service Template** (`scripts/systemd/syndicate-executor.service`)
   - Production-ready systemd unit file
   - Automatic restart on failure with configurable backoff
   - Resource limits (CPU quota, memory max)
@@ -421,7 +421,7 @@ See the "Added", "Fixed", and "Changed" sections below for full details.
   - `/metrics` and `/health` HTTP endpoints
 
 - **Pre-configured Grafana Dashboard**
-  - Gold Standard Overview with system health panels
+  - Syndicate Overview with system health panels
   - CPU/Memory usage graphs
   - Task execution rate charts
   - Duration percentile tracking (p50, p95, p99)
@@ -762,10 +762,10 @@ See the "Added", "Fixed", and "Changed" sections below for full details.
 
 ---
 
-[3.1.0]: https://github.com/amuzetnoM/gold_standard/compare/v3.0.0...v3.1.0
-[3.0.0]: https://github.com/amuzetnoM/gold_standard/compare/v2.1.0...v3.0.0
-[2.1.0]: https://github.com/amuzetnoM/gold_standard/compare/v2.0.0...v2.1.0
-[2.0.0]: https://github.com/amuzetnoM/gold_standard/compare/v1.5.0...v2.0.0
-[1.5.0]: https://github.com/amuzetnoM/gold_standard/compare/v1.0.0...v1.5.0
-[1.0.0]: https://github.com/amuzetnoM/gold_standard/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/amuzetnoM/gold_standard/releases/tag/v0.1.0
+[3.1.0]: https://github.com/amuzetnoM/syndicate/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/amuzetnoM/syndicate/compare/v2.1.0...v3.0.0
+[2.1.0]: https://github.com/amuzetnoM/syndicate/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/amuzetnoM/syndicate/compare/v1.5.0...v2.0.0
+[1.5.0]: https://github.com/amuzetnoM/syndicate/compare/v1.0.0...v1.5.0
+[1.0.0]: https://github.com/amuzetnoM/syndicate/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/amuzetnoM/syndicate/releases/tag/v0.1.0

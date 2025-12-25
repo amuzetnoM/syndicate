@@ -1,5 +1,5 @@
 # =============================================================================
-# Gold Standard - Development Dependencies
+# Syndicate - Development Dependencies
 # =============================================================================
 # Install: pip install -r requirements-dev.txt
 # Note: Install requirements.txt first for full development setup

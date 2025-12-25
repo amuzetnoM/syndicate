@@ -18,13 +18,13 @@ This runbook details what to do when the LLM sanitizer flags or corrects generat
 
 1. Query audit records:
 
-   sqlite3 data/gold_standard.db "SELECT id, task_id, corrections, notes, created_at FROM llm_sanitizer_audit ORDER BY created_at DESC LIMIT 20;"
+   sqlite3 data/syndicate.db "SELECT id, task_id, corrections, notes, created_at FROM llm_sanitizer_audit ORDER BY created_at DESC LIMIT 20;"
 
    Review `notes` to see what replacements were made.
 
 2. Check `llm_tasks` table to find flagged tasks:
 
-   sqlite3 data/gold_standard.db "SELECT id, document_path, status, attempts, response FROM llm_tasks WHERE status = 'flagged' ORDER BY id DESC LIMIT 20;"
+   sqlite3 data/syndicate.db "SELECT id, document_path, status, attempts, response FROM llm_tasks WHERE status = 'flagged' ORDER BY id DESC LIMIT 20;"
 
 3. Inspect the flagged report on disk (path in `document_path`) — frontmatter will have `sanitizer_flagged: true` when flagged.
 

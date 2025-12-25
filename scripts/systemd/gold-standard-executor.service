@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
-#  Gold Standard - Task Executor Systemd Service
+#  Syndicate - Task Executor Systemd Service
 #  Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 #
@@ -12,18 +12,18 @@
 #  - Automatic restart on failure
 #
 #  INSTALLATION:
-#    1. Copy to /etc/systemd/system/gold-standard-executor.service
+#    1. Copy to /etc/systemd/system/syndicate-executor.service
 #    2. Adjust paths as needed
 #    3. systemctl daemon-reload
-#    4. systemctl enable --now gold-standard-executor.service
+#    4. systemctl enable --now syndicate-executor.service
 #
 # ══════════════════════════════════════════════════════════════════════════════
 
 [Unit]
-Description=Gold Standard Task Executor Daemon
+Description=Syndicate Task Executor Daemon
 Documentation=https://github.com/amuzetnom/gold_standard
-After=network.target docker.service gold-standard-compose.service
-Wants=gold-standard-compose.service
+After=network.target docker.service syndicate-compose.service
+Wants=syndicate-compose.service
 
 # Optional dependency on the main compose stack
 # StartLimitBurst=5
@@ -72,7 +72,7 @@ ReadWritePaths=/mnt/newdisk/gold_standard
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=gold-standard-executor
+SyslogIdentifier=syndicate-executor
 
 [Install]
 WantedBy=multi-user.target

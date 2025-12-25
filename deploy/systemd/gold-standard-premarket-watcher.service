@@ -1,11 +1,11 @@
 [Unit]
-Description=Gold Standard PreMarket Watcher
+Description=Syndicate PreMarket Watcher
 After=network.target
 
 [Service]
 Type=simple
 User=adam
-WorkingDirectory=/home/adam/worxpace/gold_standard
+WorkingDirectory=/home/adam/worxpace/syndicate
 ExecStart=/home/adam/worxpace/.venv/bin/python scripts/premarket_watcher.py
 Restart=on-failure
 RestartSec=30

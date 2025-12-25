@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syndicate - Desktop GUI Mockup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+        .window {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #08090A;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.8);
+        }
+        .title-bar {
+            background: linear-gradient(135deg, #0F1114 0%, #161920 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #252B35;
+        }
+        .window-title {
+            font-size: 0.9rem;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .minimize { background: #fbbf24; }
+        .maximize { background: #10b981; }
+        .close { background: #ef4444; }
+        .header {
+            background: #0F1114;
+            padding: 24px;
+            border-bottom: 1px solid #252B35;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .brand-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #F0B90B;
+            text-shadow: 0 0 20px rgba(240, 185, 11, 0.3);
+        }
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #F0B90B 0%, #FFD93D 100%);
+            color: #08090A;
+        }
+        .btn-secondary {
+            background: #252B35;
+            color: #d1d5db;
+            border: 1px solid #374151;
+        }
+        .content {
+            display: flex;
+            height: 700px;
+        }
+        .left-pane {
+            flex: 2;
+            background: #08090A;
+            border-right: 1px solid #252B35;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .right-pane {
+            flex: 1;
+            background: #0F1114;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            color: #F0B90B;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: #161920;
+            border: 1px solid #252B35;
+            border-radius: 8px;
+            padding: 12px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+        }
+        .chart-card:hover {
+            border-color: #F0B90B;
+            transform: translateY(-2px);
+        }
+        .chart-placeholder {
+            flex: 1;
+            background: linear-gradient(135deg, #1C2028 0%, #12151A 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .chart-name {
+            font-size: 0.875rem;
+            color: #d1d5db;
+            font-weight: 600;
+        }
+        .chart-symbol {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .analysis-panel {
+            background: #161920;
+            border: 1px solid #252B35;
+            border-radius: 8px;
+            padding: 16px;
+            height: 300px;
+        }
+        .analysis-content {
+            background: #12151A;
+            border-radius: 4px;
+            padding: 12px;
+            height: calc(100% - 30px);
+            font-family: 'Consolas', monospace;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            overflow-y: auto;
+        }
+        .ai-section {
+            background: #161920;
+            border: 1px solid #252B35;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .ai-content {
+            background: #12151A;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .task-item {
+            background: #161920;
+            border: 1px solid #252B35;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.875rem;
+        }
+        .task-status {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-pending { background: #6b7280; }
+        .status-running { background: #F0B90B; animation: pulse 2s infinite; }
+        .status-complete { background: #10b981; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-bar {
+            background: #0F1114;
+            padding: 12px 24px;
+            border-top: 1px solid #252B35;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .status-left {
+            display: flex;
+            gap: 24px;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <div class="window-title">Syndicate — Precious Metals Intelligence Complex</div>
+            <div class="window-controls">
+                <div class="control-btn minimize"></div>
+                <div class="control-btn maximize"></div>
+                <div class="control-btn close"></div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <div class="brand-text">SYNDICATE</div>
+                <div class="brand-subtitle">Precious Metals Intelligence Complex</div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-secondary">⚙️ SETTINGS</button>
+                <button class="btn btn-secondary">🔄 DAEMON</button>
+                <button class="btn btn-primary">▶ RUN ANALYSIS</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Left Pane: Data View -->
+            <div class="left-pane">
+                <div class="section-title">📊 MARKET DATA</div>
+                
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <div class="chart-placeholder">📈</div>
+                        <div class="chart-name">Gold Futures</div>
+                        <div class="chart-symbol">GC=F • COMEX</div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-placeholder">📉</div>
+                        <div class="chart-name">Silver Futures</div>
+                        <div class="chart-symbol">SI=F • COMEX</div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-placeholder">💵</div>
+                        <div class="chart-name">USD Index</div>
+                        <div class="chart-symbol">DX-Y.NYB • ICE</div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-placeholder">📊</div>
+                        <div class="chart-name">Volatility</div>
+                        <div class="chart-symbol">^VIX • CBOE</div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-placeholder">📈</div>
+                        <div class="chart-name">10Y Treasury</div>
+                        <div class="chart-symbol">^TNX • Index</div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-placeholder">💹</div>
+                        <div class="chart-name">S&P Futures</div>
+                        <div class="chart-symbol">ES=F • CME</div>
+                    </div>
+                </div>
+
+                <div class="section-title">📄 ANALYSIS</div>
+                <div class="analysis-panel">
+                    <div style="margin-bottom: 12px; color: #d1d5db; font-weight: 600;">Selected: Gold Futures (GC=F)</div>
+                    <div class="analysis-content">
+                        [INFO] Loading market data...<br>
+                        [INFO] Analyzing price action...<br>
+                        [INFO] Technical indicators: RSI=67.3, MACD bullish crossover<br>
+                        [INFO] Support levels: $2,050, $2,030<br>
+                        [INFO] Resistance levels: $2,085, $2,100<br>
+                        [INFO] Trend: Bullish momentum confirmed<br>
+                        <br>
+                        <span style="color: #10b981;">[✓] Analysis complete</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Pane: AI Workspace -->
+            <div class="right-pane">
+                <div class="section-title">🤖 AI WORKSPACE</div>
+                
+                <div class="ai-section">
+                    <div style="margin-bottom: 8px; color: #d1d5db; font-weight: 600; font-size: 0.875rem;">📝 Today's Journal</div>
+                    <div class="ai-content">
+                        Market opens with gold testing $2,078 resistance...<br>
+                        <br>
+                        Key observations:<br>
+                        • Dollar weakness supporting metals<br>
+                        • Fed minutes show dovish tilt<br>
+                        • Technical setup favors continuation<br>
+                        <br>
+                        Strategy: Monitor $2,080 breakout for long entry
+                    </div>
+                </div>
+
+                <div class="section-title">📋 TASK QUEUE</div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <div class="task-status status-complete"></div>
+                        <div>Fetch market data</div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-status status-running"></div>
+                        <div>Generate technical analysis</div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-status status-pending"></div>
+                        <div>Update AI journal</div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-status status-pending"></div>
+                        <div>Publish to Notion</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <div class="section-title">📊 EXECUTION LOG</div>
+                    <div class="ai-content" style="max-height: 150px;">
+                        [12:45:23] Task started: market_analysis<br>
+                        [12:45:24] Fetching data from yfinance...<br>
+                        [12:45:26] Processing 500 candles<br>
+                        [12:45:28] Calculating indicators...<br>
+                        [12:45:29] <span style="color: #10b981;">✓ Task completed successfully</span><br>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span>System Ready</span>
+                </div>
+                <div class="status-item">
+                    <span>Tasks: 2/4 Complete</span>
+                </div>
+                <div class="status-item">
+                    <span>Last Update: 2025-12-25 12:45:29</span>
+                </div>
+            </div>
+            <div style="color: #F0B90B; font-weight: 600;">
+                SYNDICATE v3.7.0
+            </div>
+        </div>
+    </div>
+</body>
+</html>

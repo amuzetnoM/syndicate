@@ -1,8 +1,8 @@
-# Gold Standard — Discord Bot Blueprint (Architecture)
+# Syndicate — Discord Bot Blueprint (Architecture)
 
 Overview
 --------
-This document captures the architecture and design rationale for a first-of-its-kind, state-of-the-art Discord integration for Gold Standard. The bot is designed to be an operational control-plane and a lightweight assistant for day-to-day monitoring, incident alerts, digest publishing, and constrained LLM-powered interactions.
+This document captures the architecture and design rationale for a first-of-its-kind, state-of-the-art Discord integration for Syndicate. The bot is designed to be an operational control-plane and a lightweight assistant for day-to-day monitoring, incident alerts, digest publishing, and constrained LLM-powered interactions.
 
 Goals
 -----
@@ -24,7 +24,7 @@ Core Components
   - `cogs.resources` — publish changelog, docs, and pinned command guide into `📚-resources`.
   - `cogs.llm_integration` — run short LLM queries with enforced ICU (inspection) and sanitized results.
 - Utilities:
-  - `utils.metrics` — Prometheus gauges/counters integrated with `gold_standard/metrics` pipeline.
+  - `utils.metrics` — Prometheus gauges/counters integrated with `syndicate/metrics` pipeline.
   - `utils.notifier` — wrapper to send messages to Discord webhooks and internal channels.
 
 Operational patterns

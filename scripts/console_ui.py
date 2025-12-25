@@ -43,7 +43,7 @@ def get_console() -> "Console":
     return _CONSOLE
 
 
-def render_system_banner(title: str = "Gold Standard", subtitle: str = "Precious Metals Intelligence"):
+def render_system_banner(title: str = "Syndicate", subtitle: str = "Precious Metals Intelligence"):
     """Render a consistent system banner for terminal startup using Rich when available."""
     console = get_console()
     if RICH_AVAILABLE:

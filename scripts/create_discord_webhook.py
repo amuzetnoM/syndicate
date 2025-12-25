@@ -20,7 +20,7 @@ LOG = logging.getLogger("create_discord_webhook")
 API_BASE = "https://discord.com/api/v10"
 
 
-def create_webhook(bot_token: str, channel_id: str, name: str = "gold-standard-bot") -> str:
+def create_webhook(bot_token: str, channel_id: str, name: str = "syndicate-bot") -> str:
     url = f"{API_BASE}/channels/{channel_id}/webhooks"
     headers = {"Authorization": f"Bot {bot_token}", "Content-Type": "application/json"}
     payload = {"name": name}
@@ -34,7 +34,7 @@ def create_webhook(bot_token: str, channel_id: str, name: str = "gold-standard-b
 def main(argv: list | None = None) -> int:
     parser = argparse.ArgumentParser(description="Create a Discord webhook for a channel")
     parser.add_argument("--channel-id", required=True, help="Target channel ID to create the webhook in")
-    parser.add_argument("--name", default="gold-standard-bot", help="Webhook name")
+    parser.add_argument("--name", default="syndicate-bot", help="Webhook name")
     args = parser.parse_args(argv)
 
     bot_token = os.getenv("DISCORD_BOT_TOKEN")

@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Gold Standard Once Daily at 5 AM
+Description=Description=Run Syndicate Once Daily at 5 AM
 
 [Timer]
 OnCalendar=*-*-* 05:00:00

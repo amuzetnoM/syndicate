@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Gold Standard model cleanup weekly
+Description=Description=Run Syndicate model cleanup weekly
 
 [Timer]
 OnCalendar=weekly

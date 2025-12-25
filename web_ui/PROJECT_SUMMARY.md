@@ -1,8 +1,8 @@
-# Gold Standard Web UI - Project Summary
+# Syndicate Web UI - Project Summary
 
 ## 🎉 Project Complete
 
-A **world-class, human-comprehensive, gorgeous web interface** has been successfully designed and built for the Gold Standard precious metals intelligence system.
+A **world-class, human-comprehensive, gorgeous web interface** has been successfully designed and built for the Syndicate precious metals intelligence system.
 
 ## 📊 What Was Delivered
 
@@ -223,8 +223,8 @@ python web_ui/start.py
 
 ### Production (systemd)
 ```bash
-sudo systemctl enable gold-standard-web
-sudo systemctl start gold-standard-web
+sudo systemctl enable syndicate-web
+sudo systemctl start syndicate-web
 ```
 
 ### Production (Gunicorn)
@@ -234,8 +234,8 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 web_ui.app:app
 
 ### Docker (future)
 ```bash
-docker build -t gold-standard-web .
-docker run -p 5000:5000 gold-standard-web
+docker build -t syndicate-web .
+docker run -p 5000:5000 syndicate-web
 ```
 
 ## 📊 Statistics
@@ -293,7 +293,7 @@ docker run -p 5000:5000 gold-standard-web
 
 ## 🎉 Final Thoughts
 
-This project delivers **exactly what was requested**: a top-of-the-line, best-of-class, human-comprehensive, easy-to-understand, gorgeous UI for the Gold Standard system.
+This project delivers **exactly what was requested**: a top-of-the-line, best-of-class, human-comprehensive, easy-to-understand, gorgeous UI for the Syndicate system.
 
 The result is a **production-ready web interface** that:
 - Looks professional and modern
@@ -304,7 +304,7 @@ The result is a **production-ready web interface** that:
 
 ## 🙏 Thank You
 
-Thank you for the opportunity to build this amazing UI! The Gold Standard system now has a web interface that matches its sophisticated backend capabilities.
+Thank you for the opportunity to build this amazing UI! The Syndicate system now has a web interface that matches its sophisticated backend capabilities.
 
 ---
 

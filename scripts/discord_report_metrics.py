@@ -51,7 +51,7 @@ def gather_db_counts() -> dict:
 
 def build_message(output_counts: dict, db_counts: dict) -> dict:
     # Build a compact embed and plain text summary
-    title = "Gold Standard — Reports Summary"
+    title = "Syndicate — Reports Summary"
     lines = []
     lines.append("Output directory counts:")
     for k, v in sorted(output_counts.items(), key=lambda x: (-x[1], x[0])):

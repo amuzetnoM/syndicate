@@ -1,5 +1,5 @@
 ﻿---
-description: Complete VM deployment guide and troubleshooting reference for Gold Standard v3.4.0
+description: Complete VM deployment guide and troubleshooting reference for Syndicate v3.4.0
 icon: server
 ---
 
@@ -7,7 +7,7 @@ icon: server
 
 > **Last Updated:** December 13, 2025 | **Version:** 3.4.0 | **Status:** Fully Operational
 
-This document serves as the authoritative reference for deploying Gold Standard on a Virtual Machine (VM). It covers initial configuration, issues encountered during deployment, and their solutions.
+This document serves as the authoritative reference for deploying Syndicate on a Virtual Machine (VM). It covers initial configuration, issues encountered during deployment, and their solutions.
 
 ---
 
@@ -24,7 +24,7 @@ graph TB
             SYSTEMD[systemd]
         end
         subgraph DATA[Data Disk /mnt/newdisk 500GB]
-            APP[Gold Standard App]
+            APP[Syndicate App]
             DB[SQLite Database]
             OUTPUT[Reports and Charts]
             LOGS[Service Logs]
@@ -70,7 +70,7 @@ graph TB
 ### Application Architecture
 
 ```
-gold_standard/
+syndicate/
 |-- main.py          # Core orchestration (Cortex, QuantEngine, Strategist)
 |-- run.py           # CLI entry point (daemon, --once, interactive)
 |-- docker-compose.yml
@@ -104,7 +104,7 @@ gold_standard/
 **Problem:** Docker named volumes (gost_data, prometheus_data) stored data in /var/lib/docker/volumes on the root filesystem, violating the zero-writes requirement.
 
 **Solution:**
-1. Created bind mount directory: /mnt/newdisk/gold_standard/docker-data
+1. Created bind mount directory: /mnt/newdisk/syndicate/docker-data
 2. Replaced named volumes with explicit bind mounts in docker-compose.yml
 
 ```yaml
@@ -119,25 +119,25 @@ volumes:
 df -h /var/lib/docker/volumes
 
 # Verify data on newdisk
-ls -la /mnt/newdisk/gold_standard/docker-data/
+ls -la /mnt/newdisk/syndicate/docker-data/
 ```
 
 ---
 
 ### Issue 2: Service Logs on Root FS
 
-**Problem:** systemd services wrote logs to /home/user/gold_standard_config/ on root disk.
+**Problem:** systemd services wrote logs to /home/user/syndicate_config/ on root disk.
 
 **Solution:**
 1. Created config directory on data disk:
 ```bash
-mkdir -p /mnt/newdisk/gold_standard/gold_standard_config
+mkdir -p /mnt/newdisk/syndicate/syndicate_config
 ```
 
 2. Updated service files:
 ```ini
-StandardOutput=append:/mnt/newdisk/gold_standard/gold_standard_config/run.log
-StandardError=append:/mnt/newdisk/gold_standard/gold_standard_config/run.log
+StandardOutput=append:/mnt/newdisk/syndicate/syndicate_config/run.log
+StandardError=append:/mnt/newdisk/syndicate/syndicate_config/run.log
 ```
 
 3. Reloaded systemd:
@@ -165,7 +165,7 @@ environment:
 
 **codex.sh addition:**
 ```bash
-source "/mnt/newdisk/gold_standard/.env"
+source "/mnt/newdisk/syndicate/.env"
 ```
 
 ---
@@ -249,12 +249,12 @@ if filename.startswith("FILE_INDEX") or filename.lower().startswith("file_index"
 
 ### Issue 8: systemd CHDIR Error
 
-**Problem:** gold-standard-compose.service failed with CHDIR error - corrupted ExecStart line.
+**Problem:** syndicate-compose.service failed with CHDIR error - corrupted ExecStart line.
 
 **Solution - Recreated service file with explicit bash wrapper:**
 ```ini
 [Service]
-ExecStart=/bin/bash -c "cd /mnt/newdisk/gold_standard && /usr/bin/docker compose --profile monitoring --profile logging up -d"
+ExecStart=/bin/bash -c "cd /mnt/newdisk/syndicate && /usr/bin/docker compose --profile monitoring --profile logging up -d"
 ```
 
 ---
@@ -265,7 +265,7 @@ ExecStart=/bin/bash -c "cd /mnt/newdisk/gold_standard && /usr/bin/docker compose
 
 ```mermaid
 gantt
-    title Gold Standard Automation Schedule
+    title Syndicate Automation Schedule
     dateFormat HH:mm
     axisFormat %H:%M
 
@@ -278,7 +278,7 @@ gantt
 
 ### Daily Analysis Timer
 
-> **Service:** gold-standard-daily.timer -> gold-standard-daily.service
+> **Service:** syndicate-daily.timer -> syndicate-daily.service
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
@@ -292,7 +292,7 @@ gantt
 
 ### Weekly Cleanup Timer
 
-> **Service:** gold-standard-weekly-cleanup.timer -> gold-standard-weekly-cleanup.service
+> **Service:** syndicate-weekly-cleanup.timer -> syndicate-weekly-cleanup.service
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
@@ -305,7 +305,7 @@ gantt
 
 ### Docker Compose Service
 
-> **Service:** gold-standard-compose.service (Boot-time, not timer-based)
+> **Service:** syndicate-compose.service (Boot-time, not timer-based)
 
 | Parameter | Value |
 |-----------|-------|
@@ -322,24 +322,24 @@ gantt
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| gold-standard-compose.service | active (running) | Docker stack managed |
-| gold-standard-daily.timer | active (running) | Next trigger scheduled |
-| gold-standard-weekly-cleanup.timer | active (waiting) | Sunday execution pending |
+| syndicate-compose.service | active (running) | Docker stack managed |
+| syndicate-daily.timer | active (running) | Next trigger scheduled |
+| syndicate-weekly-cleanup.timer | active (waiting) | Sunday execution pending |
 
 ### Quick Commands
 
 ```bash
 # Check all services
-systemctl status gold-standard-*
+systemctl status syndicate-*
 
 # View daily timer
-systemctl list-timers gold-standard-daily.timer
+systemctl list-timers syndicate-daily.timer
 
 # Manual run
 /home/user/codex.sh run
 
 # View logs
-tail -f /mnt/newdisk/gold_standard/gold_standard_config/run.log
+tail -f /mnt/newdisk/syndicate/syndicate_config/run.log
 
 # Restart stack
 /home/user/codex.sh heal
@@ -349,12 +349,12 @@ tail -f /mnt/newdisk/gold_standard/gold_standard_config/run.log
 
 | Data Type | Path |
 |-----------|------|
-| Application Data | /mnt/newdisk/gold_standard/docker-data/gost_data/ |
-| Output Reports | /mnt/newdisk/gold_standard/docker-data/gost_output/ |
-| Service Logs | /mnt/newdisk/gold_standard/gold_standard_config/ |
-| Environment | /mnt/newdisk/gold_standard/.env |
-| Prometheus Data | /mnt/newdisk/gold_standard/docker-data/prometheus/ |
-| Grafana Data | /mnt/newdisk/gold_standard/docker-data/grafana/ |
+| Application Data | /mnt/newdisk/syndicate/docker-data/gost_data/ |
+| Output Reports | /mnt/newdisk/syndicate/docker-data/gost_output/ |
+| Service Logs | /mnt/newdisk/syndicate/syndicate_config/ |
+| Environment | /mnt/newdisk/syndicate/.env |
+| Prometheus Data | /mnt/newdisk/syndicate/docker-data/prometheus/ |
+| Grafana Data | /mnt/newdisk/syndicate/docker-data/grafana/ |
 
 ---
 
@@ -370,4 +370,4 @@ codex.sh heal     # Restart and recover services
 
 ---
 
-> **Deployment Successful** The Gold Standard system is fully operational with automated scheduling, persistent storage on the data disk, and all API integrations functional.
+> **Deployment Successful** The Syndicate system is fully operational with automated scheduling, persistent storage on the data disk, and all API integrations functional.

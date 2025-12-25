@@ -8,7 +8,7 @@ import sqlite3
 import json
 from pathlib import Path
 
-DB = Path(__file__).resolve().parent.parent / "data" / "gold_standard.db"
+DB = Path(__file__).resolve().parent.parent / "data" / "syndicate.db"
 OUT = Path(__file__).resolve().parent.parent / "output" / "notion_test_rows_backup.json"
 
 conn = sqlite3.connect(DB)

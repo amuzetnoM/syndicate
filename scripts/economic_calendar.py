@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard Economic Calendar Module
+Syndicate Economic Calendar Module
 Self-maintaining, auto-updating economic calendar with real-time data.
 """
 
@@ -700,7 +700,7 @@ class EconomicCalendar:
         high_impact = self.get_high_impact_events(30)
         recurring = get_recurring_events()
 
-        report = f"""# Gold Standard Economic Calendar
+        report = f"""# Syndicate Economic Calendar
 > Generated: {today} | Self-Maintaining | Auto-Updated Each Run
 
 ---
@@ -784,7 +784,7 @@ class EconomicCalendar:
 - **CPI Release**: Mid-month inflation = rate expectations shift
 - **PCE Release**: End of month = Fed's preferred measure
 
-*Calendar maintained by Gold Standard system. Cross-reference with live feeds for real-time updates.*
+*Calendar maintained by Syndicate system. Cross-reference with live feeds for real-time updates.*
 """
         return report
 
@@ -860,7 +860,7 @@ if __name__ == "__main__":
     calendar = EconomicCalendar()
 
     print("=" * 60)
-    print("  GOLD STANDARD ECONOMIC CALENDAR")
+    print("  SYNDICATE ECONOMIC CALENDAR")
     print("=" * 60)
 
     # Generate and save

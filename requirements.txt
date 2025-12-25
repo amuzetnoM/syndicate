@@ -1,5 +1,5 @@
 # =============================================================================
-# Gold Standard - Production Dependencies
+# Syndicate - Production Dependencies
 # =============================================================================
 # Python Version: 3.12
 # Install: pip install -r requirements.txt

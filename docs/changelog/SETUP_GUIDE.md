@@ -1,10 +1,10 @@
 # Setup Guide
 
-This setup guide provides concise, actionable steps to install, configure, and run the Gold Standard project. It mirrors the project conventions used in `README.md` and focuses specifically on getting a system instance running reliably (development and production).
+This setup guide provides concise, actionable steps to install, configure, and run the Syndicate project. It mirrors the project conventions used in `README.md` and focuses specifically on getting a system instance running reliably (development and production).
 
 ## 1. Overview
 
-Gold Standard is an end-to-end system for quantitative analysis of precious metals and intermarket assets. The system is designed to run autonomously with intelligent scheduling, multi-provider LLM fallback, and robust monitoring.
+Syndicate is an end-to-end system for quantitative analysis of precious metals and intermarket assets. The system is designed to run autonomously with intelligent scheduling, multi-provider LLM fallback, and robust monitoring.
 
 This guide covers:
 - Requirements
@@ -59,8 +59,8 @@ After automated setup, open `.env` and add the required keys (below).
 1. Clone and enter the repo:
 
 ```bash
-git clone https://github.com/amuzetnoM/gold_standard.git
-cd gold_standard
+git clone https://github.com/amuzetnoM/syndicate.git
+cd syndicate
 ```
 
 2. Create a virtual environment and activate it (example using Python 3.12):
@@ -124,7 +124,7 @@ Optional / advanced keys:
 - `LOCAL_LLM_MODEL` and GPU/threads controls — For llama.cpp / GGUF setups.
 
 Deployment notes:
-- Systemd services may read `/path/to/.env` via `EnvironmentFile=`; ensure the service's path matches where `.env` is stored (e.g., `/mnt/newdisk/gold_standard/gold_standard_config/.env`).
+- Systemd services may read `/path/to/.env` via `EnvironmentFile=`; ensure the service's path matches where `.env` is stored (e.g., `/mnt/newdisk/syndicate/syndicate_config/.env`).
 - For Docker Compose, you can set `env_file: .env` in the Compose file or export variables in the shell that launches Compose.
 
 Security checklist:
@@ -137,21 +137,21 @@ Security checklist:
 
 The project ships with a set of `systemd` units and timers used to schedule and run tasks.
 
-6.1 `gold-standard-compose.service`
+6.1 `syndicate-compose.service`
 - Purpose: Manage the Docker Compose stack (monitoring + logging profiles).
 - Typical settings: Requires `docker.service` and `network-online.target`; runs as `root`.
 - Behavior: Start on boot, restart on failure (with short delay).
 
-6.2 `gold-standard-daily.service` + `gold-standard-daily.timer`
+6.2 `syndicate-daily.service` + `syndicate-daily.timer`
 - Purpose: Trigger the daily analysis run.
-- Service example command: `/usr/bin/flock -n /tmp/gold_standard.lock /home/ali_shakil_backup/codex.sh run`
+- Service example command: `/usr/bin/flock -n /tmp/syndicate.lock /home/ali_shakil_backup/codex.sh run`
   - `flock` ensures single concurrent run.
 - Timer: `OnCalendar=daily` with a randomized `RandomizedDelaySec` up to 30m to avoid collisions.
-- Logging: writes output to configured log path (example `/home/ali_shakil_backup/gold_standard_config/run.log`).
+- Logging: writes output to configured log path (example `/home/ali_shakil_backup/syndicate_config/run.log`).
 
-6.3 `gold-standard-weekly-cleanup.service` + `gold-standard-weekly-cleanup.timer`
+6.3 `syndicate-weekly-cleanup.service` + `syndicate-weekly-cleanup.timer`
 - Purpose: Weekly cleanup tasks for logs, temporary files, or DB maintenance.
-- Example command: `/usr/local/bin/gold-standard-weekly-cleanup.sh`
+- Example command: `/usr/local/bin/syndicate-weekly-cleanup.sh`
 - Timer: weekly trigger (e.g., 1am Sunday).
 
 Notes:
@@ -160,7 +160,7 @@ Notes:
 
 ## 7. Docker Compose & Data Storage
 
-Gold Standard uses Docker Compose to host the monitoring stack and optional containerized services. Important operational requirement:
+Syndicate uses Docker Compose to host the monitoring stack and optional containerized services. Important operational requirement:
 
 High-importance: Do NOT store Docker data on the system root filesystem. Use a dedicated data disk and bind mounts.
 
@@ -183,14 +183,14 @@ Why bind mounts?
 - This avoids unexpected disk-full failures and simplifies backups.
 
 Volume management checklist:
-- Create a dedicated data directory on a separate disk, e.g. `/data/gold_standard/docker-data` or a Windows drive.
+- Create a dedicated data directory on a separate disk, e.g. `/data/syndicate/docker-data` or a Windows drive.
 - Update the Compose file or `.env` (if Compose references paths) to point to the dedicated directory.
 - Ensure file system permissions allow the Docker user or service to read/write.
 
 ## 8. Docker Compose Services (summary)
 
 The stack commonly includes:
-- `gost` — main Gold Standard application
+- `gost` — main Syndicate application
 - `prometheus`, `grafana` — metrics collection & dashboards
 - `alertmanager` — alerting
 - `node-exporter`, `cadvisor` — host / container metrics

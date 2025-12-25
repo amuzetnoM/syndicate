@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Tests for the Gold Standard File Organizer.
+Tests for the Syndicate File Organizer.
 """
 
 import shutil
@@ -162,7 +162,7 @@ class TestFileOrganizer:
 
         report = organizer.generate_index_report()
 
-        assert "# Gold Standard File Index" in report
+        assert "# Syndicate File Index" in report
         assert "Statistics" in report
         assert "Files by Category" in report
 

@@ -1,6 +1,6 @@
 # Digest Bot — Architecture
 
-> Lightweight local AI summarizer for Gold Standard daily outputs.
+> Lightweight local AI summarizer for Syndicate daily outputs.
 
 ---
 
@@ -18,7 +18,7 @@ Digest Bot is a standalone module that reads the day's analysis outputs (pre-mar
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        Gold Standard Output                      │
+│                        Syndicate Output                      │
 │  output/                                                         │
 │   ├── journals/YYYY-MM-DD_daily_journal.md                       │
 │   ├── pre_market/YYYY-MM-DD_pre_market.md                        │
@@ -125,7 +125,7 @@ Prompt template (≈300 word cap):
 
 ```
 You are a concise financial analyst.
-Given the following three documents from today's Gold Standard analysis:
+Given the following three documents from today's Syndicate analysis:
 
 --- PRE-MARKET PLAN ---
 {pre_market_content}

@@ -1,6 +1,6 @@
 # LLM Providers Guide
 
-Gold Standard v3.3.0+ supports multiple LLM backends with automatic fallback. This guide covers setup, configuration, and usage for each provider.
+Syndicate v3.3.0+ supports multiple LLM backends with automatic fallback. This guide covers setup, configuration, and usage for each provider.
 
 ---
 
@@ -91,7 +91,7 @@ Ollama provides easy local model management with one-command setup.
    ollama serve
    ```
 
-4. **Configure Gold Standard:**
+4. **Configure Syndicate:**
    ```bash
    export LLM_PROVIDER=ollama
    # Or with specific model:
@@ -149,7 +149,7 @@ Direct llama.cpp integration for maximum control over local inference.
 
 2. **Download a GGUF model:**
    ```bash
-   # Using Gold Standard's built-in downloader
+   # Using Syndicate's built-in downloader
    python scripts/local_llm.py --download mistral-7b
 
    # Or manually from HuggingFace
@@ -209,9 +209,9 @@ python scripts/local_llm.py --download phi3-mini
 ```
 
 ### Model Search Paths
-Gold Standard searches these directories for `.gguf` files:
+Syndicate searches these directories for `.gguf` files:
 1. `./models/` (project directory)
-2. `~/.cache/gold_standard/models/`
+2. `~/.cache/syndicate/models/`
 3. `C:/models/` (Windows) or `/models/` (Linux/Mac)
 4. Path specified in `LOCAL_LLM_MODEL`
 
@@ -238,7 +238,7 @@ export LLM_PROVIDER=gemini  # Only Gemini
 ```
 
 ### Automatic Fallback
-When the primary provider fails (quota, error, timeout), Gold Standard automatically switches to the next available provider:
+When the primary provider fails (quota, error, timeout), Syndicate automatically switches to the next available provider:
 
 ```
 [LLM] ✓ Primary: Gemini (models/gemini-pro-latest)
@@ -259,7 +259,7 @@ For environments without internet access:
 1. **Pre-download model** (on a connected machine):
    ```bash
    python scripts/local_llm.py --download mistral-7b
-   # Copy ~/.cache/gold_standard/models/ to air-gapped machine
+   # Copy ~/.cache/syndicate/models/ to air-gapped machine
    ```
 
 2. **Configure for offline use:**

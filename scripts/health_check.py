@@ -50,7 +50,7 @@ def check_notion():
     from dotenv import load_dotenv
 
     try:
-        from gold_standard.utils.env_loader import load_env
+        from syndicate.utils.env_loader import load_env
 
         load_env(PROJECT_ROOT / ".env")
     except Exception:

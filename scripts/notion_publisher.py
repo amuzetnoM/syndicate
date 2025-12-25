@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Notion Publisher for Gold Standard
+Notion Publisher for Syndicate
 Python-based publisher that syncs reports to Notion database.
 Includes intelligent deduplication to prevent publishing the same content multiple times.
 """
@@ -42,7 +42,7 @@ except ImportError:
     print("notion-client not installed. Run: pip install notion-client")
 
 try:
-    from gold_standard.utils.env_loader import load_env
+    from syndicate.utils.env_loader import load_env
 
     load_env(PROJECT_ROOT / ".env")
 except Exception:
@@ -226,7 +226,7 @@ class NotionConfig:
 
 
 class NotionPublisher:
-    """Publish Gold Standard reports to Notion."""
+    """Publish Syndicate reports to Notion."""
 
     def __init__(self, config: NotionConfig = None, no_client_ok: bool = False):
         # Allow tests or dry-run to construct without the Notion client.
@@ -1240,7 +1240,7 @@ class NotionPublisher:
         # Acquire per-file publish lock to avoid concurrent publishes creating duplicates
         # Ensure locks live under the project cache directory to avoid trying to
         # create a directory with the raw database id as a top-level path.
-        lock_dir = Path.home() / ".cache" / "gold_standard" / (self.config.database_id or "notion") / "notion_locks"
+        lock_dir = Path.home() / ".cache" / "syndicate" / (self.config.database_id or "notion") / "notion_locks"
         lock_dir.mkdir(parents=True, exist_ok=True)
         lock_name = hashlib.md5(str(path).encode()).hexdigest() + ".lock"
         lock_path = lock_dir / lock_name
@@ -1363,7 +1363,7 @@ class NotionPublisher:
 
 def sync_all_outputs(output_dir: str = None, force: bool = False, dry_run: bool = False) -> Dict[str, Any]:
     """
-    Sync all Gold Standard outputs to Notion with intelligent deduplication.
+    Sync all Syndicate outputs to Notion with intelligent deduplication.
 
     Args:
         output_dir: Directory containing output files (default: PROJECT_ROOT/output)
@@ -1455,7 +1455,7 @@ def sync_all_outputs(output_dir: str = None, force: bool = False, dry_run: bool 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Notion Publisher for Gold Standard")
+    parser = argparse.ArgumentParser(description="Notion Publisher for Syndicate")
     parser.add_argument("--sync-all", action="store_true", help="Sync all outputs to Notion")
     parser.add_argument("--file", type=str, help="Sync a specific file")
     parser.add_argument("--list", action="store_true", help="List recent documents")

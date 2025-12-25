@@ -1,6 +1,6 @@
-# Gold Standard Web UI
+# Syndicate Web UI
 
-Modern, responsive web interface for the Gold Standard precious metals intelligence system.
+Modern, responsive web interface for the Syndicate precious metals intelligence system.
 
 ## Features
 
@@ -26,7 +26,7 @@ Modern, responsive web interface for the Gold Standard precious metals intellige
 ### Prerequisites
 
 - Python 3.10 or higher
-- All Gold Standard dependencies installed
+- All Syndicate dependencies installed
 - Database initialized (`python db_manager.py`)
 
 ### Installation
@@ -150,17 +150,17 @@ gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 web_ui.app:app
 
 ### Using systemd
 
-Create `/etc/systemd/system/gold-standard-web.service`:
+Create `/etc/systemd/system/syndicate-web.service`:
 
 ```ini
 [Unit]
-Description=Gold Standard Web UI
+Description=Syndicate Web UI
 After=network.target
 
 [Service]
 Type=simple
 User=your-user
-WorkingDirectory=/path/to/gold_standard
+WorkingDirectory=/path/to/syndicate
 Environment="PATH=/path/to/venv/bin"
 ExecStart=/path/to/venv/bin/python web_ui/start.py
 Restart=on-failure
@@ -172,8 +172,8 @@ WantedBy=multi-user.target
 Then:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable gold-standard-web
-sudo systemctl start gold-standard-web
+sudo systemctl enable syndicate-web
+sudo systemctl start syndicate-web
 ```
 
 ### Nginx Reverse Proxy
@@ -243,8 +243,8 @@ python web_ui/start.py
 ## Support
 
 For issues, feature requests, or contributions:
-- GitHub Issues: https://github.com/amuzetnoM/gold_standard/issues
-- Documentation: https://github.com/amuzetnoM/gold_standard#readme
+- GitHub Issues: https://github.com/amuzetnoM/syndicate/issues
+- Documentation: https://github.com/amuzetnoM/syndicate#readme
 
 ## License
 

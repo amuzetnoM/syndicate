@@ -57,7 +57,7 @@ def write_env_var(key: str, value: str, env_path: str = ENV_PATH) -> None:
     LOG.info("Wrote %s to %s", key, env_path)
 
 
-def test_webhook(url: str, message: str = "[Gold Standard] Test message") -> bool:
+def test_webhook(url: str, message: str = "[Syndicate] Test message") -> bool:
     if requests is None:
         LOG.error("requests package is not installed. Install with: pip install requests")
         return False
@@ -101,14 +101,14 @@ def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--webhook", required=False, help="Discord webhook URL to test and persist")
     p.add_argument("--persist-systemd", action="store_true", help="Persist the env var into systemd unit(s) via drop-in")
-    p.add_argument("--services", help="Comma-separated list of services to apply systemd env to (default: gold-standard-llm-worker.service,gold-standard-premarket-watcher.service)")
+    p.add_argument("--services", help="Comma-separated list of services to apply systemd env to (default: syndicate-llm-worker.service,syndicate-premarket-watcher.service)")
     p.add_argument("--notion-api", help="NOTION_API_KEY to write to .env")
     p.add_argument("--notion-db", help="NOTION_DATABASE_ID to write to .env")
     p.add_argument("--no-test", action="store_true", help="Do not send a test message to webhook")
 
     args = p.parse_args(argv)
 
-    services = [s.strip() for s in (args.services or "gold-standard-llm-worker.service,gold-standard-premarket-watcher.service").split(",")]
+    services = [s.strip() for s in (args.services or "syndicate-llm-worker.service,syndicate-premarket-watcher.service").split(",")]
 
     if args.webhook:
         if not args.no_test:

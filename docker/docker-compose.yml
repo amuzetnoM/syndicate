@@ -1,12 +1,12 @@
 version: '3.8'
 services:
-  gold_standard:
+  syndicate_old:
     build: .
-    image: gold_standard:local
-    container_name: gold_standard
+    image: syndicate_old:local
+    container_name: syndicate_old
     volumes:
-      - ..:/opt/gold_standard:cached
-    working_dir: /opt/gold_standard
+      - ..:/opt/syndicate_old:cached
+    working_dir: /opt/syndicate
     command: bash -c "./scripts/start_executor.sh"
     environment:
       - METRICS_PORT=8080

@@ -1,10 +1,10 @@
 [Unit]
-Description=Gold Standard Service Monitor
+Description=Syndicate Service Monitor
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/adam/worxpace/gold_standard
+WorkingDirectory=/home/adam/worxpace/syndicate
 ExecStart=/home/adam/worxpace/.venv/bin/python scripts/service_monitor.py
 Restart=always
 RestartSec=10
