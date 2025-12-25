@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard Database Manager
+Syndicate Database Manager
 SQLite-based storage for reports, journals, analysis data, and insights.
 Provides intelligent redundancy control, date-wise organization, and task management.
 """
@@ -34,7 +34,7 @@ _env_db = os.getenv("GOLD_STANDARD_TEST_DB") or os.getenv("GOLD_STANDARD_DB")
 if _env_db:
     DB_PATH = Path(_env_db)
 else:
-    DB_PATH = DB_DIR / "gold_standard.db"
+    DB_PATH = DB_DIR / "syndicate.db"
 
 
 @dataclass
@@ -88,7 +88,7 @@ class AnalysisSnapshot:
 
 class DatabaseManager:
     """
-    Manages SQLite database for Gold Standard system.
+    Manages SQLite database for Syndicate system.
     Handles journals, reports, and analysis data with intelligent redundancy control.
     """
 
@@ -2280,7 +2280,7 @@ class DatabaseManager:
                 retries += 1
                 # Increment prometheus retry counter if available
                 try:
-                    from gold_standard.metrics import METRICS
+                    from syndicate.metrics import METRICS
 
                     METRICS["db_log_retries_total"].inc()
                 except Exception:
@@ -2288,7 +2288,7 @@ class DatabaseManager:
                 if retries > max_retries:
                     # Final failure - increment error counter if present
                     try:
-                        from gold_standard.metrics import METRICS
+                        from syndicate.metrics import METRICS
 
                         METRICS["db_log_errors_total"].inc()
                     except Exception:

@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard CLI
+Syndicate CLI
 Unified entry point with intelligent report management.
 Runs all analysis with automatic redundancy control.
 
@@ -367,7 +367,7 @@ def _signal_handler(signum, frame):
 
 def run_daemon(no_ai: bool = False, interval_hours: int = 0, interval_minutes: int = 1):
     """
-    Run Gold Standard as an autonomous daemon.
+    Run Syndicate as an autonomous daemon.
     Executes analysis immediately, then at specified intervals.
 
     Args:
@@ -1235,7 +1235,7 @@ def handle_lifecycle_command(action: str, target_file: str = None, filter_status
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gold Standard CLI - Autonomous precious metals analysis system. Runs continuously by default.",
+        description="Syndicate CLI - Autonomous precious metals analysis system. Runs continuously by default.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

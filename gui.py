@@ -7,12 +7,12 @@
 # /_______  /|___||____|_  /___|______/ /_______  (____  /____/   __/|___|  (____  /
 #         \/             \/                     \/     \/     |__|        \/     \/
 #
-# Gold Standard - Precious Metals Intelligence System
+# Syndicate - Precious Metals Intelligence System
 # Copyright (c) 2025 SIRIUS Alpha
 # All rights reserved.
 # ══════════════════════════════════════════════════════════════════════════════
 """
-Gold Standard GUI v3
+Syndicate GUI v3
 ═══════════════════════════════════════════════════════════════════════════════
 Modern dashboard with dual-pane architecture:
 - LEFT: Polished Data View (charts grid, analysis, reports)
@@ -396,7 +396,7 @@ class TaskCard(tk.Frame):
 
 class GoldStandardGUI:
     """
-    Gold Standard v3 - Dual-Pane Dashboard
+    Syndicate v3 - Dual-Pane Dashboard
 
     Architecture:
     ┌─────────────────────────────────────────────────────────────────────────┐
@@ -423,7 +423,7 @@ class GoldStandardGUI:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Gold Standard — Precious Metals Intelligence Complex")
+        self.root.title("Syndicate — Precious Metals Intelligence Complex")
         self.root.geometry("1600x950")
         self.root.minsize(1400, 800)
         self.root.configure(bg=Theme.BG_MAIN)
@@ -1132,7 +1132,7 @@ class GoldStandardGUI:
 
 
 def main():
-    """Launch the Gold Standard GUI."""
+    """Launch the Syndicate GUI."""
     root = tk.Tk()
 
     # Set icon if available
