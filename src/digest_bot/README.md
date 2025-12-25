@@ -1,6 +1,6 @@
 # Digest Bot
 
-> Lightweight robot summarizer for Gold Standard daily outputs.
+> Lightweight robot summarizer for Syndicate daily outputs.
 
 ---
 

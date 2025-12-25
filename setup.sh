@@ -284,11 +284,11 @@ if command -v systemctl &> /dev/null && [ -d "/run/systemd/system" ]; then
             sudo cp -n deploy/systemd/* /etc/systemd/system/ || echo -e "${YELLOW}WARNING: Failed to copy some unit files.${NC}"
             sudo systemctl daemon-reload
             # Enable and start monitor if unit exists
-            if [ -f "/etc/systemd/system/gold-standard-monitor.service" ]; then
-                sudo systemctl enable --now gold-standard-monitor.service || echo -e "${YELLOW}WARNING: Failed to enable/start gold-standard-monitor.service${NC}"
+            if [ -f "/etc/systemd/system/syndicate-monitor.service" ]; then
+                sudo systemctl enable --now syndicate-monitor.service || echo -e "${YELLOW}WARNING: Failed to enable/start syndicate-monitor.service${NC}"
             fi
             # Attempt to enable core services if present
-            sudo systemctl enable --now gold-standard-discord-bot.service gold-standard-llm-worker.service gold-standard-daily-llm-report.timer || true
+            sudo systemctl enable --now syndicate-discord-bot.service syndicate-llm-worker.service syndicate-daily-llm-report.timer || true
             touch .setup_systemd_done
             echo -e "${GREEN}Systemd units installed and monitor enabled (if present).${NC}"
         else

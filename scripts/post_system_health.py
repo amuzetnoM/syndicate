@@ -28,10 +28,10 @@ from scripts.local_llm import LocalLLM
 from scripts.post_reports_to_admin import get_channel_id_by_name, create_text_channel_if_missing, post_with_embed_and_files
 
 SERVICE_NAMES = [
-    "gold-standard-premarket-watcher.service",
-    "gold-standard-offloaded-executor.service",
-    "gold-standard-run-once.service",
-    "gold-standard-model-cleanup.timer",
+    "syndicate-premarket-watcher.service",
+    "syndicate-offloaded-executor.service",
+    "syndicate-run-once.service",
+    "syndicate-model-cleanup.timer",
 ]
 
 DEFAULT_CHANNEL = os.environ.get("SYSTEM_HEALTH_CHANNEL", "📡-system-health")

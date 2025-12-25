@@ -6,15 +6,15 @@ import logging
 import os
 
 SERVICE_LIST = [
-    "gold-standard-discord-bot.service",
-    "gold-standard-llm-worker.service",
-    "gold-standard-daily-llm-report.timer",
+    "syndicate-discord-bot.service",
+    "syndicate-llm-worker.service",
+    "syndicate-daily-llm-report.timer",
 ]
 CHECK_INTERVAL = int(os.getenv("GOLDSTANDARD_MONITOR_INTERVAL", "60"))
-LOG_PATH = "/var/log/gold_standard/service_monitor.log"
+LOG_PATH = "/var/log/syndicate/service_monitor.log"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("gold_standard.monitor")
+logger = logging.getLogger("syndicate.monitor")
 
 # Ensure log directory exists
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)

@@ -7,7 +7,7 @@ set -euo pipefail
 MODEL_NAME=${1:-"phi3-mini"}
 VENV_PATH=${2:-"$HOME/worxpace/.venv_ai"}
 TMPDIR=${TMPDIR:-$HOME/tmp}
-MODELS_DIR=${MODELS_DIR:-"$HOME/.cache/gold_standard/models"}
+MODELS_DIR=${MODELS_DIR:-"$HOME/.cache/syndicate/models"}
 HF_TOKEN=${HF_TOKEN:-""}
 
 echo "[LOCAL LLM] Using venv: $VENV_PATH"

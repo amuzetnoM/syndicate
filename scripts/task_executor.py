@@ -568,7 +568,7 @@ Be specific and data-driven. Target 300-500 words."""
             response = self.model.generate_content(prompt)
             result_text = response.text
 
-            # Save research to file with proper Gold Standard formatting
+            # Save research to file with proper Syndicate formatting
             filename = f"research_{action.action_id}_{date.today()}.md"
             filepath = self.research_dir / filename
 

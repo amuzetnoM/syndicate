@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple log watcher for Gold Standard.
+"""Simple log watcher for Syndicate.
 Tails run_once.log and executor.log, scans for errors/warnings and writes alerts.
 """
 import time

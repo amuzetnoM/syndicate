@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════════════
-#  Gold Standard - Task Executor Systemd Service
+#  Syndicate - Task Executor Systemd Service
 #  Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 #
@@ -20,7 +20,7 @@
 # ══════════════════════════════════════════════════════════════════════════════
 
 [Unit]
-Description=Gold Standard Task Executor Daemon
+Description=Syndicate Task Executor Daemon
 Documentation=https://github.com/amuzetnom/gold_standard
 After=network.target docker.service gold-standard-compose.service
 Wants=gold-standard-compose.service

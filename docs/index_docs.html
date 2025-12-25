@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation | Gold Standard</title>
+    <title>Documentation | Syndicate</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -480,7 +480,7 @@
         <div class="mobile-topbar-inner">
             <a href="index.html" class="mobile-topbar-logo">
                 <div class="mobile-topbar-logo-mark">&#9670;</div>
-                Gold Standard
+                Syndicate
             </a>
             <button class="mobile-toggle" aria-label="Toggle menu">&#9776;</button>
         </div>
@@ -490,7 +490,7 @@
         <a href="index_docs.html" class="active">Documentation</a>
         <a href="odyssey.html">Deployment</a>
         <a href="guide.html">Guide</a>
-        <a href="https://github.com/amuzetnoM/gold_standard">GitHub</a>
+        <a href="https://github.com/amuzetnoM/syndicate">GitHub</a>
     </div>
 
     <div class="layout">
@@ -498,7 +498,7 @@
             <div class="sidebar-header">
                 <a href="index.html" class="sidebar-logo">
                     <div class="sidebar-logo-mark">&#9670;</div>
-                    Gold Standard
+                    Syndicate
                 </a>
             </div>
 
@@ -559,18 +559,18 @@
                 <div class="topbar-title">Documentation</div>
                 <div class="topbar-actions">
                     <a href="index.html" class="btn">&#8592; Home</a>
-                    <a href="https://github.com/amuzetnoM/gold_standard" class="btn">GitHub</a>
+                    <a href="https://github.com/amuzetnoM/syndicate" class="btn">GitHub</a>
                 </div>
             </div>
 
             <div class="content">
                 <span class="version-badge">&#9679; v3.5.2</span>
                 <div class="patch-callout" style="margin-top:0.75rem;padding:0.75rem;border-left:4px solid var(--accent-gold);background:var(--accent-gold-dim);color:var(--text-primary);">
-                    <strong>v3.5.2 Patch (2025-12-19)</strong> — GSR computation and console UX fixes. <a href="https://github.com/amuzetnoM/gold_standard/releases/tag/v3.5.2" style="color:var(--accent-gold);text-decoration:underline;">Release notes</a>
+                    <strong>v3.5.2 Patch (2025-12-19)</strong> — GSR computation and console UX fixes. <a href="https://github.com/amuzetnoM/syndicate/releases/tag/v3.5.2" style="color:var(--accent-gold);text-decoration:underline;">Release notes</a>
                 </div>
                 <h1>Documentation</h1>
                 <p class="page-lead">
-                    Comprehensive reference for the Gold Standard Precious Metals Intelligence System.
+                    Comprehensive reference for the Syndicate Precious Metals Intelligence System.
                     From installation to advanced configuration, everything you need to deploy and operate
                     the autonomous analysis daemon.
                 </p>
@@ -602,7 +602,7 @@
 
                 <h2 id="overview">Overview</h2>
                 <p>
-                    Gold Standard is a Precious Metals Intelligence System that combines market data ingestion,
+                    Syndicate is a Precious Metals Intelligence System that combines market data ingestion,
                     technical analysis, regime/strategy synthesis, memory/persistence, and optional AI-enhanced insights.
                 </p>
 
@@ -610,7 +610,7 @@
                 <ul>
                     <li><strong>GSR reliability</strong> — Gold/Silver Ratio now uses a DB fallback to compute reliably when live prices are missing or invalid.</li>
                     <li><strong>Console UX</strong> — Compact, color-coded module tags and reduced logger-name noise for clearer terminal output.</li>
-                    <li><strong>Tests & Docker</strong> — Unit tests added and Docker images published as <code>ghcr.io/amuzetnom/gold_standard:3.5.2</code>.</li>
+                    <li><strong>Tests & Docker</strong> — Unit tests added and Docker images published as <code>ghcr.io/amuzetnom/syndicate:3.5.2</code>.</li>
                 </ul>
 
                 <h3>Key Capabilities</h3>
@@ -636,8 +636,8 @@
                 </ul>
 
                 <h3>Clone and Setup</h3>
-                <pre><code>git clone https://github.com/amuzetnoM/gold_standard.git
-cd gold_standard
+                <pre><code>git clone https://github.com/amuzetnoM/syndicate.git
+cd syndicate
 python -m venv venv
 venv\Scripts\activate  # Windows
 pip install -r requirements.txt</code></pre>
@@ -672,7 +672,7 @@ LLM_PROVIDER=gemini             # gemini, ollama, or local</code></pre>
 
                 <h2 id="architecture">Architecture</h2>
 
-                <p>Gold Standard follows a three-module design with clear separation of concerns:</p>
+                <p>Syndicate follows a three-module design with clear separation of concerns:</p>
 
                 <table>
                     <thead>
@@ -953,7 +953,7 @@ LLM_PROVIDER=gemini             # gemini, ollama, or local</code></pre>
                 <h2 id="project-structure">Project Structure</h2>
 
                 <div class="file-tree">
-<span class="folder">gold_standard/</span>
+<span class="folder">syndicate/</span>
 ├── <span class="file">run.py</span>              # Main entry point
 ├── <span class="file">gui.py</span>              # GUI dashboard
 ├── <span class="file">main.py</span>             # Core logic
@@ -975,7 +975,7 @@ LLM_PROVIDER=gemini             # gemini, ollama, or local</code></pre>
                 <hr>
 
                 <p style="text-align: center; color: var(--text-muted); margin-top: 4rem;">
-                    Gold Standard &#183; Precious Metals Intelligence System
+                    Syndicate &#183; Precious Metals Intelligence System
                 </p>
             </div>
         </main>

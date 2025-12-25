@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lightweight runner script for containerized gold_standard executor
+# Lightweight runner script for containerized syndicate executor
 set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"

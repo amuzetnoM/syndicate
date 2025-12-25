@@ -1,4 +1,4 @@
-Gold Standard Discord Bot — Blueprint
+Syndicate Discord Bot — Blueprint
 
 This blueprint contains a production-minded scaffold for the Discord bot powering operational notifications and light LLM interactions.
 

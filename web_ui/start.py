@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gold Standard Web UI Launcher
+Syndicate Web UI Launcher
 Quick start script for the web interface
 """
 import os

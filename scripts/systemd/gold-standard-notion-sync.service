@@ -1,9 +1,9 @@
 #!/bin/sh
-## Gold Standard - Notion Sync Service
+## Syndicate - Notion Sync Service
 # Copy to /etc/systemd/system/gold-standard-notion-sync.service and adjust paths as needed
 
 [Unit]
-Description=Gold Standard Notion Sync Service
+Description=Syndicate Notion Sync Service
 After=network.target
 Wants=network-online.target
 

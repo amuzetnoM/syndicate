@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ══════════════════════════════════════════════════════════════════════════════
-#  Gold Standard - Task Executor Daemon
+#  Syndicate - Task Executor Daemon
 #  Copyright (c) 2025 SIRIUS Alpha
 # ══════════════════════════════════════════════════════════════════════════════
 """
@@ -551,7 +551,7 @@ class ExecutorDaemon:
                 db.set_config(f"executor_stats_{self.worker_id}", json.dumps(self.stats))
                 # Update Prometheus metrics if available
                 try:
-                    from gold_standard.metrics import METRICS
+                    from syndicate.metrics import METRICS
 
                     # set heartbeat timestamp and leadership gauge
                     METRICS["executor_heartbeat_timestamp"].labels(worker_id=self.worker_id).set(time.time())
@@ -681,7 +681,7 @@ class ExecutorDaemon:
 
         # Start Prometheus metrics server if available (best-effort)
         try:
-            from gold_standard.metrics import start_metrics_server
+            from syndicate.metrics import start_metrics_server
 
             start_metrics_server()
         except Exception:

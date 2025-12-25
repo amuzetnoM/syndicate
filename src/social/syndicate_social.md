@@ -1,8 +1,8 @@
-# Gold Standard — Autonomous Social Media Strategy
+# Syndicate — Autonomous Social Media Strategy
 
 Last updated: 2025-12-24
 
-This document describes a fully autonomous, quota-safe, low-cost social media publishing system for Gold Standard. It is written to run as a detached process, integrated with the existing pipeline (digests, insights, charts, and report outputs) while minimizing external API quota usage.
+This document describes a fully autonomous, quota-safe, low-cost social media publishing system for Syndicate. It is written to run as a detached process, integrated with the existing pipeline (digests, insights, charts, and report outputs) while minimizing external API quota usage.
 
 Goals
 - Reliable, hands-off operation with predictable throughput (e.g. 1–2 posts/day per platform).

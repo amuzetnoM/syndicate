@@ -1,5 +1,5 @@
 [Unit]
-Description=Gold Standard Discord/Digest Worker
+Description=Syndicate Discord/Digest Worker
 After=network.target
 
 [Service]

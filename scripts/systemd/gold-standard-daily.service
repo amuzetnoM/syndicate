@@ -1,5 +1,5 @@
 [Unit]
-Description=Gold Standard Daily Run (one-shot)
+Description=Syndicate Daily Run (one-shot)
 After=network.target
 
 [Service]

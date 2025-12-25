@@ -1,4 +1,4 @@
-"""Prometheus metrics instrumentation for Gold Standard.
+"""Prometheus metrics instrumentation for Syndicate.
 
 Expose counters and histograms for the executor and LLM usage.
 """
@@ -19,7 +19,7 @@ llm_tokens_total = Counter("syndicate_llm_tokens_total", "Total LLM tokens consu
 llm_cost_total = Counter("syndicate_llm_cost_total", "Total LLM cost (USD)", ['provider'])
 
 # DB metrics
-db_busy_total = Gauge("gold_standard_db_busy_total", "SQLite busy count (indicative)")
+db_busy_total = Gauge("syndicate_db_busy_total", "SQLite busy count (indicative)")
 
 
 def expose_metrics():

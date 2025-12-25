@@ -1,5 +1,5 @@
 """
-Gold Standard Web UI
+Syndicate Web UI
 Modern web-based interface for the precious metals intelligence system.
 """
 
