@@ -1,13 +1,13 @@
 [Unit]
-Description=Gold Standard LLM Worker
+Description=Syndicate LLM Worker
 After=network.target
 
 [Service]
 Type=simple
 User=adam
 Group=adam
-WorkingDirectory=/home/adam/worxpace/gold_standard
-ExecStart=/opt/run_gold_standard_llm_worker.sh
+WorkingDirectory=/home/adam/worxpace/syndicate
+ExecStart=/opt/run_syndicate_llm_worker.sh
 Restart=always
 RestartSec=5
 StandardOutput=journal

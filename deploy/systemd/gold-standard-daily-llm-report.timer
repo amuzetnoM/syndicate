@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Gold Standard daily LLM report daily
+Description=Description=Run Syndicate daily LLM report daily
 
 [Timer]
 OnCalendar=daily

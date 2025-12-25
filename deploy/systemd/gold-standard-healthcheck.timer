@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Gold Standard healthcheck daily
+Description=Description=Run Syndicate healthcheck daily
 
 [Timer]
 OnBootSec=5min

@@ -1,5 +1,5 @@
 [Unit]
-Description=Periodic cleanup and retirement timer for Gold Standard
+Description=Description=Periodic cleanup and retirement timer for Syndicate
 
 [Timer]
 OnCalendar=*-*-* *:00/30

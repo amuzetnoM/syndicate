@@ -1,11 +1,11 @@
 [Unit]
-Description=Gold Standard Notion Retry Service
+Description=Syndicate Notion Retry Service
 After=network.target
 
 [Service]
 Type=oneshot
 User=ali
-ExecStart=/usr/bin/env python /mnt/disk/gold_standard/scripts/retry_failed_publishes.py
+ExecStart=/usr/bin/env python /mnt/disk/syndicate/scripts/retry_failed_publishes.py
 
 [Install]
 WantedBy=multi-user.target
