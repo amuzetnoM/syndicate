@@ -394,7 +394,7 @@ class TaskCard(tk.Frame):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class GoldStandardGUI:
+class SyndicateGUI:
     """
     Syndicate v3 - Dual-Pane Dashboard
 
@@ -515,8 +515,8 @@ class GoldStandardGUI:
         title_row = tk.Frame(brand, bg=Theme.BG_PANEL)
         title_row.pack(anchor=tk.W)
 
-        tk.Label(title_row, text="GOLD", bg=Theme.BG_PANEL, fg=Theme.GOLD, font=Theme.FONT_HERO).pack(side=tk.LEFT)
-        tk.Label(title_row, text="STANDARD", bg=Theme.BG_PANEL, fg=Theme.TEXT_PRIMARY, font=Theme.FONT_HERO).pack(
+        tk.Label(title_row, text="SYNDICATE", bg=Theme.BG_PANEL, fg=Theme.GOLD, font=Theme.FONT_HERO).pack(side=tk.LEFT)
+        tk.Label(title_row, text="", bg=Theme.BG_PANEL, fg=Theme.TEXT_PRIMARY, font=Theme.FONT_HERO).pack(
             side=tk.LEFT, padx=(8, 0)
         )
 
@@ -1143,7 +1143,7 @@ def main():
     except Exception:
         pass
 
-    app = GoldStandardGUI(root)
+    app = SyndicateGUI(root)
 
     # Handle close
     def on_close():
