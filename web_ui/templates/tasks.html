@@ -1,4 +1,6 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
+
+{% block title %}Tasks - Syndicate{% endblock %}
 
 {% block content %}
 <main class="main-content">
@@ -8,48 +10,109 @@
             <p class="subtitle">View and manage system tasks</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
+            <button class="btn btn-secondary" onclick="refreshTasks()">
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Refresh
+            </button>
         </div>
     </header>
 
     <div class="dashboard-grid">
-        <section class="card tasks-full">
-            <div class="card-header"><h2>Pending & Ready Tasks</h2></div>
+        <!-- Task Statistics -->
+        <section class="card stats-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Task Statistics</h2>
+            </div>
             <div class="card-body">
-                <div id="tasks-full-list">
-                    <div class="loading"><p>Loading tasks...</p></div>
+                <div class="stats-grid" id="task-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Ready Now</span>
+                        <span class="stat-value" id="stat-ready">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pending</span>
+                        <span class="stat-value" id="stat-pending">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Scheduled</span>
+                        <span class="stat-value" id="stat-scheduled">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Completed Today</span>
+                        <span class="stat-value" id="stat-completed">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ready Tasks -->
+        <section class="card tasks-section">
+            <div class="card-header">
+                <h2>Ready to Execute</h2>
+                <span class="badge" id="ready-count">0</span>
+            </div>
+            <div class="card-body">
+                <div id="ready-tasks-list" class="tasks-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pending Tasks -->
+        <section class="card tasks-section">
+            <div class="card-header">
+                <h2>Pending Tasks</h2>
+                <span class="badge" id="pending-count">0</span>
+            </div>
+            <div class="card-body">
+                <div id="pending-tasks-list" class="tasks-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scheduled Tasks -->
+        <section class="card tasks-section" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Scheduled Tasks</h2>
+                <span class="badge" id="scheduled-count">0</span>
+            </div>
+            <div class="card-body">
+                <div id="scheduled-tasks-list" class="tasks-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Execution History -->
+        <section class="card history-section" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Recent Execution History</h2>
+            </div>
+            <div class="card-body">
+                <div id="execution-history" class="history-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading history...</p>
+                    </div>
                 </div>
             </div>
         </section>
     </div>
 </main>
+{% endblock %}
 
-<script>
-async function loadAllTasks() {
-    try {
-        const res = await fetch('/api/tasks?limit=100');
-        const data = await res.json();
-        const el = document.getElementById('tasks-full-list');
-        if (data.status === 'ok') {
-            const combined = [...(data.ready || []), ...(data.pending || []), ...(data.scheduled || [])];
-            if (!combined.length) {
-                el.innerHTML = '<div class="loading"><p>No tasks available</p></div>';
-                return;
-            }
-            el.innerHTML = combined.map(t => `
-                <div class="task-item">
-                    <div class="task-header"><strong>${t.title || t.action_type || 'Task'}</strong>
-                    <span class="task-status ${t.status}">${t.status}</span></div>
-                    <div class="task-desc">${t.description || t.result || ''}</div>
-                </div>
-            `).join('');
-        }
-    } catch (e) {
-        console.error('Failed to load tasks', e);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => loadAllTasks());
-</script>
-
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
 {% endblock %}

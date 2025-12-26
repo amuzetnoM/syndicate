@@ -248,6 +248,229 @@ class DatabaseManager:
                 )
             """)
 
+            # Reports table - weekly, monthly, yearly
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    report_type TEXT NOT NULL,
+                    period TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    summary TEXT,
+                    ai_enabled INTEGER DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(report_type, period)
+                )
+            """)
+
+            # Analysis snapshots - historical technical data
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS analysis_snapshots (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    asset TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    rsi REAL,
+                    sma_50 REAL,
+                    sma_200 REAL,
+                    atr REAL,
+                    adx REAL,
+                    trend TEXT,
+                    raw_data TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(date, asset)
+                )
+            """)
+
+            # Pre-market plans table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS premarket_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT UNIQUE NOT NULL,
+                    content TEXT NOT NULL,
+                    bias TEXT,
+                    catalysts TEXT,
+                    ai_enabled INTEGER DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Trade simulations table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS trades (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    trade_id TEXT UNIQUE NOT NULL,
+                    direction TEXT NOT NULL,
+                    asset TEXT NOT NULL,
+                    entry_price REAL NOT NULL,
+                    exit_price REAL,
+                    stop_loss REAL,
+                    take_profit REAL,
+                    status TEXT DEFAULT 'OPEN',
+                    result TEXT,
+                    pnl REAL,
+                    pnl_pct REAL,
+                    entry_date TEXT NOT NULL,
+                    exit_date TEXT,
+                    notes TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Entity insights table - extracted entities from reports
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS entity_insights (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_name TEXT NOT NULL,
+                    entity_type TEXT NOT NULL,
+                    context TEXT,
+                    relevance_score REAL DEFAULT 0.5,
+                    source_report TEXT,
+                    extracted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    metadata TEXT,
+                    UNIQUE(entity_name, source_report)
+                )
+            """)
+
+            # Action insights table - actionable tasks extracted from reports
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS action_insights (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action_id TEXT UNIQUE NOT NULL,
+                    action_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    priority TEXT DEFAULT 'medium',
+                    status TEXT DEFAULT 'pending',
+                    source_report TEXT,
+                    source_context TEXT,
+                    deadline TEXT,
+                    scheduled_for TEXT,
+                    result TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    last_error TEXT,
+                    metadata TEXT
+                )
+            """)
+
+            # System configuration table - stores runtime settings
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_config (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT UNIQUE NOT NULL,
+                    value TEXT,
+                    description TEXT,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Cortex memory table - dedicated storage for persistent memory (JSON)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS cortex_memory (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    memory_json TEXT,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Task execution log - tracks task executor results
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS task_execution_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    action_id TEXT NOT NULL,
+                    success INTEGER DEFAULT 0,
+                    result_data TEXT,
+                    execution_time_ms REAL,
+                    error_message TEXT,
+                    artifacts TEXT,
+                    executed_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Notion sync tracking - prevents duplicate publishing
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS notion_sync (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    file_path TEXT NOT NULL,
+                    file_hash TEXT NOT NULL,
+                    notion_page_id TEXT,
+                    notion_url TEXT,
+                    doc_type TEXT,
+                    synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(file_path)
+                )
+            """)
+
+            # Schedule tracking - controls frequency of different operations
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS schedule_tracker (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_name TEXT UNIQUE NOT NULL,
+                    last_run TEXT,
+                    next_run TEXT,
+                    frequency TEXT NOT NULL,
+                    enabled INTEGER DEFAULT 1,
+                    metadata TEXT
+                )
+            """)
+
+            # Document lifecycle - tracks draft/in_progress/published status
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS document_lifecycle (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    file_path TEXT UNIQUE NOT NULL,
+                    doc_type TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    published_at TEXT,
+                    notion_page_id TEXT,
+                    content_hash TEXT,
+                    version INTEGER DEFAULT 1,
+                    metadata TEXT
+                )
+            """)
+
+            # Create indexes for faster queries
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_type_period ON reports(report_type, period)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_analysis_date_asset ON analysis_snapshots(date, asset)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_entity_insights_name ON entity_insights(entity_name)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_status ON action_insights(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_priority ON action_insights(priority)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_task_log_action ON task_execution_log(action_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_notion_sync_path ON notion_sync(file_path)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_schedule_task ON schedule_tracker(task_name)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_path ON document_lifecycle(file_path)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_status ON document_lifecycle(status)")
+
+            # LLM caching and usage tracking
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS llm_cache (
+                    prompt_hash TEXT PRIMARY KEY,
+                    prompt TEXT,
+                    response TEXT,
+                    usage_count INTEGER DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    last_used TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS llm_usage (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    provider TEXT,
+                    tokens_used INTEGER,
+                    cost REAL,
+                    recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Initialize default schedules if not present
+            self._init_default_schedules(cursor)
+
     def save_llm_sanitizer_audit(self, task_id: int, corrections: int, notes: str = None) -> int:
         """Save a sanitizer audit record."""
         with self._get_connection() as conn:
@@ -392,302 +615,6 @@ class DatabaseManager:
             cursor.execute("SELECT SUM(corrections) as total FROM llm_sanitizer_audit WHERE created_at >= datetime('now', ?)", (f"-{hours} hours",))
             row = cursor.fetchone()
             return int(row["total"] or 0)
-
-            # Reports table - weekly, monthly, yearly
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS reports (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    report_type TEXT NOT NULL,
-                    period TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    summary TEXT,
-                    ai_enabled INTEGER DEFAULT 1,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(report_type, period)
-                )
-            """)
-
-            # Analysis snapshots - historical technical data
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS analysis_snapshots (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT NOT NULL,
-                    asset TEXT NOT NULL,
-                    price REAL NOT NULL,
-                    rsi REAL,
-                    sma_50 REAL,
-                    sma_200 REAL,
-                    atr REAL,
-                    adx REAL,
-                    trend TEXT,
-                    raw_data TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(date, asset)
-                )
-            """)
-
-            # Pre-market plans table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS premarket_plans (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT UNIQUE NOT NULL,
-                    content TEXT NOT NULL,
-                    bias TEXT,
-                    catalysts TEXT,
-                    ai_enabled INTEGER DEFAULT 1,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Trade simulations table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS trades (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    trade_id TEXT UNIQUE NOT NULL,
-                    direction TEXT NOT NULL,
-                    asset TEXT NOT NULL,
-                    entry_price REAL NOT NULL,
-                    exit_price REAL,
-                    stop_loss REAL,
-                    take_profit REAL,
-                    status TEXT DEFAULT 'OPEN',
-                    result TEXT,
-                    pnl REAL,
-                    pnl_pct REAL,
-                    entry_date TEXT NOT NULL,
-                    exit_date TEXT,
-                    notes TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Entity insights table - extracted entities from reports
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS entity_insights (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entity_name TEXT NOT NULL,
-                    entity_type TEXT NOT NULL,
-                    context TEXT,
-                    relevance_score REAL DEFAULT 0.5,
-                    source_report TEXT,
-                    extracted_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    metadata TEXT,
-                    UNIQUE(entity_name, source_report)
-                )
-            """)
-
-            # Action insights table - actionable tasks extracted from reports
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS action_insights (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    action_id TEXT UNIQUE NOT NULL,
-                    action_type TEXT NOT NULL,
-                    title TEXT NOT NULL,
-                    description TEXT,
-                    priority TEXT DEFAULT 'medium',
-                    status TEXT DEFAULT 'pending',
-                    source_report TEXT,
-                    source_context TEXT,
-                    deadline TEXT,
-                    scheduled_for TEXT,
-                    result TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    completed_at TEXT,
-                    retry_count INTEGER DEFAULT 0,
-                    last_error TEXT,
-                    metadata TEXT
-                )
-            """)
-
-            # Add scheduled_for column if it doesn't exist (migration)
-            try:
-                cursor.execute("ALTER TABLE action_insights ADD COLUMN scheduled_for TEXT")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
-
-            # Add retry tracking columns if they don't exist (migration)
-            try:
-                cursor.execute("ALTER TABLE action_insights ADD COLUMN retry_count INTEGER DEFAULT 0")
-                cursor.execute("ALTER TABLE action_insights ADD COLUMN last_error TEXT")
-            except sqlite3.OperationalError:
-                pass  # Columns already exist
-
-            # System configuration table - stores runtime settings
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS system_config (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT UNIQUE NOT NULL,
-                    value TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Model usage table - track GGUF model usage for pruning and metrics
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS model_usage (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    model_path TEXT UNIQUE NOT NULL,
-                    name TEXT,
-                    size_gb REAL,
-                    last_used TEXT,
-                    usage_count INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS system_config (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT UNIQUE NOT NULL,
-                    value TEXT,
-                    description TEXT,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Cortex memory table - dedicated storage for persistent memory (JSON)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS cortex_memory (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    memory_json TEXT,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # LLM tasks table - persistent queue for long-running AI generations
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS llm_tasks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document_path TEXT NOT NULL,
-                    prompt TEXT NOT NULL,
-                    provider_hint TEXT,
-                    status TEXT DEFAULT 'pending',
-                    attempts INTEGER DEFAULT 0,
-                    response TEXT,
-                    error TEXT,
-                    priority TEXT DEFAULT 'normal',
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    started_at TEXT,
-                    last_attempt_at TEXT,
-                    completed_at TEXT
-                )
-            """)
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_llm_tasks_status_created ON llm_tasks(status, created_at)")
-            # Migration: add 'task_type' column to distinguish generation vs post-processing tasks
-            try:
-                cursor.execute("ALTER TABLE llm_tasks ADD COLUMN task_type TEXT DEFAULT 'generate'")
-            except sqlite3.OperationalError:
-                pass  # Column likely already exists
-
-            # Migrate existing JSON blob from system_config into cortex_memory if present
-            try:
-                cursor.execute("SELECT value FROM system_config WHERE key = 'cortex_memory'")
-                row = cursor.fetchone()
-                cursor.execute("SELECT COUNT(1) as cnt FROM cortex_memory")
-                cnt = cursor.fetchone()["cnt"]
-                if row and row["value"] and cnt == 0:
-                    cursor.execute(
-                        "INSERT INTO cortex_memory (id, memory_json, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)",
-                        (row["value"],),
-                    )
-            except Exception:
-                pass
-
-            # Task execution log - tracks task executor results
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS task_execution_log (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    action_id TEXT NOT NULL,
-                    success INTEGER DEFAULT 0,
-                    result_data TEXT,
-                    execution_time_ms REAL,
-                    error_message TEXT,
-                    artifacts TEXT,
-                    executed_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Notion sync tracking - prevents duplicate publishing
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS notion_sync (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    file_path TEXT NOT NULL,
-                    file_hash TEXT NOT NULL,
-                    notion_page_id TEXT,
-                    notion_url TEXT,
-                    doc_type TEXT,
-                    synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(file_path)
-                )
-            """)
-
-            # Schedule tracking - controls frequency of different operations
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS schedule_tracker (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    task_name TEXT UNIQUE NOT NULL,
-                    last_run TEXT,
-                    next_run TEXT,
-                    frequency TEXT NOT NULL,
-                    enabled INTEGER DEFAULT 1,
-                    metadata TEXT
-                )
-            """)
-
-            # Document lifecycle - tracks draft/in_progress/published status
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS document_lifecycle (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    file_path TEXT UNIQUE NOT NULL,
-                    doc_type TEXT NOT NULL,
-                    status TEXT NOT NULL DEFAULT 'draft',
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    published_at TEXT,
-                    notion_page_id TEXT,
-                    content_hash TEXT,
-                    version INTEGER DEFAULT 1,
-                    metadata TEXT
-                )
-            """)
-
-            # Create indexes for faster queries
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_journals_date ON journals(date)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_type_period ON reports(report_type, period)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_analysis_date_asset ON analysis_snapshots(date, asset)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_entity_insights_name ON entity_insights(entity_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_status ON action_insights(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_action_insights_priority ON action_insights(priority)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_task_log_action ON task_execution_log(action_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_notion_sync_path ON notion_sync(file_path)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_schedule_task ON schedule_tracker(task_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_path ON document_lifecycle(file_path)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_lifecycle_status ON document_lifecycle(status)")
-
-            # LLM caching and usage tracking
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS llm_cache (
-                    prompt_hash TEXT PRIMARY KEY,
-                    prompt TEXT,
-                    response TEXT,
-                    usage_count INTEGER DEFAULT 1,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    last_used TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS llm_usage (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    provider TEXT,
-                    tokens_used INTEGER,
-                    cost REAL,
-                    recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Initialize default schedules if not present
-            self._init_default_schedules(cursor)
 
     def _init_default_schedules(self, cursor):
         """Initialize default task schedules."""

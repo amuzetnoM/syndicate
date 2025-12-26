@@ -1,7 +1,8 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
+
+{% block title %}Analysis - Syndicate{% endblock %}
 
 {% block content %}
-<!-- Reuse main layout but focus on analysis: larger chart and report list -->
 <main class="main-content">
     <header class="header">
         <div class="header-title">
@@ -9,65 +10,95 @@
             <p class="subtitle">Charts, reports, and deep analysis</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
-            <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+            <button class="btn btn-secondary" onclick="refreshAnalysis()">
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Refresh
+            </button>
+            <button class="btn btn-primary" onclick="runAnalysis()">
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Run Analysis
+            </button>
         </div>
     </header>
 
     <div class="dashboard-grid">
-        <section class="card charts-section" style="grid-column: 1 / span 2;">
-            <div class="card-header"><h2>Primary Chart</h2></div>
+        <!-- Chart Viewer -->
+        <section class="card charts-section" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Market Charts</h2>
+                <div class="chart-tabs" id="chart-tabs">
+                    <button class="chart-tab active" data-chart="GOLD">Gold</button>
+                    <button class="chart-tab" data-chart="SILVER">Silver</button>
+                    <button class="chart-tab" data-chart="DXY">DXY</button>
+                    <button class="chart-tab" data-chart="VIX">VIX</button>
+                    <button class="chart-tab" data-chart="GSR">GSR</button>
+                </div>
+            </div>
             <div class="card-body">
                 <div class="chart-container" id="chart-container-large">
                     <img id="chart-image" src="" alt="Loading chart..." class="chart-image">
+                    <div class="chart-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading chart data...</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="card reports-section" style="grid-column: 1 / span 1;">
-            <div class="card-header"><h2>Recent Reports</h2></div>
+        <!-- Available Charts List -->
+        <section class="card charts-list-section">
+            <div class="card-header">
+                <h2>Available Charts</h2>
+            </div>
             <div class="card-body">
-                <div id="reports-list">
-                    <div class="loading"><p>Loading reports...</p></div>
+                <div id="charts-list" class="charts-list-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading charts...</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="card analysis-notes" style="grid-column: 2 / span 1;">
-            <div class="card-header"><h2>Notes</h2></div>
+        <!-- Recent Reports -->
+        <section class="card reports-section">
+            <div class="card-header">
+                <h2>Recent Reports</h2>
+            </div>
             <div class="card-body">
-                <div id="analysis-notes-content">No notes yet.</div>
+                <div id="reports-list" class="reports-list-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading reports...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Journal Entry -->
+        <section class="card journal-section" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Latest Journal Entry</h2>
+                <span class="date-badge" id="journal-date"></span>
+            </div>
+            <div class="card-body">
+                <div class="journal-content" id="journal-content">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading journal...</p>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
 </main>
+{% endblock %}
 
-<script>
-async function loadReports() {
-    try {
-        const res = await fetch('/api/reports');
-        const data = await res.json();
-        const el = document.getElementById('reports-list');
-        if (data.status === 'ok') {
-            if (!data.reports.length) {
-                el.innerHTML = '<div class="loading"><p>No reports available</p></div>';
-                return;
-            }
-            el.innerHTML = data.reports.map(r => `
-                <div class="report-item">
-                    <a href="${r.url}" target="_blank">${r.name}</a>
-                    <div class="muted">${new Date(r.modified).toLocaleString()}</div>
-                </div>
-            `).join('');
-        }
-    } catch (e) {
-        console.error('Failed to load reports', e);
-    }
-}
-
-// load on page ready
-document.addEventListener('DOMContentLoaded', () => {
-    loadReports();
-});
-</script>
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
 {% endblock %}

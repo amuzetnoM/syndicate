@@ -6,6 +6,7 @@ Modern Flask-based web interface with real-time updates
 import json
 import logging
 import os
+import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -302,6 +303,26 @@ def api_toggle_feature(feature):
         })
     except Exception as e:
         logger.error(f"Toggle API error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/execution_history')
+def api_execution_history():
+    """Get task execution history"""
+    try:
+        db = get_db()
+        days = request.args.get('days', 7, type=int)
+        action_id = request.args.get('action_id', None)
+        
+        history = db.get_execution_history(action_id=action_id, days=days)
+        
+        return jsonify({
+            'status': 'ok',
+            'history': history,
+            'count': len(history)
+        })
+    except Exception as e:
+        logger.error(f"Execution history API error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 

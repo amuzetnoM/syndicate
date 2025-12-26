@@ -1,4 +1,6 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
+
+{% block title %}Settings - Syndicate{% endblock %}
 
 {% block content %}
 <main class="main-content">
@@ -7,45 +9,78 @@
             <h1>Settings</h1>
             <p class="subtitle">Feature toggles and configuration</p>
         </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="refreshToggles()">
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Refresh
+            </button>
+        </div>
     </header>
 
     <div class="dashboard-grid">
-        <section class="card settings-card">
-            <div class="card-header"><h2>Feature Toggles</h2></div>
+        <!-- Feature Toggles -->
+        <section class="card settings-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Feature Toggles</h2>
+                <p class="card-subtitle">Enable or disable system features</p>
+            </div>
             <div class="card-body">
-                <div id="toggles-list">Loading toggles...</div>
+                <div id="toggles-list" class="toggles-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading toggles...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Information -->
+        <section class="card info-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>System Information</h2>
+            </div>
+            <div class="card-body">
+                <div id="system-info" class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Database Status</span>
+                        <span class="info-value" id="db-status">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Reports</span>
+                        <span class="info-value" id="total-reports">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Tasks</span>
+                        <span class="info-value" id="total-tasks">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Update</span>
+                        <span class="info-value" id="last-update">--</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration -->
+        <section class="card config-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>Configuration</h2>
+            </div>
+            <div class="card-body">
+                <div class="config-info">
+                    <p><strong>Web UI Version:</strong> 1.0.0</p>
+                    <p><strong>Database:</strong> SQLite</p>
+                    <p><strong>Auto-refresh:</strong> 30 seconds</p>
+                    <p><strong>WebSocket:</strong> Enabled</p>
+                </div>
             </div>
         </section>
     </div>
 </main>
+{% endblock %}
 
-<script>
-async function loadToggles() {
-    try {
-        const res = await fetch('/api/toggles');
-        const data = await res.json();
-        const el = document.getElementById('toggles-list');
-        if (data.status === 'ok') {
-            const toggles = data.toggles || {};
-            el.innerHTML = Object.keys(toggles).map(k => `
-                <div class="toggle-item">
-                    <span class="label">${k}</span>
-                    <button class="btn" onclick="toggleFeature('${k}')">${toggles[k] ? 'Disable' : 'Enable'}</button>
-                </div>
-            `).join('');
-        }
-    } catch (e) { console.error(e); }
-}
-
-async function toggleFeature(feature) {
-    // Map friendly names used in UI to API feature keys
-    const map = { 'notion_publishing': 'notion', 'task_execution': 'tasks', 'insights_extraction': 'insights' };
-    const apiKey = map[feature] || feature;
-    const res = await fetch(`/api/toggles/${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ enabled: true }) });
-    loadToggles();
-}
-
-document.addEventListener('DOMContentLoaded', loadToggles);
-</script>
-
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}
