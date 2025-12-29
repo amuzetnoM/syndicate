@@ -21,6 +21,7 @@ from .base import GenerationConfig, LLMProvider, LLMResponse, ProviderError
 from .factory import (
     PROVIDER_PRIORITY,
     create_provider,
+    create_provider_from_config,
     get_provider,
     get_provider_with_fallback,
     reset_provider,
@@ -33,6 +34,7 @@ __all__ = [
     "GenerationConfig",
     "ProviderError",
     "create_provider",
+    "create_provider_from_config",
     "get_provider",
     "get_provider_with_fallback",
     "reset_provider",
