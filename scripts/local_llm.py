@@ -32,6 +32,44 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # ============================================================================
+# Utilities
+# ============================================================================
+
+
+def get_env_int(key: str, default: int) -> int:
+    """Get integer from environment variable."""
+    val = os.environ.get(key, "")
+    try:
+        return int(val) if val else default
+    except ValueError:
+        return default
+
+
+def get_env_bool(key: str, default: bool = False) -> bool:
+    """Get boolean from environment variable."""
+    val = os.environ.get(key, "").lower()
+    if val in ("1", "true", "yes", "on"):
+        return True
+    if val in ("0", "false", "no", "off"):
+        return False
+    return default
+
+
+def is_ollama_reachable(host: str, timeout_s: int = 2) -> bool:
+    """Quick check whether an Ollama server is reachable.
+
+    Returns True if a GET to /api/tags returns 200 within timeout.
+    """
+    try:
+        import requests
+
+        resp = requests.get(f"{host.rstrip('/')}/api/tags", timeout=timeout_s)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+# ============================================================================
 # Backend Detection - Try multiple LLM backends
 # ============================================================================
 
@@ -55,7 +93,6 @@ except ImportError:
 
 # Backend 3: Ollama (requires ollama server running)
 try:
-    import requests
     import threading
 
     # Concurrency limit for Ollama (prevent overload). Default: 2 concurrent calls
@@ -103,39 +140,6 @@ HAS_NATIVE_LLM = HAS_LLM_SUPPORT
 # Ollama:
 # OLLAMA_HOST          - Ollama server URL (default: http://localhost:11434)
 # OLLAMA_MODEL         - Ollama model name (default: llama3.2)
-
-
-def get_env_int(key: str, default: int) -> int:
-    """Get integer from environment variable."""
-    val = os.environ.get(key, "")
-    try:
-        return int(val) if val else default
-    except ValueError:
-        return default
-
-
-def get_env_bool(key: str, default: bool = False) -> bool:
-    """Get boolean from environment variable."""
-    val = os.environ.get(key, "").lower()
-    if val in ("1", "true", "yes", "on"):
-        return True
-    if val in ("0", "false", "no", "off"):
-        return False
-    return default
-
-
-def is_ollama_reachable(host: str, timeout_s: int = 2) -> bool:
-    """Quick check whether an Ollama server is reachable.
-
-    Returns True if a GET to /api/tags returns 200 within timeout.
-    """
-    try:
-        import requests
-
-        resp = requests.get(f"{host.rstrip('/')}/api/tags", timeout=timeout_s)
-        return resp.status_code == 200
-    except Exception:
-        return False
 
 
 @dataclass
@@ -539,6 +543,28 @@ class GeminiCompatibleLLM:
     def __init__(self, model_path: str, **config):
         self._llm = LocalLLM(model_path, LLMConfig(**config) if config else None)
 
+    def _wrap_prompt(self, prompt: str) -> str:
+        """Wrap prompt in instruct template if needed."""
+        # Detect model type from path or loaded model name
+        model_name = self._llm.model_name.lower()
+
+        # If already wrapped, don't re-wrap
+        if "<|user|>" in prompt or "[INST]" in prompt or "<|start_header_id|>" in prompt:
+            return prompt
+
+        if "phi-3" in model_name or "phi3" in model_name:
+            return f"<|user|>\n{prompt}<|end|>\n<|assistant|>"
+        elif "llama-3" in model_name or "llama3" in model_name:
+            return f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        elif "mistral" in model_name or "mixtral" in model_name:
+            return f"[INST] {prompt} [/INST]"
+        else:
+            # Default to basic instruct if unknown but common and has 'instruct' in name
+            if "instruct" in model_name:
+                return f"<|user|>\n{prompt}<|end|>\n<|assistant|>"
+
+        return prompt
+
     def generate_content(self, prompt: str, **kwargs) -> "GenerateContentResponse":
         """
         Generate content (Gemini-compatible API).
@@ -549,7 +575,8 @@ class GeminiCompatibleLLM:
         Returns:
             Response object with .text attribute
         """
-        text = self._llm.generate(prompt, **kwargs)
+        wrapped_prompt = self._wrap_prompt(prompt)
+        text = self._llm.generate(wrapped_prompt, **kwargs)
         return GenerateContentResponse(text)
 
 
@@ -609,7 +636,9 @@ class OllamaLLM:
         # Quick ping check to avoid long retries when host is down
         ping_timeout = int(os.environ.get("OLLAMA_PING_TIMEOUT_S", "2"))
         if not is_ollama_reachable(self._host, timeout_s=ping_timeout):
-            print(f"[Ollama] Host not reachable at {self._host} (ping timeout {ping_timeout}s). Skipping Ollama provider.")
+            print(
+                f"[Ollama] Host not reachable at {self._host} (ping timeout {ping_timeout}s). Skipping Ollama provider."
+            )
             self._available = False
             return
 
