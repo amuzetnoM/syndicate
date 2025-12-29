@@ -103,6 +103,7 @@ import yfinance as yf
 
 # Compatibility: ensure yf.download exists for test monkeypatches and legacy callers
 if yf is not None and not hasattr(yf, "download"):
+
     def _yf_download(ticker, *args, **kwargs):
         t = yf.Ticker(ticker)
         return t.history(*args, **kwargs)
@@ -247,7 +248,9 @@ class LocalLLMProvider(LLMProvider):
             )
 
             if model_path:
-                self._llm = GeminiCompatibleLLM(model_path, **vars(config))
+                # Filter out model_path from config to avoid multiple values error
+                llm_params = {k: v for k, v in vars(config).items() if k != "model_path"}
+                self._llm = GeminiCompatibleLLM(model_path, **llm_params)
                 self._available = self._llm._llm.is_loaded
                 if self._available:
                     gpu_info = f"GPU layers: {config.n_gpu_layers}" if config.n_gpu_layers else "CPU only"
@@ -1318,6 +1321,7 @@ class QuantEngine:
                 futures[ex.submit(self._fetch, conf["p"], conf["b"])] = (key, conf)
 
             from concurrent.futures import as_completed
+
             for fut in as_completed(futures):
                 key, conf = futures[fut]
                 try:
@@ -1363,7 +1367,8 @@ class QuantEngine:
 
                     # Persist snapshot to DB for historical use (best-effort)
                     try:
-                        from db_manager import get_db, AnalysisSnapshot
+                        from db_manager import AnalysisSnapshot, get_db
+
                         snap = AnalysisSnapshot(
                             date=str(datetime.date.today()),
                             asset=key,
@@ -1402,7 +1407,7 @@ class QuantEngine:
         # Diagnostic: detect uniform prices across assets which is a sign
         # of an upstream mapping or aggregation bug.
         try:
-            prices = [v.get('price') for v in snapshot.values() if isinstance(v, dict) and 'price' in v]
+            prices = [v.get("price") for v in snapshot.values() if isinstance(v, dict) and "price" in v]
             unique_prices = set(prices)
             if len(prices) > 1 and len(unique_prices) == 1:
                 msg = f"Uniform prices detected across assets: {unique_prices}. This may indicate a mapping/fetch bug."
