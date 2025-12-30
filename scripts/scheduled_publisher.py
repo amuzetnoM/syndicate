@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 """
-Scheduled Publisher for Discord
-Publishes documents to Discord channels on a schedule.
-
-Schedule (UTC+5 / Karachi):
-- 7:00 AM: Pre-market, Catalysts, Economic Calendar
-- 12:00 PM: Journal (initial)
-- 5:00 PM: Digest (comprehensive summary)
-- 10:00 PM: Journal (revised with latest news)
-- Research: As completed
+Scheduled Publisher for Discord - Premium Formatting
+Publishes documents to Discord with polished, Discord-native formatting.
 """
 
 import argparse
 import asyncio
 import os
+import re
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -35,8 +29,92 @@ if env_path.exists():
 import discord
 
 
+class DiscordFormatter:
+    """Formats markdown content for Discord with premium styling."""
+
+    @staticmethod
+    def clean_markdown(content: str) -> str:
+        """Clean and adapt markdown for Discord compatibility."""
+        # Remove complex HTML tables and replace with simpler format
+        content = re.sub(r"<table>.*?</table>", "[Table removed for Discord]", content, flags=re.DOTALL)
+
+        # Convert markdown tables to Discord-friendly format
+        lines = content.split("\n")
+        cleaned = []
+        in_table = False
+        table_data = []
+
+        for line in lines:
+            # Detect table start
+            if "|" in line and line.strip().startswith("|"):
+                in_table = True
+                # Skip separator lines
+                if set(line.replace("|", "").replace("-", "").replace(":", "").strip()) == set():
+                    continue
+                # Extract cells
+                cells = [c.strip() for c in line.split("|")[1:-1]]
+                if cells:
+                    table_data.append(cells)
+            elif in_table:
+                # End of table, format it
+                if table_data:
+                    cleaned.append("```")
+                    for row in table_data:
+                        cleaned.append(" | ".join(row))
+                    cleaned.append("```")
+                    table_data = []
+                in_table = False
+                cleaned.append(line)
+            else:
+                cleaned.append(line)
+
+        # Handle any remaining table
+        if table_data:
+            cleaned.append("```")
+            for row in table_data:
+                cleaned.append(" | ".join(row))
+            cleaned.append("```")
+
+        content = "\n".join(cleaned)
+
+        # Clean up excessive newlines
+        content = re.sub(r"\n{3,}", "\n\n", content)
+
+        # Convert headers to Discord bold
+        content = re.sub(r"^#{1,3}\s+(.+)$", r"**\1**", content, flags=re.MULTILINE)
+
+        # Clean up bullet points
+        content = re.sub(r"^[-*]\s+", "• ", content, flags=re.MULTILINE)
+
+        return content.strip()
+
+    @staticmethod
+    def extract_key_info(content: str, doc_type: str) -> dict:
+        """Extract key information for embed fields."""
+        info = {}
+
+        if doc_type == "premarket":
+            # Extract bias
+            bias_match = re.search(r"(?:overall\s+)?bias[:\s]+([^\n]+)", content, re.I)
+            if bias_match:
+                info["bias"] = bias_match.group(1).strip()[:100]
+
+            # Extract key levels
+            levels_match = re.search(r"key\s+levels?[:\s]+([^\n]+)", content, re.I)
+            if levels_match:
+                info["levels"] = levels_match.group(1).strip()[:100]
+
+        elif doc_type == "journal":
+            # Extract mood/reflection
+            mood_match = re.search(r"(?:mood|reflection)[:\s]+([^\n]+)", content, re.I)
+            if mood_match:
+                info["mood"] = mood_match.group(1).strip()[:100]
+
+        return info
+
+
 class ScheduledPublisher:
-    """Handles scheduled publishing of documents to Discord."""
+    """Handles scheduled publishing with premium Discord formatting."""
 
     CHANNEL_MAP = {
         "premarket": "📈-premarket-plans",
@@ -48,9 +126,37 @@ class ScheduledPublisher:
         "report": "📥-reports",
     }
 
+    COLORS = {
+        "premarket": 0x3498DB,  # Blue
+        "journal": 0x9B59B6,  # Purple
+        "catalyst": 0xE74C3C,  # Red
+        "economic": 0x2ECC71,  # Green
+        "digest": 0xF39C12,  # Orange
+        "research": 0x1ABC9C,  # Teal
+    }
+
+    EMOJIS = {
+        "premarket": "📈",
+        "journal": "📔",
+        "catalyst": "🚀",
+        "economic": "📅",
+        "digest": "📊",
+        "research": "🔬",
+    }
+
+    TITLES = {
+        "premarket": "Pre-Market Analysis",
+        "journal": "Trading Journal",
+        "catalyst": "Live Catalysts",
+        "economic": "Economic Calendar",
+        "digest": "Daily Digest",
+        "research": "Research Report",
+    }
+
     def __init__(self):
         self.output_dir = Path(os.path.expanduser("~/syndicate/output"))
         self.reports_dir = self.output_dir / "reports"
+        self.formatter = DiscordFormatter()
 
     def find_documents(self, doc_type: str, target_date: date) -> List[Path]:
         """Find documents of a given type for a specific date."""
@@ -58,68 +164,84 @@ class ScheduledPublisher:
         date_str = target_date.strftime("%Y-%m-%d")
 
         if doc_type == "premarket":
-            # Check organized location
-            pattern = f"**/PreMarket_{date_str}.md"
-            docs.extend(self.reports_dir.glob(pattern))
-            # Check raw location
+            docs.extend(self.reports_dir.glob(f"**/PreMarket_{date_str}.md"))
             docs.extend(self.reports_dir.glob(f"premarket_{date_str}.md"))
-
         elif doc_type == "journal":
             docs.extend(self.output_dir.glob(f"Journal_{date_str}.md"))
             docs.extend(self.output_dir.glob(f"**/Journal_{date_str}.md"))
-
         elif doc_type == "catalyst":
             docs.extend(self.reports_dir.glob(f"**/Catalysts_{date_str}.md"))
-            docs.extend(self.reports_dir.glob(f"catalysts_{date_str}.md"))
-
         elif doc_type == "economic":
             docs.extend(self.reports_dir.glob(f"**/EconCalendar_{date_str}.md"))
-            docs.extend(self.reports_dir.glob(f"economic_calendar_{date_str}.md"))
-
         elif doc_type == "digest":
             docs.extend((self.output_dir / "digests").glob(f"digest_{date_str}.md"))
-
         elif doc_type == "research":
-            # All research reports for today
             docs.extend(self.reports_dir.glob(f"**/*_{date_str}.md"))
 
-        return list(set(docs))  # Remove duplicates
+        return list(set(docs))
 
     def read_document(self, path: Path) -> str:
-        """Read document content, stripping frontmatter if present."""
+        """Read document, stripping frontmatter."""
         content = path.read_text(encoding="utf-8")
-
-        # Strip YAML frontmatter
         if content.startswith("---"):
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 content = parts[2].strip()
-
         return content
 
-    def format_for_discord(self, content: str, doc_type: str, max_length: int = 1900) -> List[str]:
-        """Format content for Discord, splitting if necessary."""
-        # Add header based on type
-        headers = {
-            "premarket": "📈 **Pre-Market Analysis**",
-            "journal": "📔 **Trading Journal**",
-            "catalyst": "🚀 **Live Catalysts**",
-            "economic": "📅 **Economic Calendar**",
-            "digest": "📊 **Daily Digest**",
-            "research": "🔬 **Research Report**",
-        }
+    def create_embed(self, content: str, doc_type: str, doc_name: str) -> discord.Embed:
+        """Create a polished Discord embed from document content."""
+        today = date.today()
 
-        header = headers.get(doc_type, "📄 **Report**")
-        today = date.today().strftime("%A, %B %d, %Y")
-        full_content = f"{header}\n*{today}*\n\n{content}"
+        # Clean content for Discord
+        cleaned = self.formatter.clean_markdown(content)
 
-        # Split into chunks if too long
+        # Extract key info
+        key_info = self.formatter.extract_key_info(content, doc_type)
+
+        # Truncate if needed (embed description max is 4096)
+        if len(cleaned) > 3900:
+            cleaned = cleaned[:3900] + "\n\n*[Content truncated - see full report in Notion]*"
+
+        # Create embed
+        embed = discord.Embed(
+            title=f"{self.EMOJIS.get(doc_type, '📄')} {self.TITLES.get(doc_type, 'Report')}",
+            description=cleaned,
+            color=self.COLORS.get(doc_type, 0x7289DA),
+            timestamp=datetime.utcnow(),
+        )
+
+        # Add key info as fields
+        for key, value in key_info.items():
+            embed.add_field(name=key.title(), value=value, inline=True)
+
+        # Footer
+        embed.set_footer(text=f"Syndicate • {today.strftime('%A, %B %d, %Y')}")
+
+        return embed
+
+    def create_text_message(self, content: str, doc_type: str) -> List[str]:
+        """Create formatted text messages for longer content."""
+        cleaned = self.formatter.clean_markdown(content)
+
+        header = f"{self.EMOJIS.get(doc_type, '📄')} **{self.TITLES.get(doc_type, 'Report')}**\n"
+        header += f"*{date.today().strftime('%A, %B %d, %Y')}*\n"
+        header += "━" * 30 + "\n\n"
+
+        full_content = header + cleaned
+
+        # Split into chunks (Discord max is 2000)
+        max_len = 1950
         chunks = []
-        while len(full_content) > max_length:
-            # Find a good split point
-            split_at = full_content.rfind("\n", 0, max_length)
+
+        while len(full_content) > max_len:
+            # Find good split point
+            split_at = full_content.rfind("\n\n", 0, max_len)
             if split_at == -1:
-                split_at = max_length
+                split_at = full_content.rfind("\n", 0, max_len)
+            if split_at == -1:
+                split_at = max_len
+
             chunks.append(full_content[:split_at])
             full_content = full_content[split_at:].strip()
 
@@ -128,8 +250,8 @@ class ScheduledPublisher:
 
         return chunks
 
-    async def publish(self, doc_type: str, target_date: Optional[date] = None):
-        """Publish documents of a given type to Discord."""
+    async def publish(self, doc_type: str, target_date: Optional[date] = None, use_embed: bool = True):
+        """Publish documents to Discord with premium formatting."""
         target_date = target_date or date.today()
         channel_name = self.CHANNEL_MAP.get(doc_type)
 
@@ -144,7 +266,6 @@ class ScheduledPublisher:
 
         print(f"Found {len(docs)} {doc_type} document(s) for {target_date}")
 
-        # Connect to Discord
         intents = discord.Intents.default()
         client = discord.Client(intents=intents)
 
@@ -159,17 +280,24 @@ class ScheduledPublisher:
                 for doc_path in docs:
                     print(f"Publishing: {doc_path.name} -> #{channel_name}")
                     content = self.read_document(doc_path)
-                    chunks = self.format_for_discord(content, doc_type)
 
-                    for i, chunk in enumerate(chunks):
-                        try:
-                            await channel.send(chunk)
-                            if i < len(chunks) - 1:
-                                await asyncio.sleep(1)  # Rate limiting
-                        except Exception as e:
-                            print(f"Error sending message: {e}")
+                    try:
+                        if use_embed and len(content) < 4000:
+                            # Use embed for shorter content
+                            embed = self.create_embed(content, doc_type, doc_path.name)
+                            await channel.send(embed=embed)
+                        else:
+                            # Use text messages for longer content
+                            chunks = self.create_text_message(content, doc_type)
+                            for i, chunk in enumerate(chunks):
+                                await channel.send(chunk)
+                                if i < len(chunks) - 1:
+                                    await asyncio.sleep(0.5)
 
-                    print(f"  ✓ Published to #{channel_name}")
+                        print(f"  ✓ Published to #{channel_name}")
+
+                    except Exception as e:
+                        print(f"  ✗ Error: {e}")
 
             await client.close()
 
@@ -188,20 +316,20 @@ async def main():
         choices=["premarket", "catalyst", "economic", "journal", "digest", "research", "all"],
         help="Type of document to publish",
     )
-    parser.add_argument("--date", type=str, help="Target date (YYYY-MM-DD), defaults to today")
+    parser.add_argument("--date", type=str, help="Target date (YYYY-MM-DD)")
+    parser.add_argument("--no-embed", action="store_true", help="Use text instead of embeds")
 
     args = parser.parse_args()
-
     target_date = date.fromisoformat(args.date) if args.date else date.today()
     publisher = ScheduledPublisher()
+    use_embed = not args.no_embed
 
     if args.type == "all":
-        # Morning batch
-        await publisher.publish("premarket", target_date)
-        await publisher.publish("catalyst", target_date)
-        await publisher.publish("economic", target_date)
+        await publisher.publish("premarket", target_date, use_embed)
+        await publisher.publish("catalyst", target_date, use_embed)
+        await publisher.publish("economic", target_date, use_embed)
     else:
-        await publisher.publish(args.type, target_date)
+        await publisher.publish(args.type, target_date, use_embed)
 
 
 if __name__ == "__main__":

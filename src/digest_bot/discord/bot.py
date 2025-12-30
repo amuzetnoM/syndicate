@@ -204,6 +204,7 @@ class DigestDiscordBot(BotBase):
             from .cogs import (
                 alerting,
                 digest_workflow,
+                intelligence,
                 moderation,
                 pins,
                 reporting,
@@ -224,6 +225,7 @@ class DigestDiscordBot(BotBase):
                 pins.PinsCog,
                 resources.ResourcesCog,
                 status.Status,
+                intelligence.IntelligenceCog,
             ]
 
             for cog_cls in cogs_to_add:
