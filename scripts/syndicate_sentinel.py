@@ -60,7 +60,7 @@ def reset_stuck_tasks():
         threshold = (datetime.now() - timedelta(minutes=STUCK_TASK_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute(
-            "UPDATE llm_tasks SET status='pending', updated_at=CURRENT_TIMESTAMP WHERE status='in_progress' AND updated_at < ?",
+            "UPDATE llm_tasks SET status='pending', last_attempt_at=CURRENT_TIMESTAMP WHERE status='in_progress' AND last_attempt_at < ?",
             (threshold,),
         )
 
