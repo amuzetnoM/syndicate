@@ -1,0 +1,11 @@
+[Unit]
+Description=Syndicate - Digest Publishing (5 PM UTC+5)
+After=network.target
+
+[Timer]
+# 5:00 PM UTC+5 = 12:00 UTC
+OnCalendar=*-*-* 12:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Syndicate - Journal Revision (10 PM UTC+5)
+After=network.target
+
+[Timer]
+# 10:00 PM UTC+5 = 17:00 UTC
+OnCalendar=*-*-* 17:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

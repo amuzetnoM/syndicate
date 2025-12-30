@@ -1,0 +1,11 @@
+[Unit]
+Description=Syndicate - Morning Publishing (7 AM UTC+5)
+After=network.target
+
+[Timer]
+# 7:00 AM UTC+5 = 02:00 UTC
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

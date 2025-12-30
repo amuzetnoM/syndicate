@@ -1,0 +1,14 @@
+[Unit]
+Description=Syndicate - Morning Publishing Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=ali_shakil_backup_gmail_com
+WorkingDirectory=/home/ali_shakil_backup_gmail_com/syndicate
+ExecStart=/home/ali_shakil_backup_gmail_com/miniforge3/envs/syndicate/bin/python scripts/scheduled_publisher.py all
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
