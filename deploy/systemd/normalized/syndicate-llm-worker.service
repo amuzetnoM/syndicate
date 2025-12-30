@@ -1,0 +1,17 @@
+[Unit]
+Description=Syndicate LLM Worker (processes generation queue)
+After=network.target syndicate-daemon.service
+
+[Service]
+Type=simple
+User=ali_shakil_backup_gmail_com
+WorkingDirectory=/home/ali_shakil_backup_gmail_com/syndicate
+ExecStart=/home/ali_shakil_backup_gmail_com/miniforge3/envs/syndicate/bin/python scripts/llm_worker.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
