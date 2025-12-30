@@ -225,6 +225,14 @@ def generate_premarket(config: Config, logger, model=None, dry_run: bool = False
     """Generate the pre-market plan."""
     logger.info("Generating Pre-Market Plan...")
 
+    # Force AI unless explicitly disabled
+    if not no_ai and model is None:
+        try:
+            model = create_llm_provider(config, logger)
+            logger.info("Initialized local LLM provider for Pre-Market generation")
+        except Exception as e:
+            logger.warning(f"Failed to create LLM provider: {e}")
+
     week_info = get_week_info()
     reports_dir = os.path.join(config.OUTPUT_DIR, "reports")
     os.makedirs(reports_dir, exist_ok=True)

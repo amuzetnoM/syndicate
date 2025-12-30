@@ -599,6 +599,65 @@ def _run_post_analysis_tasks(
                 print("[DAEMON] ⏸️  Insights extraction DISABLED via toggle")
                 return 0
 
+            # ------------------------------------------------------------------
+            # HELPER: Run Publishing
+            # ------------------------------------------------------------------
+            def run_publishing_once():
+                """
+                Run Notion publishing for all unsynced documents.
+                Returns (published_count, skipped_schedule, skipped_status)
+                """
+                if not db.is_notion_publishing_enabled():
+                    print("[DAEMON] ⏸️  Notion publishing DISABLED via toggle")
+                    return 0, 0, 1
+
+                try:
+                    from scripts.notion_publisher import NotionPublisher
+
+                    pub = NotionPublisher()
+                    output_dir = Path(config.OUTPUT_DIR)
+                    reports_dir = output_dir / "reports"
+
+                    published = 0
+
+                    # Publish Journals
+                    for f in output_dir.glob("Journal_*.md"):
+                        try:
+                            res = pub.sync_file(str(f), doc_type="journal")
+                            if res and not res.get("skipped"):
+                                published += 1
+                        except Exception:
+                            pass
+
+                    # Publish Reports
+                    for f in reports_dir.glob("**/*.md"):
+                        # Skip if already published or not a report
+                        if f.name.startswith("data_fetch_") or f.name.startswith("news_scan_"):
+                            continue
+
+                        # Detect type based on path/name
+                        doc_type = "reports"
+                        if "premarket" in str(f).lower():
+                            doc_type = "premarket"
+                        elif "catalysts" in str(f).lower():
+                            doc_type = "reports"
+                        elif "economic" in str(f).lower():
+                            doc_type = "reports"
+
+                        try:
+                            # Only publish if valid report
+                            res = pub.sync_file(str(f), doc_type=doc_type)
+                            if res and not res.get("skipped"):
+                                published += 1
+                        except Exception:
+                            pass
+
+                    return published, 0, 0
+
+                except Exception as e:
+                    logger.error(f"[DAEMON] Publishing failed: {e}")
+                    return 0, 0, 1
+
             if not ignore_schedule and not db.should_run_task("insights_extraction"):
                 print("[DAEMON] Insights extraction already done today, skipping")
                 return 0

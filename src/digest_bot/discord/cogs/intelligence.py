@@ -119,9 +119,9 @@ When asked about documents, summarize from available context."""
             async with self._llm_lock:
                 if self._llm is None:
                     try:
-                        from src.digest_bot.llm import create_llm_provider
+                        from src.digest_bot.llm import get_provider_with_fallback
 
-                        self._llm = create_llm_provider()
+                        self._llm = get_provider_with_fallback()
                         logger.info("IntelligentResponder: LLM loaded")
                     except Exception as e:
                         logger.error(f"Failed to load LLM: {e}")
@@ -274,9 +274,9 @@ class IntelligenceCog(commands.Cog):
 
             await ctx.reply(response, mention_author=False)
 
-    @commands.command(name="status")
-    async def status_command(self, ctx: commands.Context):
-        """Quick system status check."""
+    @commands.command(name="intel")
+    async def intel_status_command(self, ctx: commands.Context):
+        """Quick intelligence status check."""
 
         embed = discord.Embed(title="🧠 Syndicate Intelligence", color=0x2ECC71, timestamp=datetime.utcnow())
 
