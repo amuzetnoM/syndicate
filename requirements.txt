@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------
 yfinance>=0.2.66              # Yahoo Finance market data API
 pandas>=2.0.0                 # Data manipulation and analysis
-           # Technical analysis indicators (requires numba)
+pandas-ta>=0.3.0              # Technical analysis indicators (requires numba)
 mplfinance>=0.12.10b0         # Financial charting library
 
 # -----------------------------------------------------------------------------
